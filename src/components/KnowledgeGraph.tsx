@@ -28,15 +28,23 @@ export const KnowledgeGraph = () => {
     links: [],
   });
 
+  const [allInsights, setAllInsights] = useState<any[]>([]);
+
   useEffect(() => {
     fetchGraphData();
   }, []);
 
   useEffect(() => {
+    if (allInsights.length > 0) {
+      buildGraph(allInsights);
+    }
+  }, [activeTab, allInsights]);
+
+  useEffect(() => {
     if (graphData.nodes.length > 0) {
       renderGraph();
     }
-  }, [graphData, activeTab]);
+  }, [graphData]);
 
   const fetchGraphData = async () => {
     try {
@@ -48,7 +56,7 @@ export const KnowledgeGraph = () => {
       if (error) throw error;
 
       if (insights && insights.length > 0) {
-        buildGraph(insights);
+        setAllInsights(insights);
       }
     } catch (error) {
       console.error("Error fetching graph data:", error);
@@ -58,31 +66,29 @@ export const KnowledgeGraph = () => {
   };
 
   const buildGraph = (insights: any[]) => {
-    const entityFreq = new Map<string, number>();
-    const themeFreq = new Map<string, number>();
-    const keywordFreq = new Map<string, number>();
+    const itemFreq = new Map<string, number>();
     const connections = new Map<string, Set<string>>();
 
+    // Extract only the items for the current tab type
     insights.forEach((insight) => {
-      const entities = (insight.entities as string[]) || [];
-      const themes = (insight.themes as string[]) || [];
-      const keywords = (insight.keywords as string[]) || [];
+      let items: string[] = [];
+      
+      if (activeTab === "entities") {
+        items = (insight.entities as string[]) || [];
+      } else if (activeTab === "themes") {
+        items = (insight.themes as string[]) || [];
+      } else {
+        items = (insight.keywords as string[]) || [];
+      }
 
-      entities.forEach((entity) => {
-        entityFreq.set(entity, (entityFreq.get(entity) || 0) + 1);
+      // Count frequency
+      items.forEach((item) => {
+        itemFreq.set(item, (itemFreq.get(item) || 0) + 1);
       });
 
-      themes.forEach((theme) => {
-        themeFreq.set(theme, (themeFreq.get(theme) || 0) + 1);
-      });
-
-      keywords.forEach((keyword) => {
-        keywordFreq.set(keyword, (keywordFreq.get(keyword) || 0) + 1);
-      });
-
-      const allItems = [...entities, ...themes, ...keywords];
-      allItems.forEach((item1, i) => {
-        allItems.slice(i + 1).forEach((item2) => {
+      // Build connections only between items of the same type in the same entry
+      items.forEach((item1, i) => {
+        items.slice(i + 1).forEach((item2) => {
           const key = [item1, item2].sort().join("||");
           if (!connections.has(key)) {
             connections.set(key, new Set());
@@ -109,10 +115,7 @@ export const KnowledgeGraph = () => {
       keywords: "keyword" as const,
     };
 
-    const freqMap =
-      activeTab === "entities" ? entityFreq : activeTab === "themes" ? themeFreq : keywordFreq;
-
-    freqMap.forEach((count, name) => {
+    itemFreq.forEach((count, name) => {
       nodes.push({
         id: name,
         name,
@@ -153,6 +156,17 @@ export const KnowledgeGraph = () => {
 
     svg.attr("width", width).attr("height", height).attr("viewBox", [0, 0, width, height]);
 
+    // Add zoom behavior
+    const g = svg.append("g");
+    
+    const zoom = d3.zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.5, 5])
+      .on("zoom", (event) => {
+        g.attr("transform", event.transform);
+      });
+
+    svg.call(zoom);
+
     const simulation = d3
       .forceSimulation(graphData.nodes)
       .force(
@@ -166,7 +180,7 @@ export const KnowledgeGraph = () => {
       .force("center", d3.forceCenter(width / 2, height / 2))
       .force("collision", d3.forceCollide().radius((d: any) => d.value + 5));
 
-    const link = svg
+    const link = g
       .append("g")
       .selectAll("line")
       .data(graphData.links)
@@ -175,7 +189,7 @@ export const KnowledgeGraph = () => {
       .attr("stroke-opacity", 0.6)
       .attr("stroke-width", (d: any) => Math.sqrt(d.value));
 
-    const node = svg
+    const node = g
       .append("g")
       .selectAll("g")
       .data(graphData.nodes)
