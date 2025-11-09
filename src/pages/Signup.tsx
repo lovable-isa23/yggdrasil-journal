@@ -41,7 +41,7 @@ const Signup = () => {
       if (error) throw error;
 
       toast.success("Account created! Welcome to Yggdrasil.");
-      navigate("/");
+      navigate("/journal");
     } catch (error: any) {
       console.error("Signup error:", error);
       toast.error(error.message || "Failed to create account");

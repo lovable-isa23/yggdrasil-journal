@@ -26,7 +26,7 @@ const Login = () => {
       if (error) throw error;
 
       toast.success("Welcome back!");
-      navigate("/");
+      navigate("/journal");
     } catch (error: any) {
       console.error("Login error:", error);
       toast.error(error.message || "Invalid login credentials");

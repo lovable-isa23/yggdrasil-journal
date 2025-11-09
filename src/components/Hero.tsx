@@ -1,8 +1,24 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
 
 export const Hero = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsAuthenticated(!!session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   return (
     <section className="relative min-h-screen flex items-center justify-center px-6 py-20 overflow-hidden">
       {/* Background pattern */}
@@ -39,21 +55,33 @@ export const Hero = () => {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
-            <Button 
-              size="lg" 
-              className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-primary to-earth-brown hover:scale-105"
-              asChild
-            >
-              <Link to="/waitlist">Join the Waitlist</Link>
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline" 
-              className="text-lg px-8 py-6 border-2 hover:bg-muted/50 transition-all duration-300"
-              asChild
-            >
-              <Link to="/login">Sign In</Link>
-            </Button>
+            {isAuthenticated ? (
+              <Button 
+                size="lg" 
+                className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-primary to-earth-brown hover:scale-105"
+                asChild
+              >
+                <Link to="/journal">Open Journal</Link>
+              </Button>
+            ) : (
+              <>
+                <Button 
+                  size="lg" 
+                  className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-primary to-earth-brown hover:scale-105"
+                  asChild
+                >
+                  <Link to="/waitlist">Join the Waitlist</Link>
+                </Button>
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  className="text-lg px-8 py-6 border-2 hover:bg-muted/50 transition-all duration-300"
+                  asChild
+                >
+                  <Link to="/login">Sign In</Link>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Feature highlights */}
