@@ -40,64 +40,27 @@ serve(async (req) => {
             role: 'system',
             content: `You are a semantic analysis expert specializing in journal entry analysis. Extract meaningful insights from journal entries.
 
-Your task is to analyze the journal entry and return a JSON object with:
-- entities: Array of key people, places, events, or concepts mentioned (max 10)
-- themes: Array of overarching themes or topics (max 5)
-- emotions: Array of emotions detected with intensity (1-10 scale)
-- keywords: Array of significant keywords (max 15)
-- summary: A brief 2-3 sentence summary
+Analyze the journal entry and extract:
+- entities: Key people, places, events, or concepts (max 10)
+- themes: Overarching themes or topics (max 5)
+- emotions: Emotions with intensity 1-10 (format: [{"emotion": "happy", "intensity": 8}])
+- keywords: Significant keywords (max 15)
+- summary: Brief 2-3 sentence summary
 
-Return ONLY valid JSON, no additional text or markdown.`
+Respond with ONLY a valid JSON object in this exact format:
+{
+  "entities": ["entity1", "entity2"],
+  "themes": ["theme1", "theme2"],
+  "emotions": [{"emotion": "joy", "intensity": 7}],
+  "keywords": ["keyword1", "keyword2"],
+  "summary": "Your summary here."
+}`
           },
           {
             role: 'user',
-            content: `Title: ${title}\n\nContent: ${content}`
+            content: `Analyze this journal entry:\n\nTitle: ${title}\n\nContent: ${content}`
           }
-        ],
-        tools: [
-          {
-            type: "function",
-            name: "analyze_journal_entry",
-            description: "Analyze a journal entry and extract semantic insights",
-            parameters: {
-              type: "object",
-              properties: {
-                entities: {
-                  type: "array",
-                  items: { type: "string" },
-                  description: "Key entities mentioned in the entry"
-                },
-                themes: {
-                  type: "array",
-                  items: { type: "string" },
-                  description: "Main themes of the entry"
-                },
-                emotions: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      emotion: { type: "string" },
-                      intensity: { type: "number" }
-                    }
-                  },
-                  description: "Emotions detected with intensity 1-10"
-                },
-                keywords: {
-                  type: "array",
-                  items: { type: "string" },
-                  description: "Significant keywords"
-                },
-                summary: {
-                  type: "string",
-                  description: "Brief summary of the entry"
-                }
-              },
-              required: ["entities", "themes", "emotions", "keywords", "summary"]
-            }
-          }
-        ],
-        tool_choice: { type: "function", function: { name: "analyze_journal_entry" } }
+        ]
       }),
     });
 
@@ -110,14 +73,23 @@ Return ONLY valid JSON, no additional text or markdown.`
     const aiData = await aiResponse.json();
     console.log('AI response:', JSON.stringify(aiData));
 
-    // Extract the tool call result
-    const toolCall = aiData.choices[0]?.message?.tool_calls?.[0];
-    if (!toolCall) {
-      throw new Error('No tool call in AI response');
+    // Extract the content and parse JSON
+    const aiContent = aiData.choices[0]?.message?.content;
+    if (!aiContent) {
+      throw new Error('No content in AI response');
     }
 
-    const analysis = JSON.parse(toolCall.function.arguments);
-    console.log('Parsed analysis:', analysis);
+    // Parse the JSON response
+    let analysis;
+    try {
+      // Remove markdown code blocks if present
+      const cleanContent = aiContent.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      analysis = JSON.parse(cleanContent);
+      console.log('Parsed analysis:', analysis);
+    } catch (parseError) {
+      console.error('Failed to parse AI response:', aiContent);
+      throw new Error('Failed to parse AI analysis');
+    }
 
     // Get user from request
     const authHeader = req.headers.get('Authorization');
