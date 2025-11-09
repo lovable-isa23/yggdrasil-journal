@@ -3,6 +3,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { JournalEditor } from "@/components/JournalEditor";
 import { JournalEntryList } from "@/components/JournalEntryList";
 import { ReflectionPrompt } from "@/components/ReflectionPrompt";
+import { KnowledgeGraph } from "@/components/KnowledgeGraph";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -95,6 +96,11 @@ const Journal = () => {
                 <ReflectionPrompt recentEntries={recentEntries} />
               </section>
             )}
+
+            {/* Knowledge Graph */}
+            <section>
+              <KnowledgeGraph />
+            </section>
 
             {/* Entries List */}
             <section>
