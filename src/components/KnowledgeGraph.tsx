@@ -1,38 +1,42 @@
 import { useEffect, useState, useRef } from "react";
-import ForceGraph2D from "react-force-graph-2d";
+import * as d3 from "d3";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Loader2 } from "lucide-react";
 
-interface GraphNode {
+interface GraphNode extends d3.SimulationNodeDatum {
   id: string;
   name: string;
-  val: number;
+  value: number;
   type: "entity" | "theme" | "keyword";
   color: string;
 }
 
 interface GraphLink {
-  source: string;
-  target: string;
+  source: GraphNode | string;
+  target: GraphNode | string;
   value: number;
 }
 
-interface GraphData {
-  nodes: GraphNode[];
-  links: GraphLink[];
-}
-
 export const KnowledgeGraph = () => {
-  const [graphData, setGraphData] = useState<GraphData>({ nodes: [], links: [] });
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"entities" | "themes" | "keywords">("entities");
-  const graphRef = useRef<any>();
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [graphData, setGraphData] = useState<{ nodes: GraphNode[]; links: GraphLink[] }>({
+    nodes: [],
+    links: [],
+  });
 
   useEffect(() => {
     fetchGraphData();
   }, []);
+
+  useEffect(() => {
+    if (graphData.nodes.length > 0) {
+      renderGraph();
+    }
+  }, [graphData, activeTab]);
 
   const fetchGraphData = async () => {
     try {
@@ -59,28 +63,23 @@ export const KnowledgeGraph = () => {
     const keywordFreq = new Map<string, number>();
     const connections = new Map<string, Set<string>>();
 
-    // Count frequencies and build connections
     insights.forEach((insight) => {
       const entities = (insight.entities as string[]) || [];
       const themes = (insight.themes as string[]) || [];
       const keywords = (insight.keywords as string[]) || [];
 
-      // Count entities
       entities.forEach((entity) => {
         entityFreq.set(entity, (entityFreq.get(entity) || 0) + 1);
       });
 
-      // Count themes
       themes.forEach((theme) => {
         themeFreq.set(theme, (themeFreq.get(theme) || 0) + 1);
       });
 
-      // Count keywords
       keywords.forEach((keyword) => {
         keywordFreq.set(keyword, (keywordFreq.get(keyword) || 0) + 1);
       });
 
-      // Build connections between items that appear in the same entry
       const allItems = [...entities, ...themes, ...keywords];
       allItems.forEach((item1, i) => {
         allItems.slice(i + 1).forEach((item2) => {
@@ -95,48 +94,46 @@ export const KnowledgeGraph = () => {
 
     const nodes: GraphNode[] = [];
     const links: GraphLink[] = [];
+    const getColor = () => {
+      const colors = {
+        entities: "hsl(var(--primary))",
+        themes: "hsl(var(--accent))",
+        keywords: "hsl(var(--secondary))",
+      };
+      return colors[activeTab];
+    };
 
-    // Create nodes based on active tab
-    if (activeTab === "entities") {
-      entityFreq.forEach((count, entity) => {
-        nodes.push({
-          id: entity,
-          name: entity,
-          val: count * 5,
-          type: "entity",
-          color: "hsl(var(--primary))",
-        });
-      });
-    } else if (activeTab === "themes") {
-      themeFreq.forEach((count, theme) => {
-        nodes.push({
-          id: theme,
-          name: theme,
-          val: count * 5,
-          type: "theme",
-          color: "hsl(var(--accent))",
-        });
-      });
-    } else {
-      keywordFreq.forEach((count, keyword) => {
-        nodes.push({
-          id: keyword,
-          name: keyword,
-          val: count * 3,
-          type: "keyword",
-          color: "hsl(var(--secondary))",
-        });
-      });
-    }
+    const typeMap = {
+      entities: "entity" as const,
+      themes: "theme" as const,
+      keywords: "keyword" as const,
+    };
 
-    // Create links between nodes that appear together
+    const freqMap =
+      activeTab === "entities" ? entityFreq : activeTab === "themes" ? themeFreq : keywordFreq;
+
+    freqMap.forEach((count, name) => {
+      nodes.push({
+        id: name,
+        name,
+        value: count * 5,
+        type: typeMap[activeTab],
+        color: getColor(),
+      });
+    });
+
     const nodeIds = new Set(nodes.map((n) => n.id));
+    const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+    
     connections.forEach((entryIds, key) => {
-      const [source, target] = key.split("||");
-      if (nodeIds.has(source) && nodeIds.has(target)) {
+      const [sourceId, targetId] = key.split("||");
+      const sourceNode = nodeMap.get(sourceId);
+      const targetNode = nodeMap.get(targetId);
+      
+      if (sourceNode && targetNode) {
         links.push({
-          source,
-          target,
+          source: sourceNode,
+          target: targetNode,
           value: entryIds.size,
         });
       }
@@ -145,12 +142,90 @@ export const KnowledgeGraph = () => {
     setGraphData({ nodes, links });
   };
 
-  useEffect(() => {
-    if (graphRef.current && graphData.nodes.length > 0) {
-      graphRef.current.d3Force("charge").strength(-200);
-      graphRef.current.d3Force("link").distance(100);
-    }
-  }, [graphData]);
+  const renderGraph = () => {
+    if (!svgRef.current || graphData.nodes.length === 0) return;
+
+    const svg = d3.select(svgRef.current);
+    svg.selectAll("*").remove();
+
+    const width = 800;
+    const height = 600;
+
+    svg.attr("width", width).attr("height", height).attr("viewBox", [0, 0, width, height]);
+
+    const simulation = d3
+      .forceSimulation(graphData.nodes)
+      .force(
+        "link",
+        d3
+          .forceLink(graphData.links)
+          .id((d: any) => d.id)
+          .distance(100)
+      )
+      .force("charge", d3.forceManyBody().strength(-300))
+      .force("center", d3.forceCenter(width / 2, height / 2))
+      .force("collision", d3.forceCollide().radius((d: any) => d.value + 5));
+
+    const link = svg
+      .append("g")
+      .selectAll("line")
+      .data(graphData.links)
+      .join("line")
+      .attr("stroke", "hsl(var(--border))")
+      .attr("stroke-opacity", 0.6)
+      .attr("stroke-width", (d: any) => Math.sqrt(d.value));
+
+    const node = svg
+      .append("g")
+      .selectAll("g")
+      .data(graphData.nodes)
+      .join("g")
+      .call(
+        d3.drag<any, GraphNode>()
+          .on("start", (event, d) => {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+          })
+          .on("drag", (event, d) => {
+            d.fx = event.x;
+            d.fy = event.y;
+          })
+          .on("end", (event, d) => {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+          })
+      );
+
+    node
+      .append("circle")
+      .attr("r", (d) => d.value)
+      .attr("fill", (d) => d.color)
+      .attr("stroke", "hsl(var(--background))")
+      .attr("stroke-width", 2);
+
+    node
+      .append("text")
+      .text((d) => d.name)
+      .attr("text-anchor", "middle")
+      .attr("dy", "0.3em")
+      .attr("font-size", "11px")
+      .attr("fill", "hsl(var(--background))")
+      .attr("pointer-events", "none");
+
+    node.append("title").text((d) => `${d.name}\nCount: ${d.value / 5}`);
+
+    simulation.on("tick", () => {
+      link
+        .attr("x1", (d: any) => d.source.x)
+        .attr("y1", (d: any) => d.source.y)
+        .attr("x2", (d: any) => d.target.x)
+        .attr("y2", (d: any) => d.target.y);
+
+      node.attr("transform", (d) => `translate(${d.x},${d.y})`);
+    });
+  };
 
   if (loading) {
     return (
@@ -167,9 +242,7 @@ export const KnowledgeGraph = () => {
       <Card className="w-full">
         <CardHeader>
           <CardTitle>Knowledge Graph</CardTitle>
-          <CardDescription>
-            Visualize connections in your journal
-          </CardDescription>
+          <CardDescription>Visualize connections in your journal</CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground text-center py-8">
@@ -196,42 +269,8 @@ export const KnowledgeGraph = () => {
             <TabsTrigger value="keywords">Keywords</TabsTrigger>
           </TabsList>
           <TabsContent value={activeTab}>
-            <div className="w-full h-[600px] bg-background/50 rounded-lg border">
-              <ForceGraph2D
-                ref={graphRef}
-                graphData={graphData}
-                nodeLabel="name"
-                nodeColor={(node: any) => node.color}
-                nodeVal={(node: any) => node.val}
-                linkWidth={(link: any) => Math.sqrt(link.value)}
-                linkColor={() => "hsl(var(--border))"}
-                backgroundColor="transparent"
-                nodeCanvasObject={(node: any, ctx, globalScale) => {
-                  const label = node.name;
-                  const fontSize = 12 / globalScale;
-                  ctx.font = `${fontSize}px Sans-Serif`;
-                  const textWidth = ctx.measureText(label).width;
-                  const bckgDimensions = [textWidth, fontSize].map(
-                    (n) => n + fontSize * 0.4
-                  );
-
-                  ctx.fillStyle = node.color;
-                  ctx.beginPath();
-                  ctx.arc(node.x, node.y, node.val, 0, 2 * Math.PI, false);
-                  ctx.fill();
-
-                  ctx.textAlign = "center";
-                  ctx.textBaseline = "middle";
-                  ctx.fillStyle = "hsl(var(--background))";
-                  ctx.fillText(label, node.x, node.y);
-                }}
-                cooldownTicks={100}
-                onEngineStop={() => {
-                  if (graphRef.current) {
-                    graphRef.current.zoomToFit(400);
-                  }
-                }}
-              />
+            <div className="w-full flex justify-center bg-background/50 rounded-lg border p-4">
+              <svg ref={svgRef} className="max-w-full" />
             </div>
           </TabsContent>
         </Tabs>
