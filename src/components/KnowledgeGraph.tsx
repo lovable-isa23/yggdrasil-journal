@@ -119,7 +119,7 @@ export const KnowledgeGraph = () => {
       nodes.push({
         id: name,
         name,
-        value: count * 5,
+        value: Math.max(count * 12, 20),
         type: typeMap[activeTab],
         color: getColor(),
       });
@@ -224,11 +224,15 @@ export const KnowledgeGraph = () => {
       .text((d) => d.name)
       .attr("text-anchor", "middle")
       .attr("dy", "0.3em")
-      .attr("font-size", "11px")
+      .attr("font-size", "14px")
+      .attr("font-weight", "600")
       .attr("fill", "hsl(var(--background))")
+      .attr("stroke", "hsl(var(--background))")
+      .attr("stroke-width", "0.5px")
+      .attr("paint-order", "stroke")
       .attr("pointer-events", "none");
 
-    node.append("title").text((d) => `${d.name}\nCount: ${d.value / 5}`);
+    node.append("title").text((d) => `${d.name}\nCount: ${Math.floor(d.value / 12)}`);
 
     simulation.on("tick", () => {
       link
