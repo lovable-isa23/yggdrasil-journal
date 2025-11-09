@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AuthGuard } from "@/components/AuthGuard";
 import { JournalEditor } from "@/components/JournalEditor";
 import { JournalEntryList } from "@/components/JournalEntryList";
+import { ReflectionPrompt } from "@/components/ReflectionPrompt";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -10,7 +11,24 @@ import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
 
 const Journal = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [recentEntries, setRecentEntries] = useState<any[]>([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchRecentEntries();
+  }, [refreshTrigger]);
+
+  const fetchRecentEntries = async () => {
+    const { data } = await supabase
+      .from("journal_entries")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(5);
+    
+    if (data) {
+      setRecentEntries(data);
+    }
+  };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -70,6 +88,13 @@ const Journal = () => {
               <h2 className="text-2xl font-bold mb-6">Create New Entry</h2>
               <JournalEditor onEntryCreated={handleEntryCreated} />
             </section>
+
+            {/* Reflection Prompt */}
+            {recentEntries.length > 0 && (
+              <section>
+                <ReflectionPrompt recentEntries={recentEntries} />
+              </section>
+            )}
 
             {/* Entries List */}
             <section>

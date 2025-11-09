@@ -1,1 +1,7 @@
 project_id = "zacdbqnjbcksdbfzhlqh"
+
+[functions.analyze-entry]
+verify_jwt = true
+
+[functions.generate-reflection]
+verify_jwt = true

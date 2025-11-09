@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      entry_insights: {
+        Row: {
+          created_at: string
+          emotions: Json | null
+          entities: Json | null
+          entry_id: string
+          id: string
+          keywords: Json | null
+          summary: string | null
+          themes: Json | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emotions?: Json | null
+          entities?: Json | null
+          entry_id: string
+          id?: string
+          keywords?: Json | null
+          summary?: string | null
+          themes?: Json | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emotions?: Json | null
+          entities?: Json | null
+          entry_id?: string
+          id?: string
+          keywords?: Json | null
+          summary?: string | null
+          themes?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entry_insights_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: true
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       journal_entries: {
         Row: {
           content: string
@@ -62,6 +106,30 @@ export type Database = {
           full_name?: string | null
           id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      reflection_prompts: {
+        Row: {
+          context: string | null
+          created_at: string
+          id: string
+          prompt: string
+          user_id: string
+        }
+        Insert: {
+          context?: string | null
+          created_at?: string
+          id?: string
+          prompt: string
+          user_id: string
+        }
+        Update: {
+          context?: string | null
+          created_at?: string
+          id?: string
+          prompt?: string
+          user_id?: string
         }
         Relationships: []
       }

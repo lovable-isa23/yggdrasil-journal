@@ -1,0 +1,187 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Sparkles, Lightbulb, Heart, Tag } from "lucide-react";
+import { Card } from "@/components/ui/card";
+
+interface EntryInsightsProps {
+  entryId: string;
+  title: string;
+  content: string;
+}
+
+interface Insights {
+  entities: string[];
+  themes: string[];
+  emotions: Array<{ emotion: string; intensity: number }>;
+  keywords: string[];
+  summary: string;
+}
+
+export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) => {
+  const [insights, setInsights] = useState<Insights | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [hasAnalyzed, setHasAnalyzed] = useState(false);
+
+  useEffect(() => {
+    checkExistingInsights();
+  }, [entryId]);
+
+  const checkExistingInsights = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("entry_insights")
+        .select("*")
+        .eq("entry_id", entryId)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data) {
+        setInsights({
+          entities: (data.entities as string[]) || [],
+          themes: (data.themes as string[]) || [],
+          emotions: (data.emotions as Array<{ emotion: string; intensity: number }>) || [],
+          keywords: (data.keywords as string[]) || [],
+          summary: data.summary || "",
+        });
+        setHasAnalyzed(true);
+      }
+    } catch (error: any) {
+      console.error("Error checking insights:", error);
+    }
+  };
+
+  const analyzeEntry = async () => {
+    setLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error("You must be logged in");
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke("analyze-entry", {
+        body: { entryId, title, content },
+      });
+
+      if (error) throw error;
+
+      if (data?.insights) {
+        setInsights(data.insights);
+        setHasAnalyzed(true);
+        toast.success("Entry analyzed! Check out your insights below.");
+      }
+    } catch (error: any) {
+      console.error("Analysis error:", error);
+      toast.error(error.message || "Failed to analyze entry");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!hasAnalyzed) {
+    return (
+      <Card className="p-6 bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/20">
+        <div className="flex items-start gap-4">
+          <Sparkles className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
+          <div className="flex-grow">
+            <h3 className="font-semibold text-lg mb-2">AI Insights Available</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Let our AI analyze this entry to extract themes, emotions, and key insights
+            </p>
+            <Button 
+              onClick={analyzeEntry}
+              disabled={loading}
+              className="bg-gradient-to-r from-primary to-secondary"
+            >
+              {loading ? "Analyzing..." : "Analyze Entry"}
+            </Button>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  if (!insights) return null;
+
+  return (
+    <div className="space-y-4">
+      {insights.summary && (
+        <Card className="p-6 bg-card border-border">
+          <div className="flex items-start gap-3">
+            <Lightbulb className="h-5 w-5 text-primary flex-shrink-0 mt-1" />
+            <div>
+              <h4 className="font-semibold mb-2">Summary</h4>
+              <p className="text-sm text-muted-foreground">{insights.summary}</p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {insights.themes.length > 0 && (
+          <Card className="p-4 bg-card border-border">
+            <div className="flex items-center gap-2 mb-3">
+              <Tag className="h-4 w-4 text-secondary" />
+              <h4 className="font-semibold text-sm">Themes</h4>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {insights.themes.map((theme, idx) => (
+                <span
+                  key={idx}
+                  className="px-3 py-1 rounded-full bg-secondary/20 text-secondary text-xs font-medium"
+                >
+                  {theme}
+                </span>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {insights.emotions.length > 0 && (
+          <Card className="p-4 bg-card border-border">
+            <div className="flex items-center gap-2 mb-3">
+              <Heart className="h-4 w-4 text-destructive" />
+              <h4 className="font-semibold text-sm">Emotions</h4>
+            </div>
+            <div className="space-y-2">
+              {insights.emotions.slice(0, 5).map((emotion, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <span className="text-xs flex-grow capitalize">{emotion.emotion}</span>
+                  <div className="flex-grow bg-muted rounded-full h-2 max-w-[100px]">
+                    <div
+                      className="bg-gradient-to-r from-primary to-destructive h-full rounded-full"
+                      style={{ width: `${emotion.intensity * 10}%` }}
+                    />
+                  </div>
+                  <span className="text-xs text-muted-foreground w-8 text-right">
+                    {emotion.intensity}/10
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+      </div>
+
+      {insights.keywords.length > 0 && (
+        <Card className="p-4 bg-card border-border">
+          <h4 className="font-semibold text-sm mb-3">Keywords</h4>
+          <div className="flex flex-wrap gap-2">
+            {insights.keywords.map((keyword, idx) => (
+              <span
+                key={idx}
+                className="px-2 py-1 rounded bg-muted text-foreground text-xs"
+              >
+                {keyword}
+              </span>
+            ))}
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+};

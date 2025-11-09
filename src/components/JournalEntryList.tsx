@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Trash2, Calendar } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { EntryInsights } from "@/components/EntryInsights";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -167,6 +168,15 @@ export const JournalEntryList = ({ refreshTrigger }: JournalEntryListProps) => {
                 {isExpanded ? "Show less" : "Read more"}
               </Button>
             )}
+
+            {/* AI Insights */}
+            <div className="mt-6 border-t border-border pt-6">
+              <EntryInsights 
+                entryId={entry.id}
+                title={entry.title}
+                content={entry.content}
+              />
+            </div>
           </div>
         );
       })}
