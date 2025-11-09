@@ -95,12 +95,20 @@ const Login = () => {
             {isLoading ? "Signing in..." : "Sign In"}
           </Button>
 
-          <p className="text-center text-sm text-muted-foreground">
-            Don't have an account?{" "}
-            <Link to="/signup" className="text-primary hover:underline">
-              Sign up
-            </Link>
-          </p>
+          <div className="space-y-2">
+            <p className="text-center text-sm text-muted-foreground">
+              Don't have an account?{" "}
+              <Link to="/signup" className="text-primary hover:underline">
+                Sign up
+              </Link>
+            </p>
+            <p className="text-center text-sm text-muted-foreground">
+              Forgot your password?{" "}
+              <Link to="/reset-password" className="text-primary hover:underline">
+                Reset it
+              </Link>
+            </p>
+          </div>
         </form>
 
         <div className="mt-8 text-center">
