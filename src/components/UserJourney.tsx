@@ -1,3 +1,35 @@
+import { useIntersectionObserver } from "@/hooks/use-intersection-observer";
+
+const JourneyCard = ({ step, index }: { step: any; index: number }) => {
+  const { elementRef, isVisible } = useIntersectionObserver();
+
+  return (
+    <div 
+      ref={elementRef}
+      className={`relative group transition-all duration-700 ${
+        isVisible 
+          ? 'opacity-100 translate-y-0' 
+          : 'opacity-0 translate-y-8'
+      }`}
+      style={{
+        transitionDelay: `${index * 150}ms`
+      }}
+    >
+      <div className="text-center space-y-4 p-6 rounded-2xl bg-card border border-border hover:border-primary/50 transition-all duration-500 hover:shadow-medium h-full flex flex-col">
+        <div className="text-5xl mb-2">{step.icon}</div>
+        <div className="text-sm font-mono text-primary font-bold">{step.number}</div>
+        <h3 className="text-xl font-semibold">{step.title}</h3>
+        <p className="text-sm text-muted-foreground flex-grow">{step.description}</p>
+      </div>
+      
+      {/* Connecting line for desktop */}
+      {index < 2 && (
+        <div className="hidden lg:block absolute top-1/2 -right-4 w-8 h-0.5 bg-gradient-to-r from-primary/50 to-transparent" />
+      )}
+    </div>
+  );
+};
+
 export const UserJourney = () => {
   const steps = [
     {
@@ -36,25 +68,7 @@ export const UserJourney = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {steps.map((step, index) => (
-            <div 
-              key={index}
-              className="relative group"
-              style={{
-                animationDelay: `${index * 100}ms`
-              }}
-            >
-              <div className="text-center space-y-4 p-6 rounded-2xl bg-card border border-border hover:border-primary/50 transition-all duration-500 hover:shadow-medium h-full flex flex-col">
-                <div className="text-5xl mb-2">{step.icon}</div>
-                <div className="text-sm font-mono text-primary font-bold">{step.number}</div>
-                <h3 className="text-xl font-semibold">{step.title}</h3>
-                <p className="text-sm text-muted-foreground flex-grow">{step.description}</p>
-              </div>
-              
-              {/* Connecting line for desktop */}
-              {index < steps.length - 1 && (
-                <div className="hidden lg:block absolute top-1/2 -right-4 w-8 h-0.5 bg-gradient-to-r from-primary/50 to-transparent" />
-              )}
-            </div>
+            <JourneyCard key={index} step={step} index={index} />
           ))}
         </div>
       </div>

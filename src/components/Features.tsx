@@ -1,3 +1,34 @@
+import { useIntersectionObserver } from "@/hooks/use-intersection-observer";
+
+const FeatureCard = ({ feature, index }: { feature: any; index: number }) => {
+  const { elementRef, isVisible } = useIntersectionObserver();
+
+  return (
+    <div 
+      ref={elementRef}
+      className={`group relative p-8 rounded-2xl bg-card border border-border hover:border-transparent hover:shadow-emphasis transition-all duration-700 ${
+        isVisible 
+          ? 'opacity-100 translate-y-0' 
+          : 'opacity-0 translate-y-8'
+      }`}
+      style={{
+        transitionDelay: `${index * 100}ms`
+      }}
+    >
+      {/* Gradient border on hover */}
+      <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10`} />
+      <div className="absolute inset-[1px] rounded-2xl bg-card z-0" />
+      
+      <div className="relative z-10 space-y-4">
+        <h3 className="text-xl font-semibold">{feature.title}</h3>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          {feature.description}
+        </p>
+      </div>
+    </div>
+  );
+};
+
 export const Features = () => {
   const features = [
     {
@@ -56,24 +87,7 @@ export const Features = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => (
-            <div 
-              key={index}
-              className="group relative p-8 rounded-2xl bg-card border border-border hover:border-transparent hover:shadow-emphasis transition-all duration-500"
-              style={{
-                animationDelay: `${index * 75}ms`
-              }}
-            >
-              {/* Gradient border on hover */}
-              <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10`} />
-              <div className="absolute inset-[1px] rounded-2xl bg-card z-0" />
-              
-              <div className="relative z-10 space-y-4">
-                <h3 className="text-xl font-semibold">{feature.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {feature.description}
-                </p>
-              </div>
-            </div>
+            <FeatureCard key={index} feature={feature} index={index} />
           ))}
         </div>
       </div>
