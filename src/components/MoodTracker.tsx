@@ -6,7 +6,7 @@ import { format, subDays, isWithinInterval } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type EmotionData = {
@@ -154,11 +154,21 @@ export const MoodTracker = () => {
   return (
     <Card className="p-6">
       <div className="space-y-4">
-        <div>
-          <h3 className="text-xl font-semibold mb-2">Mood Over Time</h3>
-          <p className="text-sm text-muted-foreground">
-            Tracking emotional intensity from positive (+10) to negative (-10)
-          </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h3 className="text-xl font-semibold mb-2">Mood Over Time</h3>
+            <p className="text-sm text-muted-foreground">
+              Tracking emotional intensity from negative (-10) to positive (+10)
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={fetchMoodData}
+            className="h-8 w-8"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
         </div>
 
         <div className="flex flex-wrap gap-2 items-center">
@@ -249,11 +259,6 @@ export const MoodTracker = () => {
             />
           </LineChart>
         </ResponsiveContainer>
-
-        <div className="flex justify-between text-xs text-muted-foreground">
-          <span>← More Negative</span>
-          <span>More Positive →</span>
-        </div>
       </div>
     </Card>
   );
