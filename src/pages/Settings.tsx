@@ -1,24 +1,18 @@
-import { useState } from "react";
 import { AuthGuard } from "@/components/AuthGuard";
-import { JournalEditor } from "@/components/JournalEditor";
-import { JournalEntryList } from "@/components/JournalEntryList";
+import { DataExport } from "@/components/DataExport";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { LogOut, BarChart3, Settings as SettingsIcon } from "lucide-react";
+import { LogOut, BookOpen, BarChart3, Download } from "lucide-react";
 import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
 
-const Journal = () => {
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+const Settings = () => {
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     navigate("/");
-  };
-
-  const handleEntryCreated = () => {
-    setRefreshTrigger(prev => prev + 1);
   };
 
   return (
@@ -41,21 +35,21 @@ const Journal = () => {
               <div className="flex gap-1 sm:gap-2">
                 <Button
                   variant="ghost"
+                  onClick={() => navigate("/journal")}
+                  className="gap-1 sm:gap-2 h-8 sm:h-10 px-2 sm:px-4"
+                  size="sm"
+                >
+                  <BookOpen className="h-4 w-4" />
+                  <span className="hidden sm:inline">Journal</span>
+                </Button>
+                <Button
+                  variant="ghost"
                   onClick={() => navigate("/insights")}
                   className="gap-1 sm:gap-2 h-8 sm:h-10 px-2 sm:px-4"
                   size="sm"
                 >
                   <BarChart3 className="h-4 w-4" />
                   <span className="hidden sm:inline">Insights</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => navigate("/settings")}
-                  className="gap-1 sm:gap-2 h-8 sm:h-10 px-2 sm:px-4"
-                  size="sm"
-                >
-                  <SettingsIcon className="h-4 w-4" />
-                  <span className="hidden sm:inline">Settings</span>
                 </Button>
                 <Button
                   variant="ghost"
@@ -73,28 +67,47 @@ const Journal = () => {
 
         {/* Main Content */}
         <main className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 max-w-4xl">
-          <div className="space-y-12">
-            {/* Welcome Section */}
+          <div className="space-y-8 sm:space-y-12">
+            {/* Page Title */}
             <div className="text-center space-y-2">
-              <h2 className="text-3xl md:text-4xl font-bold text-primary">
-                Your Sacred Space
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary">
+                Settings
               </h2>
-              <p className="text-lg text-muted-foreground">
-                Record your thoughts, reflections, and insights
+              <p className="text-base sm:text-lg text-muted-foreground">
+                Manage your preferences and data
               </p>
             </div>
 
-            {/* Editor */}
-            <section>
-              <h2 className="text-2xl font-bold mb-6">Create New Entry</h2>
-              <JournalEditor onEntryCreated={handleEntryCreated} />
-            </section>
+            {/* Data Export Section */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Download className="h-5 w-5 text-primary" />
+                  <CardTitle>Export Your Data</CardTitle>
+                </div>
+                <CardDescription>
+                  Download all your journal entries in JSON or PDF format
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <DataExport />
+              </CardContent>
+            </Card>
 
-            {/* Entries List */}
-            <section>
-              <h2 className="text-2xl font-bold mb-6">Your Entries</h2>
-              <JournalEntryList refreshTrigger={refreshTrigger} />
-            </section>
+            {/* Preferences Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Preferences</CardTitle>
+                <CardDescription>
+                  Additional settings coming soon
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  More customization options will be available here in future updates.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </main>
       </div>
@@ -102,4 +115,4 @@ const Journal = () => {
   );
 };
 
-export default Journal;
+export default Settings;
