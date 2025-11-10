@@ -55,7 +55,7 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
           user_id: user.id,
           title: data.title,
           content: data.content,
-          entry_date: format(new Date(entryDate.getFullYear(), entryDate.getMonth(), entryDate.getDate()), "yyyy-MM-dd"),
+          entry_date: format(entryDate, "yyyy-MM-dd"),
         });
 
       if (error) throw error;

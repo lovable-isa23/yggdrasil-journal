@@ -99,7 +99,7 @@ export const JournalEntryList = ({ refreshTrigger }: JournalEntryListProps) => {
     try {
       const { error } = await supabase
         .from("journal_entries")
-        .update({ entry_date: format(new Date(newDate.getFullYear(), newDate.getMonth(), newDate.getDate()), "yyyy-MM-dd") })
+        .update({ entry_date: format(newDate, "yyyy-MM-dd") })
         .eq("id", entryId);
 
       if (error) throw error;

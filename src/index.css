@@ -33,11 +33,6 @@ All colors MUST be HSL.
     --destructive: 0 65% 55%;
     --destructive-foreground: 35 25% 95%;
 
-    /* Added semantic tokens for charts */
-    --success: 142 70% 45%; /* green */
-    --success-foreground: 35 25% 95%;
-    --neutral: 0 0% 50%; /* grey */
-
     --border: 35 25% 85%;
     --input: 35 25% 90%;
     --ring: 100 25% 50%;

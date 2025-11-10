@@ -2,10 +2,11 @@ import { useState } from "react";
 import { AuthGuard } from "@/components/AuthGuard";
 import { JournalEditor } from "@/components/JournalEditor";
 import { JournalEntryList } from "@/components/JournalEntryList";
+import { DataExport } from "@/components/DataExport";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { LogOut, BarChart3, Settings as SettingsIcon } from "lucide-react";
+import { LogOut, BarChart3 } from "lucide-react";
 import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
 
 const Journal = () => {
@@ -26,45 +27,34 @@ const Journal = () => {
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
         {/* Header */}
         <header className="border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-50">
-          <div className="container mx-auto px-4 sm:px-6 py-4">
+          <div className="container mx-auto px-6 py-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 sm:gap-3">
+              <div className="flex items-center gap-3">
                 <img 
                   src={yggdrasilLogo} 
                   alt="Yggdrasil" 
-                  className="h-8 w-8 sm:h-10 sm:w-10 object-contain"
+                  className="h-10 w-10 object-contain"
                 />
-                <h1 className="text-xl sm:text-2xl font-bold text-primary">
+                <h1 className="text-2xl font-bold text-primary">
                   Yggdrasil
                 </h1>
               </div>
-              <div className="flex gap-1 sm:gap-2">
+              <div className="flex gap-2">
                 <Button
                   variant="ghost"
                   onClick={() => navigate("/insights")}
-                  className="gap-1 sm:gap-2 h-8 sm:h-10 px-2 sm:px-4"
-                  size="sm"
+                  className="gap-2"
                 >
                   <BarChart3 className="h-4 w-4" />
-                  <span className="hidden sm:inline">Insights</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => navigate("/settings")}
-                  className="gap-1 sm:gap-2 h-8 sm:h-10 px-2 sm:px-4"
-                  size="sm"
-                >
-                  <SettingsIcon className="h-4 w-4" />
-                  <span className="hidden sm:inline">Settings</span>
+                  Insights
                 </Button>
                 <Button
                   variant="ghost"
                   onClick={handleSignOut}
-                  className="gap-1 sm:gap-2 h-8 sm:h-10 px-2 sm:px-4"
-                  size="sm"
+                  className="gap-2"
                 >
                   <LogOut className="h-4 w-4" />
-                  <span className="hidden sm:inline">Sign Out</span>
+                  Sign Out
                 </Button>
               </div>
             </div>
@@ -72,7 +62,7 @@ const Journal = () => {
         </header>
 
         {/* Main Content */}
-        <main className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 max-w-4xl">
+        <main className="container mx-auto px-6 py-12 max-w-4xl">
           <div className="space-y-12">
             {/* Welcome Section */}
             <div className="text-center space-y-2">
@@ -92,7 +82,10 @@ const Journal = () => {
 
             {/* Entries List */}
             <section>
-              <h2 className="text-2xl font-bold mb-6">Your Entries</h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold">Your Entries</h2>
+                <DataExport />
+              </div>
               <JournalEntryList refreshTrigger={refreshTrigger} />
             </section>
           </div>
