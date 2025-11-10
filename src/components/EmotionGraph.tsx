@@ -32,18 +32,14 @@ export const EmotionGraph = () => {
         return;
       }
 
-      // Fetch insights with proper join
-      const { data: insights, error } = await supabase
+      // Fetch insights for the user
+      const { data: insights, error: insightsError } = await supabase
         .from("entry_insights")
-        .select(`
-          emotions,
-          entry_id,
-          journal_entries!inner(entry_date)
-        `)
+        .select("emotions, entry_id")
         .eq("user_id", user.id);
 
-      if (error) {
-        console.error("Error fetching insights:", error);
+      if (insightsError) {
+        console.error("Error fetching insights:", insightsError);
         setLoading(false);
         return;
       }
@@ -53,43 +49,60 @@ export const EmotionGraph = () => {
         return;
       }
 
+      // Fetch corresponding journal entry dates (avoid join issues without FK)
+      const entryIds = insights.map((i: any) => i.entry_id).filter(Boolean);
+      let dateByEntryId: Record<string, string> = {};
+      if (entryIds.length) {
+        const { data: entries, error: entriesError } = await supabase
+          .from("journal_entries")
+          .select("id, entry_date")
+          .in("id", entryIds);
+
+        if (entriesError) {
+          console.error("Error fetching entries:", entriesError);
+          setLoading(false);
+          return;
+        }
+
+        dateByEntryId = (entries || []).reduce((acc: Record<string, string>, e: any) => {
+          if (e.id && e.entry_date) acc[e.id] = e.entry_date;
+          return acc;
+        }, {});
+      }
+
       // Process data to get emotions over time
-      const emotionsByDate: { [key: string]: { [emotion: string]: number[] } } = {};
+      const emotionsByIsoDate: { [iso: string]: { [emotion: string]: number[] } } = {};
       const allEmotions = new Set<string>();
 
       insights.forEach((insight: any) => {
-        const date = insight.journal_entries?.entry_date;
-        if (!date || !insight.emotions || !Array.isArray(insight.emotions) || insight.emotions.length === 0) return;
+        const rawDate: string | undefined = dateByEntryId[insight.entry_id];
+        if (!rawDate || !Array.isArray(insight.emotions) || insight.emotions.length === 0) return;
 
-        const formattedDate = format(new Date(date + 'T00:00:00'), "MMM d");
-        
-        if (!emotionsByDate[formattedDate]) {
-          emotionsByDate[formattedDate] = {};
+        const iso = format(new Date(rawDate + 'T00:00:00'), "yyyy-MM-dd");
+        if (!emotionsByIsoDate[iso]) {
+          emotionsByIsoDate[iso] = {};
         }
 
         (insight.emotions as EmotionData[]).forEach((emotion) => {
-          if (emotion.name && typeof emotion.intensity === 'number') {
-            allEmotions.add(emotion.name);
-            if (!emotionsByDate[formattedDate][emotion.name]) {
-              emotionsByDate[formattedDate][emotion.name] = [];
+          if (emotion?.name && typeof emotion.intensity === 'number') {
+            const name = emotion.name;
+            allEmotions.add(name);
+            if (!emotionsByIsoDate[iso][name]) {
+              emotionsByIsoDate[iso][name] = [];
             }
-            emotionsByDate[formattedDate][emotion.name].push(emotion.intensity);
+            emotionsByIsoDate[iso][name].push(emotion.intensity);
           }
         });
       });
 
       // Calculate average intensities and format for chart
-      const formattedData: ChartDataPoint[] = Object.entries(emotionsByDate)
-        .sort(([dateA], [dateB]) => {
-          const a = new Date(dateA);
-          const b = new Date(dateB);
-          return a.getTime() - b.getTime();
-        })
-        .map(([date, emotions]) => {
-          const dataPoint: ChartDataPoint = { date };
+      const formattedData: ChartDataPoint[] = Object.entries(emotionsByIsoDate)
+        .sort(([isoA], [isoB]) => isoA.localeCompare(isoB))
+        .map(([iso, emotions]) => {
+          const dataPoint: ChartDataPoint = { date: format(new Date(iso + 'T00:00:00'), "MMM d") };
           Object.entries(emotions).forEach(([emotion, intensities]) => {
             dataPoint[emotion] = Math.round(
-              intensities.reduce((sum, val) => sum + val, 0) / intensities.length
+              intensities.reduce((sum, val) => sum + val, 0) / Math.max(1, intensities.length)
             );
           });
           return dataPoint;
@@ -134,17 +147,19 @@ export const EmotionGraph = () => {
     );
   }
 
-  const colors = [
-    "hsl(var(--primary))",
-    "hsl(var(--secondary))",
-    "hsl(var(--accent))",
-    "#8884d8",
-    "#82ca9d",
-    "#ffc658",
-    "#ff7c7c",
-    "#a78bfa",
-    "#fb923c",
-  ];
+  const POSITIVE = new Set([
+    "joy","happiness","gratitude","love","contentment","pride","hope","relief","calm","excitement","optimism","peace","serenity","satisfaction"
+  ]);
+  const NEGATIVE = new Set([
+    "sadness","anger","fear","anxiety","stress","guilt","shame","disgust","frustration","loneliness","grief","worry","resentment","hurt"
+  ]);
+
+  const getEmotionColor = (emotion: string) => {
+    const e = emotion.toLowerCase();
+    if (NEGATIVE.has(e)) return "hsl(var(--destructive))"; // red
+    if (POSITIVE.has(e)) return "hsl(var(--success))"; // green
+    return "hsl(var(--neutral))"; // grey
+  };
 
   return (
     <Card>
@@ -178,7 +193,7 @@ export const EmotionGraph = () => {
                 key={`emotion-${emotion}-${index}`}
                 type="monotone"
                 dataKey={emotion}
-                stroke={colors[index % colors.length]}
+                stroke={getEmotionColor(emotion)}
                 strokeWidth={2}
                 dot={{ r: 4 }}
                 activeDot={{ r: 6 }}
