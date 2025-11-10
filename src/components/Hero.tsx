@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
+import yggdrasilHeroBg from "@/assets/yggdrasil-hero-bg.png";
 
 export const Hero = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -21,13 +22,16 @@ export const Hero = () => {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center px-6 py-20 overflow-hidden">
-      {/* Background pattern */}
-      <div className="absolute inset-0 opacity-[0.03]">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `radial-gradient(circle at 2px 2px, hsl(var(--earth-brown)) 1px, transparent 0)`,
-          backgroundSize: '40px 40px'
-        }} />
-      </div>
+      {/* Background image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: `url(${yggdrasilHeroBg})`,
+        }}
+      />
+      
+      {/* Translucent overlay for text legibility */}
+      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
 
       <div className="container mx-auto max-w-6xl relative z-10">
         <div className="text-center space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
