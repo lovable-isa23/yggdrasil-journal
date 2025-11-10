@@ -226,7 +226,12 @@ export const JournalEntryList = ({ refreshTrigger }: JournalEntryListProps) => {
 
                 <CollapsibleContent>
                   <div className="prose prose-sm max-w-none dark:prose-invert mb-6">
-                    <ReactMarkdown>{entry.content}</ReactMarkdown>
+                    <ReactMarkdown
+                      disallowedElements={['script', 'iframe', 'object', 'embed']}
+                      unwrapDisallowed={true}
+                    >
+                      {entry.content}
+                    </ReactMarkdown>
                   </div>
 
                   {/* AI Insights */}

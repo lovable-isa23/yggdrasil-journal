@@ -15,8 +15,17 @@ serve(async (req) => {
   try {
     const { entryId, title, content } = await req.json();
 
+    // Input validation
     if (!entryId || !content) {
       throw new Error('Entry ID and content are required');
+    }
+
+    if (typeof title !== 'string' || title.length > 200) {
+      throw new Error('Title must be a string with max 200 characters');
+    }
+
+    if (typeof content !== 'string' || content.length > 50000) {
+      throw new Error('Content must be a string with max 50,000 characters');
     }
 
     console.log('Analyzing entry:', entryId);

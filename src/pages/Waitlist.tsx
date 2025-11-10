@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,37 +5,39 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { waitlistSchema, type WaitlistFormData } from "@/lib/validations";
 
 const Waitlist = () => {
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<WaitlistFormData>({
+    resolver: zodResolver(waitlistSchema),
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
+  const onSubmit = async (data: WaitlistFormData) => {
     try {
       const { error } = await supabase
         .from("waitlist")
-        .insert({ email, name: name || null });
+        .insert([{ 
+          email: data.email, 
+          name: data.name || null 
+        }]);
 
-      if (error) {
-        if (error.code === "23505") {
-          toast.error("This email is already on the waitlist!");
-        } else {
-          throw error;
-        }
+      if (error) throw error;
+
+      toast.success("You're on the list! We'll be in touch soon.");
+      reset();
+    } catch (error: any) {
+      if (error.message.includes("duplicate key")) {
+        toast.error("This email is already on the waitlist!");
       } else {
-        toast.success("Welcome to Yggdrasil! You're on the waitlist.");
-        setEmail("");
-        setName("");
+        toast.error(error.message || "Failed to join waitlist");
       }
-    } catch (error) {
-      console.error("Waitlist error:", error);
-      toast.error("Something went wrong. Please try again.");
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -65,38 +66,41 @@ const Waitlist = () => {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6 bg-card p-8 rounded-2xl border border-border shadow-medium">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 bg-card p-8 rounded-2xl border border-border shadow-medium">
           <div className="space-y-2">
             <Label htmlFor="name">Name (optional)</Label>
             <Input
               id="name"
               type="text"
               placeholder="Your name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              {...register("name")}
               className="h-12"
             />
+            {errors.name && (
+              <p className="text-sm text-destructive">{errors.name.message}</p>
+            )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email *</Label>
+            <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               type="email"
               placeholder="your@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
+              {...register("email")}
               className="h-12"
             />
+            {errors.email && (
+              <p className="text-sm text-destructive">{errors.email.message}</p>
+            )}
           </div>
 
           <Button 
             type="submit" 
             className="w-full h-12 text-base bg-gradient-to-r from-primary to-earth-brown hover:scale-[1.02] transition-all duration-300 shadow-soft"
-            disabled={isLoading}
+            disabled={isSubmitting}
           >
-            {isLoading ? "Joining..." : "Join Waitlist"}
+            {isSubmitting ? "Joining..." : "Join Waitlist"}
           </Button>
 
           <p className="text-center text-sm text-muted-foreground">

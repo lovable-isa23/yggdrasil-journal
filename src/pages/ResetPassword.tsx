@@ -6,30 +6,35 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { resetPasswordSchema, type ResetPasswordFormData } from "@/lib/validations";
 
 const ResetPassword = () => {
-  const [email, setEmail] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [sentEmail, setSentEmail] = useState("");
+  
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<ResetPasswordFormData>({
+    resolver: zodResolver(resetPasswordSchema),
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
+  const onSubmit = async (data: ResetPasswordFormData) => {
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
         redirectTo: `${window.location.origin}/update-password`,
       });
 
       if (error) throw error;
 
       toast.success("Password reset email sent! Check your inbox.");
+      setSentEmail(data.email);
       setEmailSent(true);
     } catch (error: any) {
-      console.error("Password reset error:", error);
       toast.error(error.message || "Failed to send reset email");
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -59,26 +64,27 @@ const ResetPassword = () => {
         </div>
 
         {!emailSent ? (
-          <form onSubmit={handleSubmit} className="space-y-6 bg-card p-8 rounded-2xl border border-border shadow-medium">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 bg-card p-8 rounded-2xl border border-border shadow-medium">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="your@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+                {...register("email")}
                 className="h-12"
               />
+              {errors.email && (
+                <p className="text-sm text-destructive">{errors.email.message}</p>
+              )}
             </div>
 
             <Button 
               type="submit" 
               className="w-full h-12 text-base bg-gradient-to-r from-primary to-earth-brown hover:scale-[1.02] transition-all duration-300 shadow-soft"
-              disabled={isLoading}
+              disabled={isSubmitting}
             >
-              {isLoading ? "Sending..." : "Send Reset Link"}
+              {isSubmitting ? "Sending..." : "Send Reset Link"}
             </Button>
 
             <p className="text-center text-sm text-muted-foreground">
@@ -93,7 +99,7 @@ const ResetPassword = () => {
             <div className="text-5xl mb-4">✉️</div>
             <h2 className="text-xl font-semibold">Check Your Email</h2>
             <p className="text-muted-foreground">
-              We've sent a password reset link to <strong>{email}</strong>
+              We've sent a password reset link to <strong>{sentEmail}</strong>
             </p>
             <div className="pt-4">
               <Link to="/login">

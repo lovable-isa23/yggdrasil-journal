@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,34 +5,32 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Link, useNavigate } from "react-router-dom";
 import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { signupSchema, type SignupFormData } from "@/lib/validations";
 
 const Signup = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<SignupFormData>({
+    resolver: zodResolver(signupSchema),
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters");
-      return;
-    }
-
-    setIsLoading(true);
-
+  const onSubmit = async (data: SignupFormData) => {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
       const { error } = await supabase.auth.signUp({
-        email,
-        password,
+        email: data.email,
+        password: data.password,
         options: {
           emailRedirectTo: redirectUrl,
           data: {
-            full_name: fullName,
+            full_name: data.fullName,
           },
         },
       });
@@ -43,10 +40,11 @@ const Signup = () => {
       toast.success("Account created! Welcome to Yggdrasil.");
       navigate("/journal");
     } catch (error: any) {
-      console.error("Signup error:", error);
-      toast.error(error.message || "Failed to create account");
-    } finally {
-      setIsLoading(false);
+      if (error.message.includes("already registered")) {
+        toast.error("This email is already registered. Please sign in instead.");
+      } else {
+        toast.error(error.message || "Failed to create account");
+      }
     }
   };
 
@@ -75,18 +73,19 @@ const Signup = () => {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6 bg-card p-8 rounded-2xl border border-border shadow-medium">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 bg-card p-8 rounded-2xl border border-border shadow-medium">
           <div className="space-y-2">
             <Label htmlFor="fullName">Full Name</Label>
             <Input
               id="fullName"
               type="text"
               placeholder="Your name"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              required
+              {...register("fullName")}
               className="h-12"
             />
+            {errors.fullName && (
+              <p className="text-sm text-destructive">{errors.fullName.message}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -95,11 +94,12 @@ const Signup = () => {
               id="email"
               type="email"
               placeholder="your@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
+              {...register("email")}
               className="h-12"
             />
+            {errors.email && (
+              <p className="text-sm text-destructive">{errors.email.message}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -108,20 +108,20 @@ const Signup = () => {
               id="password"
               type="password"
               placeholder="At least 6 characters"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
+              {...register("password")}
               className="h-12"
             />
+            {errors.password && (
+              <p className="text-sm text-destructive">{errors.password.message}</p>
+            )}
           </div>
 
           <Button 
             type="submit" 
             className="w-full h-12 text-base bg-gradient-to-r from-primary to-earth-brown hover:scale-[1.02] transition-all duration-300 shadow-soft"
-            disabled={isLoading}
+            disabled={isSubmitting}
           >
-            {isLoading ? "Creating account..." : "Create Account"}
+            {isSubmitting ? "Creating account..." : "Create Account"}
           </Button>
 
           <p className="text-center text-sm text-muted-foreground">

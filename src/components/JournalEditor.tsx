@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,27 +11,36 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { journalEntrySchema, type JournalEntryFormData } from "@/lib/validations";
 
 interface JournalEditorProps {
   onEntryCreated: () => void;
 }
 
 export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
   const [entryDate, setEntryDate] = useState<Date>(new Date());
-  const [isLoading, setIsLoading] = useState(false);
+  
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<JournalEntryFormData>({
+    resolver: zodResolver(journalEntrySchema),
+    defaultValues: {
+      title: "",
+      content: "",
+    },
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!title.trim() || !content.trim()) {
-      toast.error("Please fill in both title and content");
-      return;
-    }
+  const title = watch("title");
+  const content = watch("content");
 
-    setIsLoading(true);
-
+  const onSubmit = async (data: JournalEntryFormData) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -45,39 +53,36 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
         .from("journal_entries")
         .insert({
           user_id: user.id,
-          title: title.trim(),
-          content: content.trim(),
+          title: data.title,
+          content: data.content,
           entry_date: format(entryDate, "yyyy-MM-dd"),
         });
 
       if (error) throw error;
 
       toast.success("Journal entry created!");
-      setTitle("");
-      setContent("");
+      reset();
       setEntryDate(new Date());
       onEntryCreated();
     } catch (error: any) {
-      console.error("Error creating entry:", error);
       toast.error(error.message || "Failed to create entry");
-    } finally {
-      setIsLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 bg-card p-6 rounded-2xl border border-border shadow-medium">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 bg-card p-6 rounded-2xl border border-border shadow-medium">
       <div className="space-y-2">
         <Label htmlFor="title">Title</Label>
         <Input
           id="title"
           type="text"
           placeholder="Give your entry a title..."
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
+          {...register("title")}
           className="h-12 text-lg"
         />
+        {errors.title && (
+          <p className="text-sm text-destructive">{errors.title.message}</p>
+        )}
       </div>
 
       <div className="space-y-2">
@@ -85,6 +90,7 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
         <Popover>
           <PopoverTrigger asChild>
             <Button
+              type="button"
               variant="outline"
               className={cn(
                 "w-full h-12 justify-start text-left font-normal",
@@ -114,19 +120,25 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
             <TabsTrigger value="write">Write</TabsTrigger>
             <TabsTrigger value="preview">Preview</TabsTrigger>
           </TabsList>
-          <TabsContent value="write" className="mt-4">
+          <TabsContent value="write" className="mt-4 space-y-2">
             <Textarea
               placeholder="Pour your thoughts here... (Markdown supported)"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              required
+              {...register("content")}
               className="min-h-[300px] resize-none font-mono text-sm"
             />
+            {errors.content && (
+              <p className="text-sm text-destructive">{errors.content.message}</p>
+            )}
           </TabsContent>
           <TabsContent value="preview" className="mt-4">
             <div className="min-h-[300px] p-4 border border-border rounded-lg bg-muted/30 prose prose-sm max-w-none dark:prose-invert">
               {content ? (
-                <ReactMarkdown>{content}</ReactMarkdown>
+                <ReactMarkdown
+                  disallowedElements={['script', 'iframe', 'object', 'embed']}
+                  unwrapDisallowed={true}
+                >
+                  {content}
+                </ReactMarkdown>
               ) : (
                 <p className="text-muted-foreground italic">Nothing to preview yet...</p>
               )}
@@ -138,9 +150,9 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
       <Button 
         type="submit" 
         className="w-full h-12 text-base bg-gradient-to-r from-primary to-earth-brown hover:scale-[1.02] transition-all duration-300"
-        disabled={isLoading}
+        disabled={isSubmitting}
       >
-        {isLoading ? "Saving..." : "Save Entry"}
+        {isSubmitting ? "Saving..." : "Save Entry"}
       </Button>
     </form>
   );

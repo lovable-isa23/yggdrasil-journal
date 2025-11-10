@@ -15,8 +15,30 @@ serve(async (req) => {
   try {
     const { recentEntries } = await req.json();
 
+    // Input validation
     if (!recentEntries || recentEntries.length === 0) {
       throw new Error('No entries provided for reflection generation');
+    }
+
+    if (!Array.isArray(recentEntries)) {
+      throw new Error('recentEntries must be an array');
+    }
+
+    if (recentEntries.length > 10) {
+      throw new Error('Maximum 10 entries allowed for reflection generation');
+    }
+
+    // Validate each entry
+    for (const entry of recentEntries) {
+      if (!entry.title || !entry.content) {
+        throw new Error('Each entry must have title and content');
+      }
+      if (typeof entry.title !== 'string' || entry.title.length > 200) {
+        throw new Error('Entry titles must be strings with max 200 characters');
+      }
+      if (typeof entry.content !== 'string' || entry.content.length > 50000) {
+        throw new Error('Entry content must be strings with max 50,000 characters');
+      }
     }
 
     console.log('Generating reflection for', recentEntries.length, 'entries');

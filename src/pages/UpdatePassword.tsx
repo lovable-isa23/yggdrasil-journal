@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,12 +6,20 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { updatePasswordSchema, type UpdatePasswordFormData } from "@/lib/validations";
 
 const UpdatePassword = () => {
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<UpdatePasswordFormData>({
+    resolver: zodResolver(updatePasswordSchema),
+  });
 
   useEffect(() => {
     // Check if user came from a password reset link
@@ -22,24 +30,10 @@ const UpdatePassword = () => {
     });
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (password !== confirmPassword) {
-      toast.error("Passwords don't match");
-      return;
-    }
-
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters");
-      return;
-    }
-
-    setIsLoading(true);
-
+  const onSubmit = async (data: UpdatePasswordFormData) => {
     try {
       const { error } = await supabase.auth.updateUser({
-        password: password,
+        password: data.password,
       });
 
       if (error) throw error;
@@ -47,10 +41,7 @@ const UpdatePassword = () => {
       toast.success("Password updated successfully!");
       navigate("/login");
     } catch (error: any) {
-      console.error("Password update error:", error);
       toast.error(error.message || "Failed to update password");
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -77,19 +68,19 @@ const UpdatePassword = () => {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6 bg-card p-8 rounded-2xl border border-border shadow-medium">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 bg-card p-8 rounded-2xl border border-border shadow-medium">
           <div className="space-y-2">
             <Label htmlFor="password">New Password</Label>
             <Input
               id="password"
               type="password"
               placeholder="At least 6 characters"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
+              {...register("password")}
               className="h-12"
             />
+            {errors.password && (
+              <p className="text-sm text-destructive">{errors.password.message}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -98,20 +89,20 @@ const UpdatePassword = () => {
               id="confirmPassword"
               type="password"
               placeholder="Re-enter your password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              minLength={6}
+              {...register("confirmPassword")}
               className="h-12"
             />
+            {errors.confirmPassword && (
+              <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
+            )}
           </div>
 
           <Button 
             type="submit" 
             className="w-full h-12 text-base bg-gradient-to-r from-primary to-earth-brown hover:scale-[1.02] transition-all duration-300 shadow-soft"
-            disabled={isLoading}
+            disabled={isSubmitting}
           >
-            {isLoading ? "Updating..." : "Update Password"}
+            {isSubmitting ? "Updating..." : "Update Password"}
           </Button>
         </form>
       </div>
