@@ -31,7 +31,7 @@ export const Hero = () => {
       />
       
       {/* Translucent overlay for text legibility */}
-      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-background/60 backdrop-blur-sm" />
 
       <div className="container mx-auto max-w-6xl relative z-10">
         <div className="text-center space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
