@@ -3,9 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Trash2, Calendar } from "lucide-react";
+import { Trash2, Calendar as CalendarIcon, Edit2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { EntryInsights } from "@/components/EntryInsights";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +27,7 @@ interface JournalEntry {
   content: string;
   created_at: string;
   updated_at: string;
+  entry_date: string;
 }
 
 interface JournalEntryListProps {
@@ -34,13 +38,14 @@ export const JournalEntryList = ({ refreshTrigger }: JournalEntryListProps) => {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
+  const [editingDateId, setEditingDateId] = useState<string | null>(null);
 
   const fetchEntries = async () => {
     try {
       const { data, error } = await supabase
         .from("journal_entries")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("entry_date", { ascending: false });
 
       if (error) throw error;
       setEntries(data || []);
@@ -83,6 +88,24 @@ export const JournalEntryList = ({ refreshTrigger }: JournalEntryListProps) => {
       }
       return newSet;
     });
+  };
+
+  const handleDateUpdate = async (entryId: string, newDate: Date) => {
+    try {
+      const { error } = await supabase
+        .from("journal_entries")
+        .update({ entry_date: format(newDate, "yyyy-MM-dd") })
+        .eq("id", entryId);
+
+      if (error) throw error;
+
+      toast.success("Entry date updated");
+      setEditingDateId(null);
+      fetchEntries();
+    } catch (error: any) {
+      console.error("Error updating date:", error);
+      toast.error("Failed to update date");
+    }
   };
 
   if (loading) {
@@ -149,8 +172,41 @@ export const JournalEntryList = ({ refreshTrigger }: JournalEntryListProps) => {
             </div>
 
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-              <Calendar className="h-4 w-4" />
-              <time>{format(new Date(entry.created_at), "MMMM d, yyyy 'at' h:mm a")}</time>
+              <CalendarIcon className="h-4 w-4" />
+              {editingDateId === entry.id ? (
+                <Popover open={editingDateId === entry.id} onOpenChange={(open) => !open && setEditingDateId(null)}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={cn("text-sm font-normal")}
+                    >
+                      {format(new Date(entry.entry_date), "MMMM d, yyyy")}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={new Date(entry.entry_date)}
+                      onSelect={(date) => date && handleDateUpdate(entry.id, date)}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              ) : (
+                <time className="flex items-center gap-2">
+                  {format(new Date(entry.entry_date), "MMMM d, yyyy")}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setEditingDateId(entry.id)}
+                    className="h-6 w-6 p-0"
+                  >
+                    <Edit2 className="h-3 w-3" />
+                  </Button>
+                </time>
+              )}
             </div>
 
             <div 

@@ -2,7 +2,12 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { format } from "date-fns";
+import { format, subDays, isWithinInterval } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type EmotionData = {
   emotion: string;
@@ -27,11 +32,18 @@ const NEGATIVE_EMOTIONS = [
 
 export const MoodTracker = () => {
   const [moodData, setMoodData] = useState<MoodPoint[]>([]);
+  const [allMoodData, setAllMoodData] = useState<MoodPoint[]>([]);
   const [loading, setLoading] = useState(true);
+  const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 30));
+  const [endDate, setEndDate] = useState<Date | undefined>(new Date());
 
   useEffect(() => {
     fetchMoodData();
   }, []);
+
+  useEffect(() => {
+    filterMoodData();
+  }, [startDate, endDate, allMoodData]);
 
   const calculateMoodScore = (emotions: EmotionData[]): number => {
     if (!emotions || emotions.length === 0) return 0;
@@ -58,33 +70,63 @@ export const MoodTracker = () => {
 
   const fetchMoodData = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: insightsData, error: insightsError } = await supabase
         .from("entry_insights")
-        .select("emotions, created_at")
-        .order("created_at", { ascending: true });
+        .select("entry_id, emotions, created_at");
 
-      if (error) throw error;
+      if (insightsError) throw insightsError;
 
-      const moodPoints: MoodPoint[] = data
-        .filter(insight => insight.emotions && Array.isArray(insight.emotions))
+      const { data: entriesData, error: entriesError } = await supabase
+        .from("journal_entries")
+        .select("id, entry_date");
+
+      if (entriesError) throw entriesError;
+
+      const entryDateMap = new Map(
+        entriesData.map(entry => [entry.id, entry.entry_date])
+      );
+
+      const moodPoints: MoodPoint[] = insightsData
+        .filter(insight => insight.emotions && Array.isArray(insight.emotions) && insight.entry_id)
         .map(insight => {
           const emotions = insight.emotions as EmotionData[];
           const moodScore = calculateMoodScore(emotions);
-          const date = new Date(insight.created_at);
+          const entryDate = entryDateMap.get(insight.entry_id);
+          const date = entryDate ? new Date(entryDate) : new Date(insight.created_at);
 
           return {
-            date: insight.created_at,
+            date: date.toISOString(),
             mood: moodScore,
             displayDate: format(date, "MMM d")
           };
-        });
+        })
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-      setMoodData(moodPoints);
+      setAllMoodData(moodPoints);
     } catch (error) {
       console.error("Error fetching mood data:", error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const filterMoodData = () => {
+    if (!startDate || !endDate) {
+      setMoodData(allMoodData);
+      return;
+    }
+
+    const filtered = allMoodData.filter(point => {
+      const pointDate = new Date(point.date);
+      return isWithinInterval(pointDate, { start: startDate, end: endDate });
+    });
+
+    setMoodData(filtered);
+  };
+
+  const handleClearFilters = () => {
+    setStartDate(subDays(new Date(), 30));
+    setEndDate(new Date());
   };
 
   if (loading) {
@@ -117,6 +159,62 @@ export const MoodTracker = () => {
           <p className="text-sm text-muted-foreground">
             Tracking emotional intensity from positive (+10) to negative (-10)
           </p>
+        </div>
+
+        <div className="flex flex-wrap gap-2 items-center">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "justify-start text-left font-normal",
+                  !startDate && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {startDate ? format(startDate, "PPP") : <span>Start date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={startDate}
+                onSelect={setStartDate}
+                initialFocus
+                className="pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+
+          <span className="text-muted-foreground">to</span>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "justify-start text-left font-normal",
+                  !endDate && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {endDate ? format(endDate, "PPP") : <span>End date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={endDate}
+                onSelect={setEndDate}
+                initialFocus
+                className="pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+
+          <Button variant="ghost" onClick={handleClearFilters}>
+            Clear filters
+          </Button>
         </div>
 
         <ResponsiveContainer width="100%" height={300}>

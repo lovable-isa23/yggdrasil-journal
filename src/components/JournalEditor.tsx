@@ -7,6 +7,11 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ReactMarkdown from "react-markdown";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface JournalEditorProps {
   onEntryCreated: () => void;
@@ -15,6 +20,7 @@ interface JournalEditorProps {
 export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [entryDate, setEntryDate] = useState<Date>(new Date());
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,6 +47,7 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
           user_id: user.id,
           title: title.trim(),
           content: content.trim(),
+          entry_date: format(entryDate, "yyyy-MM-dd"),
         });
 
       if (error) throw error;
@@ -48,6 +55,7 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
       toast.success("Journal entry created!");
       setTitle("");
       setContent("");
+      setEntryDate(new Date());
       onEntryCreated();
     } catch (error: any) {
       console.error("Error creating entry:", error);
@@ -70,6 +78,33 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
           required
           className="h-12 text-lg"
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Entry Date</Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-full h-12 justify-start text-left font-normal",
+                !entryDate && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {entryDate ? format(entryDate, "PPP") : <span>Pick a date</span>}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={entryDate}
+              onSelect={(date) => date && setEntryDate(date)}
+              initialFocus
+              className="pointer-events-auto"
+            />
+          </PopoverContent>
+        </Popover>
       </div>
 
       <div className="space-y-2">
