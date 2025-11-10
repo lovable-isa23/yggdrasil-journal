@@ -25,6 +25,14 @@ export const EmotionGraph = () => {
 
   const fetchEmotionData = async () => {
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      // Fetch insights with proper join
       const { data: insights, error } = await supabase
         .from("entry_insights")
         .select(`
@@ -32,9 +40,13 @@ export const EmotionGraph = () => {
           entry_id,
           journal_entries!inner(entry_date)
         `)
-        .order("journal_entries(entry_date)", { ascending: true });
+        .eq("user_id", user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching insights:", error);
+        setLoading(false);
+        return;
+      }
 
       if (!insights || insights.length === 0) {
         setLoading(false);
@@ -47,7 +59,7 @@ export const EmotionGraph = () => {
 
       insights.forEach((insight: any) => {
         const date = insight.journal_entries?.entry_date;
-        if (!date || !insight.emotions) return;
+        if (!date || !insight.emotions || !Array.isArray(insight.emotions) || insight.emotions.length === 0) return;
 
         const formattedDate = format(new Date(date + 'T00:00:00'), "MMM d");
         
@@ -56,24 +68,32 @@ export const EmotionGraph = () => {
         }
 
         (insight.emotions as EmotionData[]).forEach((emotion) => {
-          allEmotions.add(emotion.name);
-          if (!emotionsByDate[formattedDate][emotion.name]) {
-            emotionsByDate[formattedDate][emotion.name] = [];
+          if (emotion.name && typeof emotion.intensity === 'number') {
+            allEmotions.add(emotion.name);
+            if (!emotionsByDate[formattedDate][emotion.name]) {
+              emotionsByDate[formattedDate][emotion.name] = [];
+            }
+            emotionsByDate[formattedDate][emotion.name].push(emotion.intensity);
           }
-          emotionsByDate[formattedDate][emotion.name].push(emotion.intensity);
         });
       });
 
       // Calculate average intensities and format for chart
-      const formattedData: ChartDataPoint[] = Object.entries(emotionsByDate).map(([date, emotions]) => {
-        const dataPoint: ChartDataPoint = { date };
-        Object.entries(emotions).forEach(([emotion, intensities]) => {
-          dataPoint[emotion] = Math.round(
-            intensities.reduce((sum, val) => sum + val, 0) / intensities.length
-          );
+      const formattedData: ChartDataPoint[] = Object.entries(emotionsByDate)
+        .sort(([dateA], [dateB]) => {
+          const a = new Date(dateA);
+          const b = new Date(dateB);
+          return a.getTime() - b.getTime();
+        })
+        .map(([date, emotions]) => {
+          const dataPoint: ChartDataPoint = { date };
+          Object.entries(emotions).forEach(([emotion, intensities]) => {
+            dataPoint[emotion] = Math.round(
+              intensities.reduce((sum, val) => sum + val, 0) / intensities.length
+            );
+          });
+          return dataPoint;
         });
-        return dataPoint;
-      });
 
       setEmotions(Array.from(allEmotions));
       setChartData(formattedData);
@@ -155,7 +175,7 @@ export const EmotionGraph = () => {
             <Legend />
             {emotions.map((emotion, index) => (
               <Line
-                key={emotion}
+                key={`emotion-${emotion}-${index}`}
                 type="monotone"
                 dataKey={emotion}
                 stroke={colors[index % colors.length]}
