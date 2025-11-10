@@ -129,6 +129,11 @@ export const MoodTracker = () => {
     setEndDate(new Date());
   };
 
+  const handleShowAll = () => {
+    setStartDate(undefined);
+    setEndDate(undefined);
+  };
+
   if (loading) {
     return (
       <Card className="p-6">
@@ -156,7 +161,7 @@ export const MoodTracker = () => {
       <div className="space-y-4">
         <div className="flex items-start justify-between">
           <div>
-            <h3 className="text-xl font-semibold mb-2">Mood Over Time</h3>
+            <h3 className="text-xl font-normal mb-2">Mood Over Time</h3>
             <p className="text-sm text-muted-foreground">
               Tracking emotional intensity from negative (-10) to positive (+10)
             </p>
@@ -225,6 +230,10 @@ export const MoodTracker = () => {
           <Button variant="ghost" onClick={handleClearFilters}>
             Clear filters
           </Button>
+
+          <Button variant="ghost" onClick={handleShowAll}>
+            Show all
+          </Button>
         </div>
 
         <ResponsiveContainer width="100%" height={300}>
@@ -233,13 +242,15 @@ export const MoodTracker = () => {
             <XAxis 
               dataKey="displayDate" 
               className="text-xs"
-              stroke="hsl(var(--muted-foreground))"
+              stroke="#000000"
+              tick={{ fill: '#000000', fontWeight: 'normal' }}
             />
             <YAxis 
               domain={[-10, 10]}
               ticks={[-10, -5, 0, 5, 10]}
               className="text-xs"
-              stroke="hsl(var(--muted-foreground))"
+              stroke="#000000"
+              tick={{ fill: '#000000', fontWeight: 'normal' }}
             />
             <Tooltip
               contentStyle={{

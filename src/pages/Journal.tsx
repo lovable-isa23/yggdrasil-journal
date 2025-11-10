@@ -71,7 +71,7 @@ const Journal = () => {
         </header>
 
         {/* Main Content */}
-        <main className="container mx-auto px-6 py-12 max-w-4xl">
+        <main className="container mx-auto px-6 py-12 max-w-6xl">
           <div className="space-y-12">
             {/* Welcome Section */}
             <div className="text-center space-y-2">
@@ -85,33 +85,42 @@ const Journal = () => {
               </p>
             </div>
 
-            {/* Editor */}
-            <section>
-              <h2 className="text-2xl font-bold mb-6">Create New Entry</h2>
-              <JournalEditor onEntryCreated={handleEntryCreated} />
-            </section>
+            {/* Two Column Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Left Column - Journal Input & Entries */}
+              <div className="space-y-8">
+                {/* Editor */}
+                <section>
+                  <h2 className="text-2xl font-bold mb-6">Create New Entry</h2>
+                  <JournalEditor onEntryCreated={handleEntryCreated} />
+                </section>
 
-            {/* Reflection Prompt */}
-            {recentEntries.length > 0 && (
-              <section>
-                <ReflectionPrompt recentEntries={recentEntries} />
-              </section>
-            )}
+                {/* Entries List */}
+                <section>
+                  <JournalEntryList refreshTrigger={refreshTrigger} />
+                </section>
+              </div>
 
-            {/* Mood Tracker */}
-            <section>
-              <MoodTracker />
-            </section>
+              {/* Right Column - Graphs & Insights */}
+              <div className="space-y-8">
+                {/* Reflection Prompt */}
+                {recentEntries.length > 0 && (
+                  <section>
+                    <ReflectionPrompt recentEntries={recentEntries} />
+                  </section>
+                )}
 
-            {/* Knowledge Graph */}
-            <section>
-              <KnowledgeGraph />
-            </section>
+                {/* Mood Tracker */}
+                <section>
+                  <MoodTracker />
+                </section>
 
-            {/* Entries List */}
-            <section>
-              <JournalEntryList refreshTrigger={refreshTrigger} />
-            </section>
+                {/* Knowledge Graph */}
+                <section>
+                  <KnowledgeGraph />
+                </section>
+              </div>
+            </div>
           </div>
         </main>
       </div>

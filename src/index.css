@@ -18,11 +18,11 @@ All colors MUST be HSL.
     --popover: 35 30% 97%;
     --popover-foreground: 25 40% 25%;
 
-    --primary: 18 55% 55%;  /* Muted orange */
+    --primary: 100 25% 50%;  /* Sage green */
     --primary-foreground: 35 25% 95%;
 
-    --secondary: 100 20% 60%;  /* Sage green */
-    --secondary-foreground: 25 40% 25%;
+    --secondary: 18 55% 55%;  /* Muted orange */
+    --secondary-foreground: 35 25% 95%;
 
     --muted: 35 20% 88%;
     --muted-foreground: 25 20% 45%;
@@ -35,7 +35,7 @@ All colors MUST be HSL.
 
     --border: 35 25% 85%;
     --input: 35 25% 90%;
-    --ring: 18 55% 55%;
+    --ring: 100 25% 50%;
 
     --radius: 0.75rem;
 
