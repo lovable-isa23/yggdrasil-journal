@@ -4,6 +4,7 @@ import { JournalEditor } from "@/components/JournalEditor";
 import { JournalEntryList } from "@/components/JournalEntryList";
 import { ReflectionPrompt } from "@/components/ReflectionPrompt";
 import { KnowledgeGraph } from "@/components/KnowledgeGraph";
+import { MoodTracker } from "@/components/MoodTracker";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -96,6 +97,11 @@ const Journal = () => {
                 <ReflectionPrompt recentEntries={recentEntries} />
               </section>
             )}
+
+            {/* Mood Tracker */}
+            <section>
+              <MoodTracker />
+            </section>
 
             {/* Knowledge Graph */}
             <section>
