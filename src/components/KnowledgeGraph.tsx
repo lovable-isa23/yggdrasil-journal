@@ -3,8 +3,10 @@ import * as d3 from "d3";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { Loader2 } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
+import { Loader2, Calendar, FileText } from "lucide-react";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
+import { Badge } from "./ui/badge";
+import { ScrollArea } from "./ui/scroll-area";
 
 interface GraphNode extends d3.SimulationNodeDatum {
   id: string;
@@ -35,7 +37,8 @@ export const KnowledgeGraph = () => {
 
   const [allInsights, setAllInsights] = useState<any[]>([]);
   const [allEntries, setAllEntries] = useState<any[]>([]);
-  const [tooltipData, setTooltipData] = useState<{ node: GraphNode; x: number; y: number } | null>(null);
+  const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   useEffect(() => {
     fetchGraphData();
@@ -255,8 +258,9 @@ export const KnowledgeGraph = () => {
       .attr("fill", "black")
       .attr("pointer-events", "none");
 
-    // Add hover effects
+    // Add hover and click effects
     node
+      .style("cursor", "pointer")
       .on("mouseenter", function(event, d) {
         d3.select(this).select("circle")
           .transition()
@@ -270,6 +274,11 @@ export const KnowledgeGraph = () => {
           .duration(200)
           .attr("r", d.value)
           .attr("stroke-width", 2);
+      })
+      .on("click", function(event, d) {
+        event.stopPropagation();
+        setSelectedNode(d);
+        setIsSheetOpen(true);
       });
 
     simulation.on("tick", () => {
@@ -310,86 +319,87 @@ export const KnowledgeGraph = () => {
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Knowledge Graph</CardTitle>
-        <CardDescription>
-          Explore connections between {activeTab} in your journal. Hover over nodes for details.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-          <TabsList className="grid w-full grid-cols-3 mb-4">
-            <TabsTrigger value="entities">Entities</TabsTrigger>
-            <TabsTrigger value="themes">Themes</TabsTrigger>
-            <TabsTrigger value="keywords">Keywords</TabsTrigger>
-          </TabsList>
-          <TabsContent value={activeTab}>
-            <TooltipProvider>
+    <>
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Knowledge Graph</CardTitle>
+          <CardDescription>
+            Explore connections between {activeTab} in your journal. Click on nodes to view details.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+            <TabsList className="grid w-full grid-cols-3 mb-4">
+              <TabsTrigger value="entities">Entities</TabsTrigger>
+              <TabsTrigger value="themes">Themes</TabsTrigger>
+              <TabsTrigger value="keywords">Keywords</TabsTrigger>
+            </TabsList>
+            <TabsContent value={activeTab}>
               <div className="relative w-full flex justify-center bg-background/50 rounded-lg border p-4">
-                <svg 
-                  ref={svgRef} 
-                  className="max-w-full"
-                  onMouseMove={(e) => {
-                    const svg = svgRef.current;
-                    if (!svg) return;
-                    
-                    const rect = svg.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const y = e.clientY - rect.top;
-                    
-                    // Find node under cursor
-                    const hoveredNode = graphData.nodes.find(node => {
-                      if (!node.x || !node.y) return false;
-                      const distance = Math.sqrt(Math.pow(x - node.x, 2) + Math.pow(y - node.y, 2));
-                      return distance <= node.value;
-                    });
-                    
-                    if (hoveredNode) {
-                      setTooltipData({ node: hoveredNode, x: e.clientX, y: e.clientY });
-                    } else {
-                      setTooltipData(null);
-                    }
-                  }}
-                  onMouseLeave={() => setTooltipData(null)}
-                />
-                {tooltipData && (
-                  <div 
-                    className="absolute bg-card border border-border rounded-lg shadow-lg p-3 z-50 max-w-xs pointer-events-none"
-                    style={{
-                      left: tooltipData.x + 10,
-                      top: tooltipData.y + 10,
-                    }}
-                  >
-                    <div className="font-semibold text-sm mb-1">{tooltipData.node.name}</div>
-                    <div className="text-xs text-muted-foreground mb-2">
-                      Type: {tooltipData.node.type} • Appears {tooltipData.node.entryIds.length}x
-                    </div>
-                    {tooltipData.node.entries && tooltipData.node.entries.length > 0 && (
-                      <div className="text-xs space-y-1 max-h-32 overflow-y-auto">
-                        <div className="font-medium mb-1">Found in entries:</div>
-                        {tooltipData.node.entries.slice(0, 3).map((entry, idx) => (
-                          <div key={idx} className="border-l-2 border-primary pl-2 py-1">
-                            <div className="font-medium">{entry.title}</div>
-                            <div className="text-muted-foreground text-xs">
-                              {new Date(entry.entry_date).toLocaleDateString()}
-                            </div>
-                          </div>
-                        ))}
-                        {tooltipData.node.entries.length > 3 && (
-                          <div className="text-muted-foreground italic">
-                            +{tooltipData.node.entries.length - 3} more...
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
+                <svg ref={svgRef} className="max-w-full" />
               </div>
-            </TooltipProvider>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent className="w-[400px] sm:w-[540px]">
+          {selectedNode && (
+            <>
+              <SheetHeader>
+                <SheetTitle className="flex items-center gap-2">
+                  <span className="text-2xl">{selectedNode.name}</span>
+                </SheetTitle>
+                <SheetDescription>
+                  <Badge variant="secondary" className="mt-2">
+                    {selectedNode.type}
+                  </Badge>
+                  <span className="ml-2 text-muted-foreground">
+                    Appears in {selectedNode.entryIds.length} {selectedNode.entryIds.length === 1 ? 'entry' : 'entries'}
+                  </span>
+                </SheetDescription>
+              </SheetHeader>
+
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Related Journal Entries
+                </h3>
+                <ScrollArea className="h-[calc(100vh-250px)]">
+                  {selectedNode.entries && selectedNode.entries.length > 0 ? (
+                    <div className="space-y-4">
+                      {selectedNode.entries.map((entry) => (
+                        <Card key={entry.id} className="p-4 hover:bg-accent/50 transition-colors">
+                          <div className="space-y-2">
+                            <h4 className="font-semibold text-base">{entry.title}</h4>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Calendar className="h-4 w-4" />
+                              {new Date(entry.entry_date).toLocaleDateString('en-US', {
+                                weekday: 'short',
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              })}
+                            </div>
+                            <p className="text-sm text-muted-foreground line-clamp-3">
+                              {entry.content}
+                            </p>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground text-center py-8">
+                      No entries found
+                    </p>
+                  )}
+                </ScrollArea>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
+    </>
   );
 };
