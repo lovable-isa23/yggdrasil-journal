@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Loader2 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 
 interface GraphNode extends d3.SimulationNodeDatum {
   id: string;
@@ -11,6 +12,10 @@ interface GraphNode extends d3.SimulationNodeDatum {
   value: number;
   type: "entity" | "theme" | "keyword";
   color: string;
+  entryIds: string[];
+  entries?: any[];
+  x?: number;
+  y?: number;
 }
 
 interface GraphLink {
@@ -29,6 +34,8 @@ export const KnowledgeGraph = () => {
   });
 
   const [allInsights, setAllInsights] = useState<any[]>([]);
+  const [allEntries, setAllEntries] = useState<any[]>([]);
+  const [tooltipData, setTooltipData] = useState<{ node: GraphNode; x: number; y: number } | null>(null);
 
   useEffect(() => {
     fetchGraphData();
@@ -48,15 +55,26 @@ export const KnowledgeGraph = () => {
 
   const fetchGraphData = async () => {
     try {
-      const { data: insights, error } = await supabase
-        .from("entry_insights")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const [insightsResult, entriesResult] = await Promise.all([
+        supabase
+          .from("entry_insights")
+          .select("*")
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("journal_entries")
+          .select("*")
+          .order("created_at", { ascending: false })
+      ]);
 
-      if (error) throw error;
+      if (insightsResult.error) throw insightsResult.error;
+      if (entriesResult.error) throw entriesResult.error;
 
-      if (insights && insights.length > 0) {
-        setAllInsights(insights);
+      if (insightsResult.data && insightsResult.data.length > 0) {
+        setAllInsights(insightsResult.data);
+      }
+      
+      if (entriesResult.data && entriesResult.data.length > 0) {
+        setAllEntries(entriesResult.data);
       }
     } catch (error) {
       console.error("Error fetching graph data:", error);
@@ -67,6 +85,7 @@ export const KnowledgeGraph = () => {
 
   const buildGraph = (insights: any[]) => {
     const itemFreq = new Map<string, number>();
+    const itemEntries = new Map<string, Set<string>>();
     const connections = new Map<string, Set<string>>();
 
     // Extract only the items for the current tab type
@@ -81,9 +100,13 @@ export const KnowledgeGraph = () => {
         items = (insight.keywords as string[]) || [];
       }
 
-      // Count frequency
+      // Count frequency and track entry IDs
       items.forEach((item) => {
         itemFreq.set(item, (itemFreq.get(item) || 0) + 1);
+        if (!itemEntries.has(item)) {
+          itemEntries.set(item, new Set());
+        }
+        itemEntries.get(item)?.add(insight.entry_id);
       });
 
       // Build connections only between items of the same type in the same entry
@@ -116,12 +139,15 @@ export const KnowledgeGraph = () => {
     };
 
     itemFreq.forEach((count, name) => {
+      const entryIds = Array.from(itemEntries.get(name) || []);
       nodes.push({
         id: name,
         name,
         value: Math.max(count * 20, 30),
         type: typeMap[activeTab],
         color: getColor(),
+        entryIds,
+        entries: allEntries.filter(e => entryIds.includes(e.id))
       });
     });
 
@@ -224,15 +250,27 @@ export const KnowledgeGraph = () => {
       .text((d) => d.name)
       .attr("text-anchor", "middle")
       .attr("dy", "0.3em")
-      .attr("font-size", "18px")
-      .attr("font-weight", "700")
-      .attr("fill", "hsl(var(--background))")
-      .attr("stroke", "hsl(var(--background))")
-      .attr("stroke-width", "1px")
-      .attr("paint-order", "stroke")
+      .attr("font-size", "14px")
+      .attr("font-weight", "normal")
+      .attr("fill", "black")
       .attr("pointer-events", "none");
 
-    node.append("title").text((d) => `${d.name}\nType: ${d.type}\nCount: ${Math.floor(d.value / 20)}`);
+    // Add hover effects
+    node
+      .on("mouseenter", function(event, d) {
+        d3.select(this).select("circle")
+          .transition()
+          .duration(200)
+          .attr("r", d.value * 1.2)
+          .attr("stroke-width", 3);
+      })
+      .on("mouseleave", function(event, d) {
+        d3.select(this).select("circle")
+          .transition()
+          .duration(200)
+          .attr("r", d.value)
+          .attr("stroke-width", 2);
+      });
 
     simulation.on("tick", () => {
       link
@@ -276,7 +314,7 @@ export const KnowledgeGraph = () => {
       <CardHeader>
         <CardTitle>Knowledge Graph</CardTitle>
         <CardDescription>
-          Explore connections between {activeTab} in your journal
+          Explore connections between {activeTab} in your journal. Hover over nodes for details.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -287,9 +325,68 @@ export const KnowledgeGraph = () => {
             <TabsTrigger value="keywords">Keywords</TabsTrigger>
           </TabsList>
           <TabsContent value={activeTab}>
-            <div className="w-full flex justify-center bg-background/50 rounded-lg border p-4">
-              <svg ref={svgRef} className="max-w-full" />
-            </div>
+            <TooltipProvider>
+              <div className="relative w-full flex justify-center bg-background/50 rounded-lg border p-4">
+                <svg 
+                  ref={svgRef} 
+                  className="max-w-full"
+                  onMouseMove={(e) => {
+                    const svg = svgRef.current;
+                    if (!svg) return;
+                    
+                    const rect = svg.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    
+                    // Find node under cursor
+                    const hoveredNode = graphData.nodes.find(node => {
+                      if (!node.x || !node.y) return false;
+                      const distance = Math.sqrt(Math.pow(x - node.x, 2) + Math.pow(y - node.y, 2));
+                      return distance <= node.value;
+                    });
+                    
+                    if (hoveredNode) {
+                      setTooltipData({ node: hoveredNode, x: e.clientX, y: e.clientY });
+                    } else {
+                      setTooltipData(null);
+                    }
+                  }}
+                  onMouseLeave={() => setTooltipData(null)}
+                />
+                {tooltipData && (
+                  <div 
+                    className="absolute bg-card border border-border rounded-lg shadow-lg p-3 z-50 max-w-xs pointer-events-none"
+                    style={{
+                      left: tooltipData.x + 10,
+                      top: tooltipData.y + 10,
+                    }}
+                  >
+                    <div className="font-semibold text-sm mb-1">{tooltipData.node.name}</div>
+                    <div className="text-xs text-muted-foreground mb-2">
+                      Type: {tooltipData.node.type} • Appears {tooltipData.node.entryIds.length}x
+                    </div>
+                    {tooltipData.node.entries && tooltipData.node.entries.length > 0 && (
+                      <div className="text-xs space-y-1 max-h-32 overflow-y-auto">
+                        <div className="font-medium mb-1">Found in entries:</div>
+                        {tooltipData.node.entries.slice(0, 3).map((entry, idx) => (
+                          <div key={idx} className="border-l-2 border-primary pl-2 py-1">
+                            <div className="font-medium">{entry.title}</div>
+                            <div className="text-muted-foreground text-xs">
+                              {new Date(entry.entry_date).toLocaleDateString()}
+                            </div>
+                          </div>
+                        ))}
+                        {tooltipData.node.entries.length > 3 && (
+                          <div className="text-muted-foreground italic">
+                            +{tooltipData.node.entries.length - 3} more...
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </TooltipProvider>
           </TabsContent>
         </Tabs>
       </CardContent>

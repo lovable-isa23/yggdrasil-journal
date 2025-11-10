@@ -3,6 +3,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { ReflectionPrompt } from "@/components/ReflectionPrompt";
 import { KnowledgeGraph } from "@/components/KnowledgeGraph";
 import { MoodTracker } from "@/components/MoodTracker";
+import { StatisticsDashboard } from "@/components/StatisticsDashboard";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -85,6 +86,11 @@ const Insights = () => {
                 Track your emotional journey and patterns
               </p>
             </div>
+
+            {/* Statistics Dashboard */}
+            <section>
+              <StatisticsDashboard />
+            </section>
 
             {/* Reflection Prompt */}
             {recentEntries.length > 0 && (
