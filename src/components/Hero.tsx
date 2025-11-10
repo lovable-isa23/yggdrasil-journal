@@ -36,7 +36,7 @@ export const Hero = () => {
             <img 
               src={yggdrasilLogo} 
               alt="Yggdrasil" 
-              className="h-32 w-32 object-contain drop-shadow-xl"
+              className="h-32 w-32 object-contain"
             />
           </div>
 
