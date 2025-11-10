@@ -2,30 +2,18 @@ export const UserJourney = () => {
   const steps = [
     {
       number: "01",
-      title: "Discover",
-      description: "Explore Yggdrasil's unique approach to journaling powered by semantic AI and interactive visualizations",
-      icon: "🔍"
-    },
-    {
-      number: "02",
-      title: "Sign Up",
-      description: "Join the waitlist to gain early access and be among the first to experience transformative journaling",
-      icon: "📝"
-    },
-    {
-      number: "03",
       title: "Journal",
       description: "Log in and create journal entries with personalized AI-generated prompts guiding your reflection",
       icon: "✍️"
     },
     {
-      number: "04",
+      number: "02",
       title: "Visualize",
       description: "See your thoughts and reflections come alive through interactive semantic knowledge graphs",
       icon: "🌐"
     },
     {
-      number: "05",
+      number: "03",
       title: "Grow",
       description: "Cultivate self-awareness and personal growth with tailored insights from your journaling journey",
       icon: "🌱"
@@ -46,7 +34,7 @@ export const UserJourney = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {steps.map((step, index) => (
             <div 
               key={index}
