@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Lightbulb, Heart, Tag } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Sparkles, Lightbulb, Heart, Tag, AlertTriangle, Phone } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 interface EntryInsightsProps {
@@ -17,6 +18,10 @@ interface Insights {
   emotions: Array<{ emotion: string; intensity: number }>;
   keywords: string[];
   summary: string;
+  safety_concerns?: {
+    flag: boolean;
+    concerns: string[];
+  };
 }
 
 export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) => {
@@ -45,6 +50,7 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
           emotions: (data.emotions as Array<{ emotion: string; intensity: number }>) || [],
           keywords: (data.keywords as string[]) || [],
           summary: data.summary || "",
+          safety_concerns: (data.safety_concerns as { flag: boolean; concerns: string[] }) || { flag: false, concerns: [] },
         });
         setHasAnalyzed(true);
       }
@@ -109,6 +115,36 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
 
   return (
     <div className="space-y-4">
+      {insights.safety_concerns?.flag && (
+        <Alert variant="destructive" className="border-2">
+          <AlertTriangle className="h-5 w-5" />
+          <AlertTitle className="text-lg font-bold">Crisis Support Available</AlertTitle>
+          <AlertDescription className="space-y-3 mt-2">
+            <p className="font-medium">
+              Your entry contains concerning thoughts. Please know that help is available and you don't have to face this alone.
+            </p>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center gap-2 p-2 bg-background/50 rounded">
+                <Phone className="h-4 w-4 flex-shrink-0" />
+                <div>
+                  <strong>988 Suicide & Crisis Lifeline:</strong> Call or text 988 (24/7)
+                </div>
+              </div>
+              <div className="flex items-center gap-2 p-2 bg-background/50 rounded">
+                <Heart className="h-4 w-4 flex-shrink-0" />
+                <div>
+                  <strong>Crisis Text Line:</strong> Text HOME to 741741
+                </div>
+              </div>
+            </div>
+            <p className="text-xs mt-3">
+              Consider: Using distress tolerance skills • Reaching out to a trusted friend or family member • 
+              Contacting your therapist or counselor • Going to your nearest emergency room
+            </p>
+          </AlertDescription>
+        </Alert>
+      )}
+      
       {insights.summary && (
         <Card className="p-6 bg-card border-border">
           <div className="flex items-start gap-3">

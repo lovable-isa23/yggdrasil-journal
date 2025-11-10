@@ -46,6 +46,9 @@ Analyze the journal entry and extract:
 - emotions: Emotions with intensity 1-10 (format: [{"emotion": "happy", "intensity": 8}])
 - keywords: Significant keywords (max 15)
 - summary: Brief 2-3 sentence summary
+- safety_concerns: Detect concerning content including suicidal ideation, self-harm thoughts, plans to harm self or others, severe hopelessness, or crisis situations. Format: {"flag": true/false, "concerns": ["concern1", "concern2"]}
+
+IMPORTANT: For safety_concerns, only flag true if there is genuine risk language (e.g., "I want to end my life", "not worth living", "plan to hurt myself", "everyone would be better off without me"). Do not flag general sadness, stress, or normal difficult emotions.
 
 Respond with ONLY a valid JSON object in this exact format:
 {
@@ -53,7 +56,8 @@ Respond with ONLY a valid JSON object in this exact format:
   "themes": ["theme1", "theme2"],
   "emotions": [{"emotion": "joy", "intensity": 7}],
   "keywords": ["keyword1", "keyword2"],
-  "summary": "Your summary here."
+  "summary": "Your summary here.",
+  "safety_concerns": {"flag": false, "concerns": []}
 }`
           },
           {
@@ -119,6 +123,7 @@ Respond with ONLY a valid JSON object in this exact format:
         emotions: analysis.emotions || [],
         keywords: analysis.keywords || [],
         summary: analysis.summary || '',
+        safety_concerns: analysis.safety_concerns || { flag: false, concerns: [] },
       });
 
     if (insertError) {

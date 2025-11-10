@@ -22,6 +22,7 @@ export type Database = {
           entry_id: string
           id: string
           keywords: Json | null
+          safety_concerns: Json | null
           summary: string | null
           themes: Json | null
           user_id: string
@@ -33,6 +34,7 @@ export type Database = {
           entry_id: string
           id?: string
           keywords?: Json | null
+          safety_concerns?: Json | null
           summary?: string | null
           themes?: Json | null
           user_id: string
@@ -44,6 +46,7 @@ export type Database = {
           entry_id?: string
           id?: string
           keywords?: Json | null
+          safety_concerns?: Json | null
           summary?: string | null
           themes?: Json | null
           user_id?: string
