@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Trash2, Calendar as CalendarIcon, Edit2 } from "lucide-react";
+import { Trash2, Calendar as CalendarIcon, Edit2, ChevronDown, ChevronUp } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { EntryInsights } from "@/components/EntryInsights";
 import { Calendar } from "@/components/ui/calendar";
@@ -20,6 +20,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface JournalEntry {
   id: string;
@@ -37,7 +42,7 @@ interface JournalEntryListProps {
 export const JournalEntryList = ({ refreshTrigger }: JournalEntryListProps) => {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
+  const [openEntries, setOpenEntries] = useState<Set<string>>(new Set());
   const [editingDateId, setEditingDateId] = useState<string | null>(null);
 
   const fetchEntries = async () => {
@@ -78,8 +83,8 @@ export const JournalEntryList = ({ refreshTrigger }: JournalEntryListProps) => {
     }
   };
 
-  const toggleExpand = (id: string) => {
-    setExpandedEntries(prev => {
+  const toggleOpen = (id: string) => {
+    setOpenEntries(prev => {
       const newSet = new Set(prev);
       if (newSet.has(id)) {
         newSet.delete(id);
@@ -133,107 +138,109 @@ export const JournalEntryList = ({ refreshTrigger }: JournalEntryListProps) => {
     <div className="space-y-4">
       <h2 className="text-2xl font-bold mb-6">Your Journal Entries</h2>
       {entries.map((entry) => {
-        const isExpanded = expandedEntries.has(entry.id);
+        const isOpen = openEntries.has(entry.id);
         return (
-          <div
+          <Collapsible
             key={entry.id}
-            className="bg-card p-6 rounded-2xl border border-border shadow-soft hover:shadow-medium transition-all duration-300"
+            open={isOpen}
+            onOpenChange={() => toggleOpen(entry.id)}
           >
-            <div className="flex items-start justify-between gap-4 mb-3">
-              <h3 className="text-xl font-semibold flex-grow">{entry.title}</h3>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete this entry?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete your journal entry.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => handleDelete(entry.id)}
-                      className="bg-destructive hover:bg-destructive/90"
-                    >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
+            <div className="bg-card rounded-2xl border border-border shadow-soft hover:shadow-medium transition-all duration-300">
+              <div className="p-6">
+                <div className="flex items-start justify-between gap-4 mb-3">
+                  <div className="flex-grow flex items-center gap-2">
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </Button>
+                    </CollapsibleTrigger>
+                    <h3 className="text-xl font-semibold">{entry.title}</h3>
+                  </div>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete this entry?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently delete your journal entry.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDelete(entry.id)}
+                          className="bg-destructive hover:bg-destructive/90"
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
 
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-              <CalendarIcon className="h-4 w-4" />
-              {editingDateId === entry.id ? (
-                <Popover open={editingDateId === entry.id} onOpenChange={(open) => !open && setEditingDateId(null)}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className={cn("text-sm font-normal")}
-                    >
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                  <CalendarIcon className="h-4 w-4" />
+                  {editingDateId === entry.id ? (
+                    <Popover open={editingDateId === entry.id} onOpenChange={(open) => !open && setEditingDateId(null)}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={cn("text-sm font-normal")}
+                        >
+                          {format(new Date(entry.entry_date), "MMMM d, yyyy")}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={new Date(entry.entry_date)}
+                          onSelect={(date) => date && handleDateUpdate(entry.id, date)}
+                          initialFocus
+                          className="pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  ) : (
+                    <time className="flex items-center gap-2">
                       {format(new Date(entry.entry_date), "MMMM d, yyyy")}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={new Date(entry.entry_date)}
-                      onSelect={(date) => date && handleDateUpdate(entry.id, date)}
-                      initialFocus
-                      className="pointer-events-auto"
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEditingDateId(entry.id)}
+                        className="h-6 w-6 p-0"
+                      >
+                        <Edit2 className="h-3 w-3" />
+                      </Button>
+                    </time>
+                  )}
+                </div>
+
+                <CollapsibleContent>
+                  <div className="prose prose-sm max-w-none dark:prose-invert mb-6">
+                    <ReactMarkdown>{entry.content}</ReactMarkdown>
+                  </div>
+
+                  {/* AI Insights */}
+                  <div className="border-t border-border pt-6">
+                    <EntryInsights 
+                      entryId={entry.id}
+                      title={entry.title}
+                      content={entry.content}
                     />
-                  </PopoverContent>
-                </Popover>
-              ) : (
-                <time className="flex items-center gap-2">
-                  {format(new Date(entry.entry_date), "MMMM d, yyyy")}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setEditingDateId(entry.id)}
-                    className="h-6 w-6 p-0"
-                  >
-                    <Edit2 className="h-3 w-3" />
-                  </Button>
-                </time>
-              )}
+                  </div>
+                </CollapsibleContent>
+              </div>
             </div>
-
-            <div 
-              className={`prose prose-sm max-w-none dark:prose-invert ${!isExpanded ? 'line-clamp-3' : ''}`}
-            >
-              <ReactMarkdown>{entry.content}</ReactMarkdown>
-            </div>
-
-            {entry.content.length > 200 && (
-              <Button
-                variant="link"
-                onClick={() => toggleExpand(entry.id)}
-                className="mt-2 p-0 h-auto text-primary"
-              >
-                {isExpanded ? "Show less" : "Read more"}
-              </Button>
-            )}
-
-            {/* AI Insights */}
-            <div className="mt-6 border-t border-border pt-6">
-              <EntryInsights 
-                entryId={entry.id}
-                title={entry.title}
-                content={entry.content}
-              />
-            </div>
-          </div>
+          </Collapsible>
         );
       })}
     </div>

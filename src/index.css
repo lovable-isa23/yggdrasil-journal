@@ -9,7 +9,7 @@ All colors MUST be HSL.
 @layer base {
   :root {
     /* Yggdrasil Earth-tone color system */
-    --background: 35 25% 95%;  /* Cream */
+    --background: 34 86% 95%;  /* #FEF3E5 */
     --foreground: 25 40% 25%;  /* Deep brown */
 
     --card: 35 30% 97%;

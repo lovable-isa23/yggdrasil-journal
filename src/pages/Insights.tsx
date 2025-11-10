@@ -1,24 +1,37 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AuthGuard } from "@/components/AuthGuard";
-import { JournalEditor } from "@/components/JournalEditor";
-import { JournalEntryList } from "@/components/JournalEntryList";
+import { ReflectionPrompt } from "@/components/ReflectionPrompt";
+import { KnowledgeGraph } from "@/components/KnowledgeGraph";
+import { MoodTracker } from "@/components/MoodTracker";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { LogOut, BarChart3 } from "lucide-react";
+import { LogOut, BookOpen } from "lucide-react";
 import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
 
-const Journal = () => {
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+const Insights = () => {
+  const [recentEntries, setRecentEntries] = useState<any[]>([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchRecentEntries();
+  }, []);
+
+  const fetchRecentEntries = async () => {
+    const { data } = await supabase
+      .from("journal_entries")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(5);
+    
+    if (data) {
+      setRecentEntries(data);
+    }
+  };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     navigate("/");
-  };
-
-  const handleEntryCreated = () => {
-    setRefreshTrigger(prev => prev + 1);
   };
 
   return (
@@ -41,11 +54,11 @@ const Journal = () => {
               <div className="flex gap-2">
                 <Button
                   variant="ghost"
-                  onClick={() => navigate("/insights")}
+                  onClick={() => navigate("/journal")}
                   className="gap-2"
                 >
-                  <BarChart3 className="h-4 w-4" />
-                  Insights
+                  <BookOpen className="h-4 w-4" />
+                  Journal
                 </Button>
                 <Button
                   variant="ghost"
@@ -66,22 +79,28 @@ const Journal = () => {
             {/* Welcome Section */}
             <div className="text-center space-y-2">
               <h2 className="text-3xl md:text-4xl font-bold text-primary">
-                Your Sacred Space
+                Your Insights & Analytics
               </h2>
               <p className="text-lg text-muted-foreground">
-                Record your thoughts, reflections, and insights
+                Track your emotional journey and patterns
               </p>
             </div>
 
-            {/* Editor */}
+            {/* Reflection Prompt */}
+            {recentEntries.length > 0 && (
+              <section>
+                <ReflectionPrompt recentEntries={recentEntries} />
+              </section>
+            )}
+
+            {/* Mood Tracker */}
             <section>
-              <h2 className="text-2xl font-bold mb-6">Create New Entry</h2>
-              <JournalEditor onEntryCreated={handleEntryCreated} />
+              <MoodTracker />
             </section>
 
-            {/* Entries List */}
+            {/* Knowledge Graph */}
             <section>
-              <JournalEntryList refreshTrigger={refreshTrigger} />
+              <KnowledgeGraph />
             </section>
           </div>
         </main>
@@ -90,4 +109,4 @@ const Journal = () => {
   );
 };
 
-export default Journal;
+export default Insights;
