@@ -7,12 +7,92 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Rate limiting configuration
+const RATE_LIMIT_WINDOW_MINUTES = 1;
+const RATE_LIMIT_MAX_REQUESTS = 5;
+
+async function checkRateLimit(supabase: any, userId: string, functionName: string): Promise<{ allowed: boolean; message?: string }> {
+  const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MINUTES * 60 * 1000);
+  
+  // Get current rate limit entry
+  const { data: rateLimitData, error: rateLimitError } = await supabase
+    .from('rate_limits')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('function_name', functionName)
+    .gte('window_start', windowStart.toISOString())
+    .single();
+
+  if (rateLimitError && rateLimitError.code !== 'PGRST116') { // PGRST116 = no rows returned
+    console.error('Rate limit check error:', rateLimitError);
+    return { allowed: true }; // Fail open to not block users due to rate limit errors
+  }
+
+  if (!rateLimitData) {
+    // First request in this window
+    await supabase
+      .from('rate_limits')
+      .insert({
+        user_id: userId,
+        function_name: functionName,
+        request_count: 1,
+        window_start: new Date().toISOString(),
+      });
+    return { allowed: true };
+  }
+
+  if (rateLimitData.request_count >= RATE_LIMIT_MAX_REQUESTS) {
+    const resetTime = new Date(new Date(rateLimitData.window_start).getTime() + RATE_LIMIT_WINDOW_MINUTES * 60 * 1000);
+    return { 
+      allowed: false, 
+      message: `Rate limit exceeded. Maximum ${RATE_LIMIT_MAX_REQUESTS} requests per ${RATE_LIMIT_WINDOW_MINUTES} minute(s). Try again after ${resetTime.toLocaleTimeString()}.` 
+    };
+  }
+
+  // Increment counter
+  await supabase
+    .from('rate_limits')
+    .update({ request_count: rateLimitData.request_count + 1 })
+    .eq('id', rateLimitData.id);
+
+  return { allowed: true };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Get user from request first for rate limiting
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('No authorization header');
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+
+    if (userError || !user) {
+      throw new Error('Invalid auth token');
+    }
+
+    // Check rate limit
+    const rateLimitCheck = await checkRateLimit(supabase, user.id, 'generate-reflection');
+    if (!rateLimitCheck.allowed) {
+      return new Response(
+        JSON.stringify({ error: rateLimitCheck.message }),
+        { 
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
     const { recentEntries } = await req.json();
 
     // Input validation
@@ -114,24 +194,7 @@ Style inspiration: The Formless Guide (YouTube) - contemplative, spacious, invit
 
     console.log('Generated prompt:', prompt);
 
-    // Get user from request
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('No authorization header');
-    }
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-
-    if (userError || !user) {
-      throw new Error('Invalid auth token');
-    }
-
-    // Store reflection prompt in database
+    // Store reflection prompt in database (supabase client already initialized above)
     const { error: insertError } = await supabase
       .from('reflection_prompts')
       .insert({
