@@ -116,8 +116,8 @@ const Insights = () => {
               <MoodTracker />
             </section>
 
-            {/* Emotion Graph */}
-            <section>
+            {/* Emotion Graph - Hidden */}
+            <section className="hidden">
               <EmotionGraph />
             </section>
 

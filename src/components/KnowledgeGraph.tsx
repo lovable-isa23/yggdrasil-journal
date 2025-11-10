@@ -182,16 +182,21 @@ export const KnowledgeGraph = () => {
 
     svg.attr("width", width).attr("height", height).attr("viewBox", [0, 0, width, height]);
 
-    // Add zoom behavior
+    // Add zoom behavior with improved controls
     const g = svg.append("g");
     
     const zoom = d3.zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.5, 5])
+      .scaleExtent([0.3, 8])
+      .wheelDelta((event) => {
+        // Smoother zoom: reduce speed for better control
+        return -event.deltaY * (event.deltaMode === 1 ? 0.03 : event.deltaMode ? 1 : 0.001);
+      })
       .on("zoom", (event) => {
         g.attr("transform", event.transform);
       });
 
-    svg.call(zoom);
+    svg.call(zoom)
+      .on("dblclick.zoom", null); // Disable double-click zoom for better control
 
     const simulation = d3
       .forceSimulation(graphData.nodes)
@@ -226,6 +231,8 @@ export const KnowledgeGraph = () => {
             if (!event.active) simulation.alphaTarget(0.3).restart();
             d.fx = d.x;
             d.fy = d.y;
+            // Prevent zoom while dragging
+            svg.on('.zoom', null);
           })
           .on("drag", (event, d) => {
             d.fx = event.x;
@@ -235,6 +242,8 @@ export const KnowledgeGraph = () => {
             if (!event.active) simulation.alphaTarget(0);
             d.fx = null;
             d.fy = null;
+            // Re-enable zoom after dragging
+            svg.call(zoom);
           })
       );
 
