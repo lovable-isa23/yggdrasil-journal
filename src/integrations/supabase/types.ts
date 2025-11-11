@@ -219,6 +219,30 @@ export type Database = {
         }
         Relationships: []
       }
+      nps_responses: {
+        Row: {
+          created_at: string
+          feedback: string | null
+          id: string
+          score: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          score: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          score?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       pattern_insights: {
         Row: {
           actionable_insight: string | null

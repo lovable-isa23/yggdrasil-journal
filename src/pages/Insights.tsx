@@ -10,6 +10,7 @@ import { SentimentTracking } from "@/components/SentimentTracking";
 import { GoalTracker } from "@/components/GoalTracker";
 import { ReportExport } from "@/components/ReportExport";
 import { DataExport } from "@/components/DataExport";
+import { NPSTooltip } from "@/components/NPSTooltip";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,6 +47,7 @@ const Insights = () => {
   return (
     <AuthGuard>
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
+        <NPSTooltip />
         {/* Header */}
         <header className="border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-50">
           <div className="container mx-auto px-4 sm:px-6 py-4">
