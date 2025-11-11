@@ -37,6 +37,7 @@ export const KnowledgeGraph = () => {
 
   const [allInsights, setAllInsights] = useState<any[]>([]);
   const [allEntries, setAllEntries] = useState<any[]>([]);
+  const [relationships, setRelationships] = useState<any[]>([]);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
@@ -58,7 +59,7 @@ export const KnowledgeGraph = () => {
 
   const fetchGraphData = async () => {
     try {
-      const [insightsResult, entriesResult] = await Promise.all([
+      const [insightsResult, entriesResult, relationshipsResult] = await Promise.all([
         supabase
           .from("entry_insights")
           .select("*")
@@ -66,11 +67,16 @@ export const KnowledgeGraph = () => {
         supabase
           .from("journal_entries")
           .select("*")
-          .order("created_at", { ascending: false })
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("knowledge_relationships")
+          .select("*")
+          .order("strength", { ascending: false })
       ]);
 
       if (insightsResult.error) throw insightsResult.error;
       if (entriesResult.error) throw entriesResult.error;
+      if (relationshipsResult.error) throw relationshipsResult.error;
 
       if (insightsResult.data && insightsResult.data.length > 0) {
         setAllInsights(insightsResult.data);
@@ -78,6 +84,10 @@ export const KnowledgeGraph = () => {
       
       if (entriesResult.data && entriesResult.data.length > 0) {
         setAllEntries(entriesResult.data);
+      }
+
+      if (relationshipsResult.data && relationshipsResult.data.length > 0) {
+        setRelationships(relationshipsResult.data);
       }
     } catch (error) {
       console.error("Error fetching graph data:", error);
@@ -89,7 +99,7 @@ export const KnowledgeGraph = () => {
   const buildGraph = (insights: any[]) => {
     const itemFreq = new Map<string, number>();
     const itemEntries = new Map<string, Set<string>>();
-    const connections = new Map<string, Set<string>>();
+    const connections = new Map<string, { entryIds: Set<string>; strength: number }>();
 
     // Extract only the items for the current tab type
     insights.forEach((insight) => {
@@ -117,11 +127,26 @@ export const KnowledgeGraph = () => {
         items.slice(i + 1).forEach((item2) => {
           const key = [item1, item2].sort().join("||");
           if (!connections.has(key)) {
-            connections.set(key, new Set());
+            connections.set(key, { entryIds: new Set(), strength: 1 });
           }
-          connections.get(key)?.add(insight.entry_id);
+          connections.get(key)!.entryIds.add(insight.entry_id);
         });
       });
+    });
+
+    // Enhance connections with AI-discovered relationship strengths
+    relationships.forEach((rel) => {
+      const key = [rel.source_item, rel.target_item].sort().join("||");
+      if (connections.has(key)) {
+        const conn = connections.get(key)!;
+        conn.strength = rel.strength; // Use AI-determined strength
+      } else {
+        // Add cross-entry relationships discovered by AI
+        connections.set(key, {
+          entryIds: new Set(rel.entry_ids || []),
+          strength: rel.strength
+        });
+      }
     });
 
     const nodes: GraphNode[] = [];
@@ -157,7 +182,7 @@ export const KnowledgeGraph = () => {
     const nodeIds = new Set(nodes.map((n) => n.id));
     const nodeMap = new Map(nodes.map((n) => [n.id, n]));
     
-    connections.forEach((entryIds, key) => {
+    connections.forEach((connData, key) => {
       const [sourceId, targetId] = key.split("||");
       const sourceNode = nodeMap.get(sourceId);
       const targetNode = nodeMap.get(targetId);
@@ -166,7 +191,7 @@ export const KnowledgeGraph = () => {
         links.push({
           source: sourceNode,
           target: targetNode,
-          value: entryIds.size,
+          value: connData.strength || connData.entryIds.size,
         });
       }
     });

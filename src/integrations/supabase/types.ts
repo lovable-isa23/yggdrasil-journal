@@ -135,6 +135,96 @@ export type Database = {
           },
         ]
       }
+      knowledge_relationships: {
+        Row: {
+          context: string | null
+          created_at: string
+          entry_ids: string[]
+          id: string
+          pattern_description: string | null
+          relationship_type: string
+          source_item: string
+          strength: number
+          target_item: string
+          temporal_pattern: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          context?: string | null
+          created_at?: string
+          entry_ids?: string[]
+          id?: string
+          pattern_description?: string | null
+          relationship_type: string
+          source_item: string
+          strength?: number
+          target_item: string
+          temporal_pattern?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          context?: string | null
+          created_at?: string
+          entry_ids?: string[]
+          id?: string
+          pattern_description?: string | null
+          relationship_type?: string
+          source_item?: string
+          strength?: number
+          target_item?: string
+          temporal_pattern?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pattern_insights: {
+        Row: {
+          actionable_insight: string | null
+          confidence_score: number
+          created_at: string
+          description: string
+          entry_ids: string[]
+          id: string
+          pattern_type: string
+          related_items: Json
+          temporal_info: Json | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          actionable_insight?: string | null
+          confidence_score?: number
+          created_at?: string
+          description: string
+          entry_ids?: string[]
+          id?: string
+          pattern_type: string
+          related_items?: Json
+          temporal_info?: Json | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          actionable_insight?: string | null
+          confidence_score?: number
+          created_at?: string
+          description?: string
+          entry_ids?: string[]
+          id?: string
+          pattern_type?: string
+          related_items?: Json
+          temporal_info?: Json | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

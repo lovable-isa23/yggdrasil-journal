@@ -4,6 +4,7 @@ import { ReflectionPrompt } from "@/components/ReflectionPrompt";
 import { KnowledgeGraph } from "@/components/KnowledgeGraph";
 import { MoodTracker } from "@/components/MoodTracker";
 import { StatisticsDashboard } from "@/components/StatisticsDashboard";
+import { PatternInsights } from "@/components/PatternInsights";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -102,6 +103,11 @@ const Insights = () => {
             {/* Mood Tracker */}
             <section>
               <MoodTracker />
+            </section>
+
+            {/* Pattern Insights */}
+            <section>
+              <PatternInsights />
             </section>
 
             {/* Knowledge Graph */}
