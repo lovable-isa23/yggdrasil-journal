@@ -48,34 +48,36 @@ const Insights = () => {
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
         {/* Header */}
         <header className="border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-50">
-          <div className="container mx-auto px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/")}>
+          <div className="container mx-auto px-4 sm:px-6 py-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 sm:gap-3 cursor-pointer min-w-0" onClick={() => navigate("/")}>
                 <img 
                   src={yggdrasilLogo} 
                   alt="Yggdrasil" 
-                  className="h-10 w-10 object-contain"
+                  className="h-8 w-8 sm:h-10 sm:w-10 object-contain flex-shrink-0"
                 />
-                <h1 className="text-2xl font-bold text-primary">
+                <h1 className="text-lg sm:text-2xl font-bold text-primary truncate">
                   Yggdrasil
                 </h1>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-1 sm:gap-2 flex-shrink-0">
                 <Button
                   variant="ghost"
                   onClick={() => navigate("/journal")}
-                  className="gap-2"
+                  className="gap-1 sm:gap-2 px-2 sm:px-4"
+                  size="sm"
                 >
                   <BookOpen className="h-4 w-4" />
-                  Journal
+                  <span className="hidden sm:inline">Journal</span>
                 </Button>
                 <Button
                   variant="ghost"
                   onClick={handleSignOut}
-                  className="gap-2"
+                  className="gap-1 sm:gap-2 px-2 sm:px-4"
+                  size="sm"
                 >
                   <LogOut className="h-4 w-4" />
-                  Sign Out
+                  <span className="hidden sm:inline">Sign Out</span>
                 </Button>
               </div>
             </div>
@@ -83,14 +85,14 @@ const Insights = () => {
         </header>
 
         {/* Main Content */}
-        <main className="container mx-auto px-6 py-12 max-w-4xl">
-          <div className="space-y-12">
+        <main className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 max-w-4xl">
+          <div className="space-y-8 sm:space-y-12">
             {/* Welcome Section */}
             <div className="text-center space-y-2">
-              <h2 className="text-3xl md:text-4xl font-bold text-primary">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary">
                 Your Insights & Analytics
               </h2>
-              <p className="text-lg text-muted-foreground">
+              <p className="text-base sm:text-lg text-muted-foreground">
                 Track your emotional journey and patterns
               </p>
             </div>
@@ -141,8 +143,8 @@ const Insights = () => {
             <section>
               <Card>
                 <CardHeader>
-                  <CardTitle>Export Your Data</CardTitle>
-                  <CardDescription>
+                  <CardTitle className="text-lg sm:text-xl">Export Your Data</CardTitle>
+                  <CardDescription className="text-sm">
                     Download your journal entries and insights
                   </CardDescription>
                 </CardHeader>
