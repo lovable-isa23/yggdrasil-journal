@@ -10,7 +10,7 @@ import { SentimentTracking } from "@/components/SentimentTracking";
 import { GoalTracker } from "@/components/GoalTracker";
 import { ReportExport } from "@/components/ReportExport";
 import { DataExport } from "@/components/DataExport";
-import { CorrelationCharts } from "@/components/CorrelationCharts";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -112,12 +112,7 @@ const Insights = () => {
               <MoodTracker />
             </section>
 
-            {/* Correlation Charts */}
-            <section>
-              <CorrelationCharts />
-            </section>
-
-            {/* Timeline Visualization */}
+            {/* Timeline */}
             <section>
               <TimelineVisualization />
             </section>
@@ -159,6 +154,10 @@ const Insights = () => {
                   <div>
                     <h3 className="text-sm font-semibold mb-2">Export Insights Report</h3>
                     <ReportExport />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold mb-2">Export All Reports</h3>
+                    <ReportExport showAllData />
                   </div>
                 </CardContent>
               </Card>

@@ -10,12 +10,12 @@ import { toast } from "sonner";
 import jsPDF from "jspdf";
 import { cn } from "@/lib/utils";
 
-export const ReportExport = () => {
+export const ReportExport = ({ showAllData = false }: { showAllData?: boolean }) => {
   const [dateRange, setDateRange] = useState<{
     from: Date | undefined;
     to: Date | undefined;
   }>({
-    from: new Date(new Date().setDate(new Date().getDate() - 30)),
+    from: showAllData ? new Date(0) : new Date(new Date().setDate(new Date().getDate() - 30)),
     to: new Date(),
   });
   const [isGenerating, setIsGenerating] = useState(false);
@@ -235,59 +235,61 @@ export const ReportExport = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <div className="flex flex-wrap gap-4">
-            <div className="flex flex-col space-y-2">
-              <label className="text-sm font-medium">From</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-[200px] justify-start text-left font-normal",
-                      !dateRange.from && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateRange.from ? format(dateRange.from, "PPP") : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={dateRange.from}
-                    onSelect={(date) => setDateRange({ ...dateRange, from: date })}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+          {!showAllData && (
+            <div className="flex flex-wrap gap-4">
+              <div className="flex flex-col space-y-2">
+                <label className="text-sm font-medium">From</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-[200px] justify-start text-left font-normal",
+                        !dateRange.from && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateRange.from ? format(dateRange.from, "PPP") : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={dateRange.from}
+                      onSelect={(date) => setDateRange({ ...dateRange, from: date })}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
 
-            <div className="flex flex-col space-y-2">
-              <label className="text-sm font-medium">To</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-[200px] justify-start text-left font-normal",
-                      !dateRange.to && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateRange.to ? format(dateRange.to, "PPP") : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={dateRange.to}
-                    onSelect={(date) => setDateRange({ ...dateRange, to: date })}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <div className="flex flex-col space-y-2">
+                <label className="text-sm font-medium">To</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-[200px] justify-start text-left font-normal",
+                        !dateRange.to && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateRange.to ? format(dateRange.to, "PPP") : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={dateRange.to}
+                      onSelect={(date) => setDateRange({ ...dateRange, to: date })}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
-          </div>
+          )}
 
           <Button onClick={generatePDF} disabled={isGenerating} className="w-full sm:w-auto gap-2">
             {isGenerating ? (
@@ -298,7 +300,7 @@ export const ReportExport = () => {
             ) : (
               <>
                 <FileText className="h-4 w-4" />
-                Generate PDF Report
+                {showAllData ? "Export All Reports" : "Generate PDF Report"}
               </>
             )}
           </Button>

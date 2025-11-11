@@ -22,6 +22,7 @@ interface TimelineData {
 export const TimelineVisualization = () => {
   const [timelineData, setTimelineData] = useState<TimelineData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAll, setShowAll] = useState(false);
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
     from: subMonths(new Date(), 3),
     to: new Date(),
@@ -30,17 +31,23 @@ export const TimelineVisualization = () => {
 
   useEffect(() => {
     fetchTimelineData();
-  }, [dateRange]);
+  }, [dateRange, showAll]);
 
   const fetchTimelineData = async () => {
     setLoading(true);
     try {
-      const { data: entries, error: entriesError } = await supabase
+      let query = supabase
         .from("journal_entries")
         .select("id, entry_date")
-        .gte("entry_date", format(dateRange.from, "yyyy-MM-dd"))
-        .lte("entry_date", format(dateRange.to, "yyyy-MM-dd"))
         .order("entry_date", { ascending: true });
+
+      if (!showAll) {
+        query = query
+          .gte("entry_date", format(dateRange.from, "yyyy-MM-dd"))
+          .lte("entry_date", format(dateRange.to, "yyyy-MM-dd"));
+      }
+
+      const { data: entries, error: entriesError } = await query;
 
       if (entriesError) throw entriesError;
 
@@ -246,7 +253,7 @@ export const TimelineVisualization = () => {
           <div>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
-              Timeline Visualization
+              Timeline
             </CardTitle>
             <CardDescription>
               Track how your themes and emotions evolve over time
@@ -257,9 +264,16 @@ export const TimelineVisualization = () => {
               <Download className="h-4 w-4" />
               Export
             </Button>
+            <Button 
+              variant={showAll ? "default" : "outline"} 
+              onClick={() => setShowAll(!showAll)}
+              size="sm"
+            >
+              {showAll ? "Filter by Date" : "Show All"}
+            </Button>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="gap-2">
+                <Button variant="outline" className="gap-2" disabled={showAll}>
                   <CalendarIcon className="h-4 w-4" />
                   {format(dateRange.from, "MMM d")} - {format(dateRange.to, "MMM d")}
                 </Button>
