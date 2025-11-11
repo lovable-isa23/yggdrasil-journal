@@ -2,6 +2,38 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
+// AES-256-GCM decryption function
+async function decrypt(encryptedBase64: string, key: string): Promise<string> {
+  try {
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+    
+    const keyData = encoder.encode(key.padEnd(32, '0').slice(0, 32));
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      keyData,
+      { name: 'AES-GCM' },
+      false,
+      ['decrypt']
+    );
+    
+    const combined = Uint8Array.from(atob(encryptedBase64), c => c.charCodeAt(0));
+    const iv = combined.slice(0, 12);
+    const encrypted = combined.slice(12);
+    
+    const decrypted = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      cryptoKey,
+      encrypted
+    );
+    
+    return decoder.decode(decrypted);
+  } catch (error) {
+    console.error('Decryption error:', error);
+    throw new Error('Failed to decrypt data');
+  }
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -93,22 +125,35 @@ serve(async (req) => {
       );
     }
 
-    const { entryId, title, content } = await req.json();
+    const { entryId } = await req.json();
 
     // Input validation
-    if (!entryId || !content) {
-      throw new Error('Entry ID and content are required');
-    }
-
-    if (typeof title !== 'string' || title.length > 200) {
-      throw new Error('Title must be a string with max 200 characters');
-    }
-
-    if (typeof content !== 'string' || content.length > 50000) {
-      throw new Error('Content must be a string with max 50,000 characters');
+    if (!entryId) {
+      throw new Error('Entry ID is required');
     }
 
     console.log('Analyzing entry:', entryId);
+
+    const encryptionKey = Deno.env.get('ENCRYPTION_KEY');
+    if (!encryptionKey) {
+      throw new Error('Encryption key not configured');
+    }
+
+    // Fetch the encrypted entry
+    const { data: entry, error: entryError } = await supabase
+      .from('journal_entries')
+      .select('*')
+      .eq('id', entryId)
+      .single();
+
+    if (entryError || !entry) {
+      console.error('Entry fetch error:', entryError);
+      throw new Error('Entry not found');
+    }
+
+    // Decrypt the entry
+    const title = await decrypt(entry.title, encryptionKey);
+    const content = await decrypt(entry.content, encryptionKey);
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {

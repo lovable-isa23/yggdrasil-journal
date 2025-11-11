@@ -1,6 +1,38 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// AES-256-GCM decryption function
+async function decrypt(encryptedBase64: string, key: string): Promise<string> {
+  try {
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+    
+    const keyData = encoder.encode(key.padEnd(32, '0').slice(0, 32));
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      keyData,
+      { name: 'AES-GCM' },
+      false,
+      ['decrypt']
+    );
+    
+    const combined = Uint8Array.from(atob(encryptedBase64), c => c.charCodeAt(0));
+    const iv = combined.slice(0, 12);
+    const encrypted = combined.slice(12);
+    
+    const decrypted = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      cryptoKey,
+      encrypted
+    );
+    
+    return decoder.decode(decrypted);
+  } catch (error) {
+    console.error('Decryption error:', error);
+    throw new Error('Failed to decrypt data');
+  }
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -30,6 +62,11 @@ serve(async (req) => {
     }
 
     console.log("Analyzing patterns for user:", user.id);
+
+    const encryptionKey = Deno.env.get('ENCRYPTION_KEY');
+    if (!encryptionKey) {
+      throw new Error('Encryption key not configured');
+    }
 
     // Fetch all insights and entries for this user
     const { data: insights, error: insightsError } = await supabase

@@ -42,9 +42,9 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
 
   const onSubmit = async (data: JournalEntryFormData) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (!user) {
+      if (!session) {
         toast.error("You must be logged in to create entries");
         return;
       }
@@ -55,18 +55,17 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
       const day = String(entryDate.getDate()).padStart(2, '0');
       const localDate = `${year}-${month}-${day}`;
 
-      const { error } = await supabase
-        .from("journal_entries")
-        .insert({
-          user_id: user.id,
+      const { error } = await supabase.functions.invoke('encrypt-entry', {
+        body: {
           title: data.title,
           content: data.content,
           entry_date: localDate,
-        });
+        },
+      });
 
       if (error) throw error;
 
-      toast.success("Journal entry created!");
+      toast.success("Journal entry created (AES-256 encrypted)!");
       reset();
       setEntryDate(new Date());
       onEntryCreated();

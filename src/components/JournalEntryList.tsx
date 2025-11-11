@@ -47,13 +47,19 @@ export const JournalEntryList = ({ refreshTrigger }: JournalEntryListProps) => {
 
   const fetchEntries = async () => {
     try {
-      const { data, error } = await supabase
-        .from("journal_entries")
-        .select("*")
-        .order("entry_date", { ascending: false });
+      setLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        console.error('No session found');
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('decrypt-entries');
 
       if (error) throw error;
-      setEntries(data || []);
+
+      setEntries(data?.entries || []);
     } catch (error: any) {
       console.error("Error fetching entries:", error);
       toast.error("Failed to load journal entries");
