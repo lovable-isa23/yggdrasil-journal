@@ -61,7 +61,7 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
     }
   };
 
-  const analyzeEntry = async () => {
+  const analyzeEntry = async (isReanalysis = false) => {
     setLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -80,7 +80,7 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
       if (data?.insights) {
         setInsights(data.insights);
         setHasAnalyzed(true);
-        toast.success("Entry analyzed! Check out your insights below.");
+        toast.success(isReanalysis ? "Entry re-analyzed with updated settings!" : "Entry analyzed! Check out your insights below.");
       }
     } catch (error: any) {
       console.error("Analysis error:", error);
@@ -101,7 +101,7 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
               Let our AI analyze this entry to extract themes, emotions, and key insights
             </p>
             <Button 
-              onClick={analyzeEntry}
+              onClick={() => analyzeEntry(false)}
               disabled={loading}
               className="bg-gradient-to-r from-primary to-secondary"
             >
@@ -117,6 +117,19 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
 
   return (
     <div className="space-y-4">
+      {/* Re-analyze button */}
+      <div className="flex justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => analyzeEntry(true)}
+          disabled={loading}
+          className="gap-2"
+        >
+          <Sparkles className="h-4 w-4" />
+          {loading ? "Re-analyzing..." : "Re-analyze Entry"}
+        </Button>
+      </div>
       {insights.safety_concerns?.flag && (
         <Alert variant="destructive" className="border-2">
           <AlertTriangle className="h-5 w-5" />
