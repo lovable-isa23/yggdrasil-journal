@@ -4,7 +4,7 @@ import { NPSTooltip } from "@/components/NPSTooltip";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { LogOut, BarChart3, ArrowLeft, Trash2, Eye } from "lucide-react";
+import { LogOut, BarChart3, ArrowLeft, Trash2, Eye, Settings as SettingsIcon } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import {
@@ -126,6 +126,15 @@ const ImportHistory = () => {
                 </h1>
               </div>
               <div className="flex gap-1 sm:gap-2 flex-shrink-0">
+                <Button
+                  variant="ghost"
+                  onClick={() => navigate("/settings")}
+                  className="gap-1 sm:gap-2 px-2 sm:px-4"
+                  size="sm"
+                >
+                  <SettingsIcon className="h-4 w-4" />
+                  <span className="hidden md:inline">Settings</span>
+                </Button>
                 <Button
                   variant="ghost"
                   onClick={() => navigate("/journal")}

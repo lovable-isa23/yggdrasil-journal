@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       entry_insights: {
         Row: {
+          chakra_tags: Json | null
           created_at: string
           emotions: Json | null
           entities: Json | null
@@ -24,10 +25,12 @@ export type Database = {
           keywords: Json | null
           safety_concerns: Json | null
           summary: string | null
+          tarot_tags: Json | null
           themes: Json | null
           user_id: string
         }
         Insert: {
+          chakra_tags?: Json | null
           created_at?: string
           emotions?: Json | null
           entities?: Json | null
@@ -36,10 +39,12 @@ export type Database = {
           keywords?: Json | null
           safety_concerns?: Json | null
           summary?: string | null
+          tarot_tags?: Json | null
           themes?: Json | null
           user_id: string
         }
         Update: {
+          chakra_tags?: Json | null
           created_at?: string
           emotions?: Json | null
           entities?: Json | null
@@ -48,6 +53,7 @@ export type Database = {
           keywords?: Json | null
           safety_concerns?: Json | null
           summary?: string | null
+          tarot_tags?: Json | null
           themes?: Json | null
           user_id?: string
         }
@@ -362,6 +368,36 @@ export type Database = {
           created_at?: string
           id?: string
           prompt?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          created_at: string
+          dark_mode: boolean | null
+          enable_chakra_tags: boolean | null
+          enable_tarot_tags: boolean | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dark_mode?: boolean | null
+          enable_chakra_tags?: boolean | null
+          enable_tarot_tags?: boolean | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dark_mode?: boolean | null
+          enable_chakra_tags?: boolean | null
+          enable_tarot_tags?: boolean | null
+          id?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

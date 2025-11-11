@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { LogOut, BookOpen } from "lucide-react";
+import { LogOut, BookOpen, Settings as SettingsIcon } from "lucide-react";
 import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
 
 const Insights = () => {
@@ -63,6 +63,15 @@ const Insights = () => {
                 </h1>
               </div>
               <div className="flex gap-1 sm:gap-2 flex-shrink-0">
+                <Button
+                  variant="ghost"
+                  onClick={() => navigate("/settings")}
+                  className="gap-1 sm:gap-2 px-2 sm:px-4"
+                  size="sm"
+                >
+                  <SettingsIcon className="h-4 w-4" />
+                  <span className="hidden md:inline">Settings</span>
+                </Button>
                 <Button
                   variant="ghost"
                   onClick={() => navigate("/journal")}

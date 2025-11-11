@@ -22,6 +22,8 @@ interface Insights {
     flag: boolean;
     concerns: string[];
   };
+  chakra_tags?: Array<{ chakra: string; description: string }>;
+  tarot_tags?: Array<{ card: string; description: string }>;
 }
 
 export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) => {
@@ -214,6 +216,40 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
               >
                 {keyword}
               </span>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {insights.chakra_tags && insights.chakra_tags.length > 0 && (
+        <Card className="p-4 bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/20">
+          <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+            <span className="text-lg">🧘</span>
+            Chakra Resonance
+          </h4>
+          <div className="space-y-2">
+            {insights.chakra_tags.map((tag, idx) => (
+              <div key={idx} className="flex gap-3 p-2 rounded bg-background/50">
+                <span className="font-medium text-xs text-primary">{tag.chakra}:</span>
+                <span className="text-xs text-muted-foreground">{tag.description}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {insights.tarot_tags && insights.tarot_tags.length > 0 && (
+        <Card className="p-4 bg-gradient-to-br from-accent/5 to-primary/5 border-accent/20">
+          <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+            <span className="text-lg">🔮</span>
+            Tarot Archetypes
+          </h4>
+          <div className="space-y-2">
+            {insights.tarot_tags.map((tag, idx) => (
+              <div key={idx} className="flex gap-3 p-2 rounded bg-background/50">
+                <span className="font-medium text-xs text-accent">{tag.card}:</span>
+                <span className="text-xs text-muted-foreground">{tag.description}</span>
+              </div>
             ))}
           </div>
         </Card>

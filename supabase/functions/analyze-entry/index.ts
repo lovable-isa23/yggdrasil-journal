@@ -142,6 +142,16 @@ serve(async (req) => {
       throw new Error('Entry ID is required');
     }
 
+    // Fetch user preferences
+    const { data: userPrefs } = await supabase
+      .from('user_preferences')
+      .select('enable_chakra_tags, enable_tarot_tags')
+      .eq('user_id', user.id)
+      .single();
+
+    const enableChakraTags = userPrefs?.enable_chakra_tags || false;
+    const enableTarotTags = userPrefs?.enable_tarot_tags || false;
+
     console.log('Analyzing entry:', entryId);
 
     const encryptionKey = Deno.env.get('ENCRYPTION_KEY');
@@ -191,6 +201,8 @@ Analyze the journal entry and extract:
 - keywords: Significant keywords (max 15)
 - summary: Brief 2-3 sentence summary
 - safety_concerns: Detect concerning content including suicidal ideation, self-harm thoughts, plans to harm self or others, severe hopelessness, or crisis situations. Format: {"flag": true/false, "concerns": ["concern1", "concern2"]}
+${enableChakraTags ? `- chakra_tags: Identify which chakra energy centers relate to the content (format: [{"chakra": "Root", "description": "brief relevance"}]). The seven chakras are: Root (survival, grounding), Sacral (creativity, emotions), Solar Plexus (personal power), Heart (love, compassion), Throat (communication, truth), Third Eye (intuition, insight), Crown (spiritual connection).` : ''}
+${enableTarotTags ? `- tarot_tags: Identify relevant tarot archetypes (format: [{"card": "The Fool", "description": "brief relevance"}]). Consider Major Arcana cards and their symbolic meanings.` : ''}
 
 IMPORTANT: For safety_concerns, only flag true if there is genuine risk language (e.g., "I want to end my life", "not worth living", "plan to hurt myself", "everyone would be better off without me"). Do not flag general sadness, stress, or normal difficult emotions.
 
@@ -201,7 +213,7 @@ Respond with ONLY a valid JSON object in this exact format:
   "emotions": [{"emotion": "joy", "intensity": 7}],
   "keywords": ["keyword1", "keyword2"],
   "summary": "Your summary here.",
-  "safety_concerns": {"flag": false, "concerns": []}
+  "safety_concerns": {"flag": false, "concerns": []}${enableChakraTags ? ',\n  "chakra_tags": [{"chakra": "Root", "description": "brief"}]' : ''}${enableTarotTags ? ',\n  "tarot_tags": [{"card": "The Fool", "description": "brief"}]' : ''}
 }`
           },
           {
@@ -240,18 +252,28 @@ Respond with ONLY a valid JSON object in this exact format:
     }
 
     // Store insights in database (supabase client already initialized above)
+    const insightData: any = {
+      entry_id: entryId,
+      user_id: user.id,
+      entities: analysis.entities || [],
+      themes: analysis.themes || [],
+      emotions: analysis.emotions || [],
+      keywords: analysis.keywords || [],
+      summary: analysis.summary || '',
+      safety_concerns: analysis.safety_concerns || { flag: false, concerns: [] },
+    };
+
+    if (enableChakraTags && analysis.chakra_tags) {
+      insightData.chakra_tags = analysis.chakra_tags;
+    }
+
+    if (enableTarotTags && analysis.tarot_tags) {
+      insightData.tarot_tags = analysis.tarot_tags;
+    }
+
     const { error: insertError } = await supabase
       .from('entry_insights')
-      .upsert({
-        entry_id: entryId,
-        user_id: user.id,
-        entities: analysis.entities || [],
-        themes: analysis.themes || [],
-        emotions: analysis.emotions || [],
-        keywords: analysis.keywords || [],
-        summary: analysis.summary || '',
-        safety_concerns: analysis.safety_concerns || { flag: false, concerns: [] },
-      });
+      .upsert(insightData);
 
     if (insertError) {
       console.error('Database insert error:', insertError);
