@@ -111,42 +111,45 @@ const ImportHistory = () => {
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
         {/* Header */}
         <header className="border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-50">
-          <div className="container mx-auto px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/")}>
+          <div className="container mx-auto px-4 sm:px-6 py-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 sm:gap-3 cursor-pointer min-w-0" onClick={() => navigate("/")}>
                 <img 
                   src={yggdrasilLogo} 
                   alt="Yggdrasil" 
-                  className="h-10 w-10 object-contain"
+                  className="h-8 w-8 sm:h-10 sm:w-10 object-contain flex-shrink-0"
                 />
-                <h1 className="text-2xl font-bold text-primary">
+                <h1 className="text-lg sm:text-2xl font-bold text-primary truncate">
                   Yggdrasil
                 </h1>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-1 sm:gap-2 flex-shrink-0">
                 <Button
                   variant="ghost"
                   onClick={() => navigate("/journal")}
-                  className="gap-2"
+                  className="gap-1 sm:gap-2 px-2 sm:px-4"
+                  size="sm"
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  Journal
+                  <span className="hidden sm:inline">Journal</span>
                 </Button>
                 <Button
                   variant="ghost"
                   onClick={() => navigate("/insights")}
-                  className="gap-2"
+                  className="gap-1 sm:gap-2 px-2 sm:px-4"
+                  size="sm"
                 >
                   <BarChart3 className="h-4 w-4" />
-                  Insights
+                  <span className="hidden sm:inline">Insights</span>
                 </Button>
                 <Button
                   variant="ghost"
                   onClick={handleSignOut}
-                  className="gap-2"
+                  className="gap-1 sm:gap-2 px-2 sm:px-4"
+                  size="sm"
                 >
                   <LogOut className="h-4 w-4" />
-                  Sign Out
+                  <span className="hidden sm:inline">Sign Out</span>
                 </Button>
               </div>
             </div>
@@ -154,13 +157,13 @@ const ImportHistory = () => {
         </header>
 
         {/* Main Content */}
-        <main className="container mx-auto px-6 py-12 max-w-4xl">
-          <div className="space-y-8">
+        <main className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 max-w-4xl">
+          <div className="space-y-6 sm:space-y-8">
             <div className="text-center space-y-2">
-              <h2 className="text-3xl md:text-4xl font-bold text-primary">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary">
                 Import History
               </h2>
-              <p className="text-lg text-muted-foreground">
+              <p className="text-base sm:text-lg text-muted-foreground">
                 View and manage your imported journal entries
               </p>
             </div>
@@ -186,28 +189,28 @@ const ImportHistory = () => {
               <div className="space-y-4">
                 {imports.map((importRecord) => (
                   <Card key={importRecord.id} className="hover:shadow-lg transition-shadow">
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1 flex-1">
-                          <CardTitle className="flex items-center gap-2">
-                            {importRecord.file_name}
-                            <Badge variant="secondary">
+                    <CardHeader className="pb-3">
+                      <div className="flex flex-col sm:flex-row items-start justify-between gap-3">
+                        <div className="space-y-1 flex-1 min-w-0">
+                          <CardTitle className="flex flex-wrap items-center gap-2 text-base sm:text-lg">
+                            <span className="break-all">{importRecord.file_name}</span>
+                            <Badge variant="secondary" className="text-xs">
                               {importRecord.file_type.toUpperCase()}
                             </Badge>
                           </CardTitle>
-                          <CardDescription>
+                          <CardDescription className="text-xs sm:text-sm">
                             Imported {format(new Date(importRecord.import_date), "PPpp")}
                           </CardDescription>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleViewEntries(importRecord.id)}
-                            className="gap-2"
+                            className="gap-1 sm:gap-2 flex-1 sm:flex-initial"
                           >
                             <Eye className="h-4 w-4" />
-                            View
+                            <span className="sm:inline">View</span>
                           </Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
@@ -215,10 +218,10 @@ const ImportHistory = () => {
                                 variant="ghost"
                                 size="sm"
                                 disabled={deletingId === importRecord.id}
-                                className="gap-2 text-destructive hover:text-destructive"
+                                className="gap-1 sm:gap-2 text-destructive hover:text-destructive flex-1 sm:flex-initial"
                               >
                                 <Trash2 className="h-4 w-4" />
-                                Undo
+                                <span className="sm:inline">Undo</span>
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
