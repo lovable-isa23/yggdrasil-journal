@@ -97,9 +97,15 @@ export const JournalEntryList = ({ refreshTrigger }: JournalEntryListProps) => {
 
   const handleDateUpdate = async (entryId: string, newDate: Date) => {
     try {
+      // Format date in local timezone to avoid shifting
+      const year = newDate.getFullYear();
+      const month = String(newDate.getMonth() + 1).padStart(2, '0');
+      const day = String(newDate.getDate()).padStart(2, '0');
+      const localDate = `${year}-${month}-${day}`;
+
       const { error } = await supabase
         .from("journal_entries")
-        .update({ entry_date: format(newDate, "yyyy-MM-dd") })
+        .update({ entry_date: localDate })
         .eq("id", entryId);
 
       if (error) throw error;

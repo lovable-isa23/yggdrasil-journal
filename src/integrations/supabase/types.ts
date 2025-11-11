@@ -61,12 +61,46 @@ export type Database = {
           },
         ]
       }
+      import_history: {
+        Row: {
+          created_at: string
+          entries_count: number
+          file_name: string
+          file_type: string
+          id: string
+          import_date: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entries_count?: number
+          file_name: string
+          file_type: string
+          id?: string
+          import_date?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          entries_count?: number
+          file_name?: string
+          file_type?: string
+          id?: string
+          import_date?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       journal_entries: {
         Row: {
           content: string
           created_at: string
           entry_date: string
           id: string
+          import_batch_id: string | null
           title: string
           updated_at: string
           user_id: string
@@ -76,6 +110,7 @@ export type Database = {
           created_at?: string
           entry_date?: string
           id?: string
+          import_batch_id?: string | null
           title: string
           updated_at?: string
           user_id: string
@@ -85,11 +120,20 @@ export type Database = {
           created_at?: string
           entry_date?: string
           id?: string
+          import_batch_id?: string | null
           title?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "journal_entries_import_batch_id_fkey"
+            columns: ["import_batch_id"]
+            isOneToOne: false
+            referencedRelation: "import_history"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

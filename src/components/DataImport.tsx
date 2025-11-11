@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { Progress } from "@/components/ui/progress";
 
 interface ParsedEntry {
   title: string;
@@ -16,6 +16,13 @@ export const DataImport = ({ onImportComplete }: { onImportComplete: () => void 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  const formatLocalDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const parseTextFile = (text: string): ParsedEntry[] => {
     // Simple text/markdown parsing - treat entire file as one entry
     const lines = text.trim().split('\n');
@@ -25,7 +32,7 @@ export const DataImport = ({ onImportComplete }: { onImportComplete: () => void 
     return [{
       title,
       content,
-      entry_date: new Date().toISOString(),
+      entry_date: formatLocalDate(new Date()),
     }];
   };
 
@@ -34,11 +41,19 @@ export const DataImport = ({ onImportComplete }: { onImportComplete: () => void 
       const data = JSON.parse(text);
       const entries = Array.isArray(data) ? data : [data];
       
-      return entries.map(entry => ({
-        title: String(entry.title || "Imported Entry").substring(0, 200),
-        content: String(entry.content || "").substring(0, 50000),
-        entry_date: entry.entry_date || entry.created_at || new Date().toISOString(),
-      })).filter(entry => entry.content.trim().length > 0);
+      return entries.map(entry => {
+        let entryDate = formatLocalDate(new Date());
+        if (entry.entry_date || entry.created_at) {
+          const date = new Date(entry.entry_date || entry.created_at);
+          entryDate = formatLocalDate(date);
+        }
+        
+        return {
+          title: String(entry.title || "Imported Entry").substring(0, 200),
+          content: String(entry.content || "").substring(0, 50000),
+          entry_date: entryDate,
+        };
+      }).filter(entry => entry.content.trim().length > 0);
     } catch (error) {
       throw new Error("Invalid JSON format");
     }
@@ -87,11 +102,31 @@ export const DataImport = ({ onImportComplete }: { onImportComplete: () => void 
     return data.entries;
   };
 
+  const processFile = async (file: File, user: any): Promise<ParsedEntry[]> => {
+    const fileType = file.name.split('.').pop()?.toLowerCase();
+
+    if (fileType === 'txt' || fileType === 'md') {
+      const text = await file.text();
+      return parseTextFile(text);
+    } else if (fileType === 'json') {
+      const text = await file.text();
+      return parseJSONFile(text);
+    } else if (fileType === 'pdf') {
+      return await parsePDFFile(file);
+    } else {
+      throw new Error(`Unsupported file type for ${file.name}. Please use .txt, .md, .json, or .pdf files.`);
+    }
+  };
+
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
 
     setIsImporting(true);
+    const totalFiles = files.length;
+    let processedFiles = 0;
+    const failedFiles: string[] = [];
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -103,42 +138,72 @@ export const DataImport = ({ onImportComplete }: { onImportComplete: () => void 
         return;
       }
 
-      let entries: ParsedEntry[] = [];
-      const fileType = file.name.split('.').pop()?.toLowerCase();
+      // Process each file
+      for (const file of Array.from(files)) {
+        try {
+          const entries = await processFile(file, user);
 
-      // Parse based on file type
-      if (fileType === 'txt' || fileType === 'md') {
-        const text = await file.text();
-        entries = parseTextFile(text);
-      } else if (fileType === 'json') {
-        const text = await file.text();
-        entries = parseJSONFile(text);
-      } else if (fileType === 'pdf') {
-        entries = await parsePDFFile(file);
+          if (entries.length === 0) {
+            failedFiles.push(`${file.name}: No valid entries found`);
+            processedFiles++;
+            continue;
+          }
+
+          // Create import history record
+          const { data: importRecord, error: historyError } = await supabase
+            .from("import_history")
+            .insert({
+              user_id: user.id,
+              file_name: file.name,
+              file_type: file.name.split('.').pop()?.toLowerCase() || 'unknown',
+              entries_count: entries.length,
+              status: 'completed',
+            })
+            .select()
+            .single();
+
+          if (historyError) throw historyError;
+
+          // Insert entries with import_batch_id
+          const entriesToInsert = entries.map(entry => ({
+            ...entry,
+            user_id: user.id,
+            import_batch_id: importRecord.id,
+          }));
+
+          const { error: insertError } = await supabase
+            .from("journal_entries")
+            .insert(entriesToInsert);
+
+          if (insertError) throw insertError;
+
+          processedFiles++;
+        } catch (error) {
+          console.error(`Error processing ${file.name}:`, error);
+          failedFiles.push(`${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          processedFiles++;
+        }
+      }
+
+      // Show result toast
+      if (failedFiles.length === 0) {
+        toast({
+          title: "Import successful",
+          description: `${totalFiles} ${totalFiles === 1 ? 'file' : 'files'} imported successfully`,
+        });
+      } else if (failedFiles.length < totalFiles) {
+        toast({
+          title: "Partial import",
+          description: `${totalFiles - failedFiles.length} files succeeded, ${failedFiles.length} failed`,
+          variant: "default",
+        });
       } else {
-        throw new Error("Unsupported file type. Please use .txt, .md, .json, or .pdf files.");
+        toast({
+          title: "Import failed",
+          description: "All files failed to import. Check console for details.",
+          variant: "destructive",
+        });
       }
-
-      if (entries.length === 0) {
-        throw new Error("No valid entries found in file");
-      }
-
-      // Insert entries into database
-      const entriesToInsert = entries.map(entry => ({
-        ...entry,
-        user_id: user.id,
-      }));
-
-      const { error } = await supabase
-        .from("journal_entries")
-        .insert(entriesToInsert);
-
-      if (error) throw error;
-
-      toast({
-        title: "Import successful",
-        description: `${entries.length} ${entries.length === 1 ? 'entry' : 'entries'} imported`,
-      });
 
       onImportComplete();
       
@@ -167,6 +232,7 @@ export const DataImport = ({ onImportComplete }: { onImportComplete: () => void 
         onChange={handleFileSelect}
         className="hidden"
         disabled={isImporting}
+        multiple
       />
       <Button
         onClick={() => fileInputRef.current?.click()}

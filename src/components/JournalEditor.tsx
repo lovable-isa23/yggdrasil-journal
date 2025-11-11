@@ -49,13 +49,19 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
         return;
       }
 
+      // Format date in local timezone to avoid shifting
+      const year = entryDate.getFullYear();
+      const month = String(entryDate.getMonth() + 1).padStart(2, '0');
+      const day = String(entryDate.getDate()).padStart(2, '0');
+      const localDate = `${year}-${month}-${day}`;
+
       const { error } = await supabase
         .from("journal_entries")
         .insert({
           user_id: user.id,
           title: data.title,
           content: data.content,
-          entry_date: format(entryDate, "yyyy-MM-dd"),
+          entry_date: localDate,
         });
 
       if (error) throw error;

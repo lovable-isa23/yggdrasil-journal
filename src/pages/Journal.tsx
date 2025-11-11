@@ -7,7 +7,7 @@ import { DataImport } from "@/components/DataImport";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { LogOut, BarChart3 } from "lucide-react";
+import { LogOut, BarChart3, History } from "lucide-react";
 import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
 
 const Journal = () => {
@@ -41,6 +41,14 @@ const Journal = () => {
                 </h1>
               </div>
               <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  onClick={() => navigate("/import-history")}
+                  className="gap-2"
+                >
+                  <History className="h-4 w-4" />
+                  Import History
+                </Button>
                 <Button
                   variant="ghost"
                   onClick={() => navigate("/insights")}
