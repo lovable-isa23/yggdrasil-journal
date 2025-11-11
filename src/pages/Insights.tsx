@@ -5,6 +5,9 @@ import { KnowledgeGraph } from "@/components/KnowledgeGraph";
 import { MoodTracker } from "@/components/MoodTracker";
 import { StatisticsDashboard } from "@/components/StatisticsDashboard";
 import { PatternInsights } from "@/components/PatternInsights";
+import { TimelineVisualization } from "@/components/TimelineVisualization";
+import { SentimentTracking } from "@/components/SentimentTracking";
+import { GoalTracker } from "@/components/GoalTracker";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -105,9 +108,24 @@ const Insights = () => {
               <MoodTracker />
             </section>
 
+            {/* Timeline Visualization */}
+            <section>
+              <TimelineVisualization />
+            </section>
+
+            {/* Sentiment Tracking */}
+            <section>
+              <SentimentTracking />
+            </section>
+
             {/* Pattern Insights */}
             <section>
               <PatternInsights />
+            </section>
+
+            {/* Goal Tracker */}
+            <section>
+              <GoalTracker />
             </section>
 
             {/* Knowledge Graph */}

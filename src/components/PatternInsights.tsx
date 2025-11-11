@@ -3,9 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Loader2, TrendingUp, Lightbulb, Calendar, RefreshCw } from "lucide-react";
+import { Loader2, TrendingUp, Lightbulb, Calendar, RefreshCw, X } from "lucide-react";
 import { toast } from "sonner";
 import { Progress } from "./ui/progress";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
 
 interface Pattern {
   id: string;
@@ -23,6 +24,8 @@ export const PatternInsights = () => {
   const [patterns, setPatterns] = useState<Pattern[]>([]);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<string | null>(null);
+  const [relatedPatterns, setRelatedPatterns] = useState<Pattern[]>([]);
 
   useEffect(() => {
     fetchPatterns();
@@ -85,6 +88,14 @@ export const PatternInsights = () => {
       cognitive: "bg-pink-500/10 text-pink-700 dark:text-pink-300",
     };
     return colors[type] || "bg-gray-500/10 text-gray-700 dark:text-gray-300";
+  };
+
+  const handleItemClick = (item: string) => {
+    setSelectedItem(item);
+    const related = patterns.filter(p => 
+      p.related_items && Array.isArray(p.related_items) && p.related_items.includes(item)
+    );
+    setRelatedPatterns(related);
   };
 
   if (loading) {
@@ -189,7 +200,12 @@ export const PatternInsights = () => {
                   {pattern.related_items && Array.isArray(pattern.related_items) && pattern.related_items.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {pattern.related_items.map((item: string, idx: number) => (
-                        <Badge key={idx} variant="secondary" className="text-xs">
+                        <Badge 
+                          key={idx} 
+                          variant="secondary" 
+                          className="text-xs cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                          onClick={() => handleItemClick(item)}
+                        >
                           {item}
                         </Badge>
                       ))}
@@ -212,6 +228,50 @@ export const PatternInsights = () => {
           </div>
         )}
       </CardContent>
+
+      <Sheet open={selectedItem !== null} onOpenChange={(open) => !open && setSelectedItem(null)}>
+        <SheetContent className="overflow-y-auto">
+          <SheetHeader>
+            <div className="flex items-center justify-between">
+              <SheetTitle>{selectedItem}</SheetTitle>
+              <Button variant="ghost" size="icon" onClick={() => setSelectedItem(null)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <SheetDescription>
+              Patterns related to this item
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-6 space-y-4">
+            {relatedPatterns.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No related patterns found</p>
+            ) : (
+              relatedPatterns.map((pattern) => (
+                <Card key={pattern.id} className="p-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{getPatternIcon(pattern.pattern_type)}</span>
+                      <h4 className="font-semibold text-sm">{pattern.title}</h4>
+                    </div>
+                    <Badge variant="secondary" className={`text-xs ${getPatternColor(pattern.pattern_type)}`}>
+                      {pattern.pattern_type}
+                    </Badge>
+                    <p className="text-xs text-muted-foreground">{pattern.description}</p>
+                    {pattern.actionable_insight && (
+                      <div className="bg-accent/50 rounded p-2 mt-2">
+                        <div className="flex items-start gap-1">
+                          <Lightbulb className="h-3 w-3 mt-0.5 text-primary flex-shrink-0" />
+                          <p className="text-xs">{pattern.actionable_insight}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </Card>
   );
 };
