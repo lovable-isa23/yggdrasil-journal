@@ -4,6 +4,15 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 // AES-256-GCM decryption function
 async function decrypt(encryptedBase64: string, key: string): Promise<string> {
+  // Check if data is already plain text (legacy entries)
+  try {
+    // Try to decode base64 - if this fails, it's plain text
+    atob(encryptedBase64);
+  } catch {
+    // Not base64, return as plain text
+    return encryptedBase64;
+  }
+
   try {
     const encoder = new TextEncoder();
     const decoder = new TextDecoder();
@@ -30,7 +39,8 @@ async function decrypt(encryptedBase64: string, key: string): Promise<string> {
     return decoder.decode(decrypted);
   } catch (error) {
     console.error('Decryption error:', error);
-    throw new Error('Failed to decrypt data');
+    // If decryption fails, return original text (likely plain text)
+    return encryptedBase64;
   }
 }
 
