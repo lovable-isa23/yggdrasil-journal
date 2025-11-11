@@ -151,13 +151,13 @@ const Insights = () => {
                     <h3 className="text-sm font-semibold mb-2">Export All Entries</h3>
                     <DataExport />
                   </div>
-                  <div>
-                    <h3 className="text-sm font-semibold mb-2">Export Reports</h3>
-                    <div className="flex flex-wrap gap-2">
-                      <ReportExport />
-                      <ReportExport showAllData />
-                    </div>
+                <div>
+                  <h3 className="text-sm font-semibold mb-2">Export Reports</h3>
+                  <div className="flex flex-col gap-2">
+                    <ReportExport />
+                    <ReportExport showAllData />
                   </div>
+                </div>
                 </CardContent>
               </Card>
             </section>
