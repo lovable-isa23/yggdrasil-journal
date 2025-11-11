@@ -152,12 +152,11 @@ const Insights = () => {
                     <DataExport />
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold mb-2">Export Insights Report</h3>
-                    <ReportExport />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold mb-2">Export All Reports</h3>
-                    <ReportExport showAllData />
+                    <h3 className="text-sm font-semibold mb-2">Export Reports</h3>
+                    <div className="flex flex-wrap gap-2">
+                      <ReportExport />
+                      <ReportExport showAllData />
+                    </div>
                   </div>
                 </CardContent>
               </Card>

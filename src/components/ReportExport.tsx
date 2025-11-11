@@ -223,89 +223,76 @@ export const ReportExport = ({ showAllData = false }: { showAllData?: boolean })
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <FileText className="h-5 w-5" />
-          Export Report
-        </CardTitle>
-        <CardDescription>
-          Generate a PDF report summarizing your patterns, goals, and insights
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {!showAllData && (
-            <div className="flex flex-wrap gap-4">
-              <div className="flex flex-col space-y-2">
-                <label className="text-sm font-medium">From</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-[200px] justify-start text-left font-normal",
-                        !dateRange.from && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateRange.from ? format(dateRange.from, "PPP") : "Pick a date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={dateRange.from}
-                      onSelect={(date) => setDateRange({ ...dateRange, from: date })}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
+    <>
+      {!showAllData && (
+        <div className="flex flex-wrap gap-4 mb-4">
+          <div className="flex flex-col space-y-2">
+            <label className="text-sm font-medium">From</label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-[200px] justify-start text-left font-normal",
+                    !dateRange.from && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateRange.from ? format(dateRange.from, "PPP") : "Pick a date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={dateRange.from}
+                  onSelect={(date) => setDateRange({ ...dateRange, from: date })}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
 
-              <div className="flex flex-col space-y-2">
-                <label className="text-sm font-medium">To</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-[200px] justify-start text-left font-normal",
-                        !dateRange.to && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateRange.to ? format(dateRange.to, "PPP") : "Pick a date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={dateRange.to}
-                      onSelect={(date) => setDateRange({ ...dateRange, to: date })}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-          )}
-
-          <Button onClick={generatePDF} disabled={isGenerating} className="w-full sm:w-auto gap-2">
-            {isGenerating ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              <>
-                <FileText className="h-4 w-4" />
-                {showAllData ? "Export All Reports" : "Generate PDF Report"}
-              </>
-            )}
-          </Button>
+          <div className="flex flex-col space-y-2">
+            <label className="text-sm font-medium">To</label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-[200px] justify-start text-left font-normal",
+                    !dateRange.to && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateRange.to ? format(dateRange.to, "PPP") : "Pick a date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={dateRange.to}
+                  onSelect={(date) => setDateRange({ ...dateRange, to: date })}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
-      </CardContent>
-    </Card>
+      )}
+
+      <Button onClick={generatePDF} disabled={isGenerating} variant="outline" className="gap-2">
+        {isGenerating ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Generating...
+          </>
+        ) : (
+          <>
+            <FileText className="h-4 w-4" />
+            {showAllData ? "Export All Reports" : "Generate PDF Report"}
+          </>
+        )}
+      </Button>
+    </>
   );
 };
