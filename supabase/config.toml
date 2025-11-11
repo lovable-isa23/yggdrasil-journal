@@ -5,3 +5,6 @@ verify_jwt = true
 
 [functions.generate-reflection]
 verify_jwt = true
+
+[functions.parse-pdf]
+verify_jwt = true

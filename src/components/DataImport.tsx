@@ -45,12 +45,13 @@ export const DataImport = ({ onImportComplete }: { onImportComplete: () => void 
   };
 
   const parsePDFFile = async (file: File): Promise<ParsedEntry[]> => {
-    // For PDF, we'll use the document parsing tool via an edge function
-    const formData = new FormData();
-    formData.append('file', file);
-
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Not authenticated");
+
+    toast({
+      title: "PDF Import",
+      description: "Extracting text from PDF using OCR. This may take a moment...",
+    });
 
     // Read file as base64
     const reader = new FileReader();
@@ -60,20 +61,30 @@ export const DataImport = ({ onImportComplete }: { onImportComplete: () => void 
       reader.readAsDataURL(file);
     });
 
-    // Extract text from PDF using a simple approach
-    // In a real scenario, you'd want to use a proper PDF parsing library or edge function
-    toast({
-      title: "PDF Import",
-      description: "PDF parsing is in progress. Large files may take a moment.",
+    // Get auth token
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("No active session");
+
+    // Call edge function to parse PDF with OCR
+    const { data, error } = await supabase.functions.invoke('parse-pdf', {
+      body: {
+        fileContent,
+        fileName: file.name,
+      },
     });
 
-    // For now, we'll create a single entry noting that PDF was imported
-    // In production, you'd want to implement proper PDF text extraction
-    return [{
-      title: `Imported from ${file.name}`,
-      content: "PDF content imported. Full text extraction requires additional processing.",
-      entry_date: new Date().toISOString(),
-    }];
+    if (error) {
+      console.error('PDF parsing error:', error);
+      throw new Error(`Failed to parse PDF: ${error.message}`);
+    }
+
+    if (!data.success || !data.entries || data.entries.length === 0) {
+      throw new Error("No content could be extracted from the PDF");
+    }
+
+    console.log(`Successfully extracted ${data.entries.length} entries from PDF`);
+    
+    return data.entries;
   };
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
