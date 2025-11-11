@@ -21,17 +21,7 @@ export const Hero = () => {
   }, []);
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center px-6 py-20 overflow-hidden">
-      {/* Background image */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: `url(${yggdrasilHeroBg})`,
-        }}
-      />
-      
-      {/* Translucent overlay for text legibility */}
-      <div className="absolute inset-0 bg-background/60 backdrop-blur-sm" />
+    <section className="relative min-h-screen flex items-center justify-center px-6 py-20 overflow-hidden bg-[#F5F1E8]">
 
       <div className="container mx-auto max-w-6xl relative z-10">
         <div className="text-center space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
@@ -46,7 +36,7 @@ export const Hero = () => {
 
           {/* Heading */}
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
-            <span className="bg-gradient-to-br from-earth-brown via-primary to-earth-sage bg-clip-text text-transparent">
+            <span className="bg-gradient-to-br from-earth-brown via-earth-teal via-40% via-primary via-60% to-earth-sage bg-clip-text text-transparent">
               Cultivate Self-Awareness
             </span>
           </h1>

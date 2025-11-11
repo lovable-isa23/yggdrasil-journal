@@ -20,6 +20,7 @@ const FeatureCard = ({ feature, index }: { feature: any; index: number }) => {
       <div className="absolute inset-[1px] rounded-2xl bg-card z-0" />
       
       <div className="relative z-10 space-y-4">
+        <div className="text-4xl mb-4">{feature.icon}</div>
         <h3 className="text-xl font-semibold">{feature.title}</h3>
         <p className="text-sm text-muted-foreground leading-relaxed">
           {feature.description}
@@ -32,31 +33,37 @@ const FeatureCard = ({ feature, index }: { feature: any; index: number }) => {
 export const Features = () => {
   const features = [
     {
+      icon: "🧠",
       title: "Semantic Understanding",
       description: "Advanced AI parsing extracts entities, themes, and meaningful patterns from your journal entries, revealing connections you might have missed.",
       gradient: "from-earth-brown to-primary"
     },
     {
+      icon: "🕸️",
       title: "Interactive Knowledge Graphs",
       description: "Visualize your thoughts and emotions as an interconnected web, discovering patterns and insights through an intuitive, explorable interface.",
       gradient: "from-primary to-secondary"
     },
     {
+      icon: "🌟",
       title: "Spiritual AI Guidance",
       description: "Receive thoughtful, nondenominational reflective prompts inspired by holistic wisdom, designed to deepen your self-awareness and growth.",
       gradient: "from-secondary to-earth-teal"
     },
     {
+      icon: "✍️",
       title: "Markdown Support",
       description: "Express yourself freely with flexible markdown formatting, giving you full control over how you capture your thoughts and reflections.",
       gradient: "from-earth-teal to-earth-brown"
     },
     {
+      icon: "📴",
       title: "Offline Journaling",
       description: "Continue your practice anywhere, anytime. Your entries sync automatically when you reconnect, ensuring your journey never stops.",
       gradient: "from-accent to-primary"
     },
     {
+      icon: "🔒",
       title: "Privacy First",
       description: "Your innermost thoughts deserve protection. Built with security and privacy at the core, your data remains yours alone.",
       gradient: "from-primary to-accent"
