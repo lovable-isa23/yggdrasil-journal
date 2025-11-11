@@ -7,6 +7,7 @@ import { Loader2, TrendingUp, Lightbulb, Calendar, RefreshCw, X } from "lucide-r
 import { toast } from "sonner";
 import { Progress } from "./ui/progress";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
+import { format } from "date-fns";
 
 interface Pattern {
   id: string;
@@ -25,7 +26,13 @@ export const PatternInsights = () => {
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
-  const [relatedPatterns, setRelatedPatterns] = useState<Pattern[]>([]);
+  const [relatedEntries, setRelatedEntries] = useState<Array<{
+    id: string;
+    title: string;
+    entry_date: string;
+    content: string;
+    relevantQuote?: string;
+  }>>([]);
 
   useEffect(() => {
     fetchPatterns();
@@ -90,12 +97,64 @@ export const PatternInsights = () => {
     return colors[type] || "bg-gray-500/10 text-gray-700 dark:text-gray-300";
   };
 
-  const handleItemClick = (item: string) => {
+  const handleItemClick = async (item: string) => {
     setSelectedItem(item);
-    const related = patterns.filter(p => 
-      p.related_items && Array.isArray(p.related_items) && p.related_items.includes(item)
-    );
-    setRelatedPatterns(related);
+    
+    try {
+      // Fetch entry_insights that contain this item in themes, keywords, or entities
+      const { data: insights, error: insightsError } = await supabase
+        .from("entry_insights")
+        .select("entry_id, themes, keywords, entities");
+
+      if (insightsError) throw insightsError;
+
+      // Filter insights that contain the selected item
+      const relevantInsights = insights?.filter((insight) => {
+        const themes = (insight.themes as string[]) || [];
+        const keywords = (insight.keywords as string[]) || [];
+        const entities = (insight.entities as string[]) || [];
+        
+        return (
+          themes.includes(item) ||
+          keywords.includes(item) ||
+          entities.includes(item)
+        );
+      }) || [];
+
+      const entryIds = relevantInsights.map((i) => i.entry_id);
+
+      if (entryIds.length === 0) {
+        setRelatedEntries([]);
+        return;
+      }
+
+      // Fetch the actual journal entries
+      const { data: entries, error: entriesError } = await supabase
+        .from("journal_entries")
+        .select("id, title, entry_date, content")
+        .in("id", entryIds)
+        .order("entry_date", { ascending: false });
+
+      if (entriesError) throw entriesError;
+
+      // Extract relevant quotes from content that mention the item
+      const entriesWithQuotes = entries?.map((entry) => {
+        const sentences = entry.content.split(/[.!?]+/);
+        const relevantSentence = sentences.find((s) =>
+          s.toLowerCase().includes(item.toLowerCase())
+        );
+
+        return {
+          ...entry,
+          relevantQuote: relevantSentence?.trim() || entry.content.slice(0, 150) + "...",
+        };
+      }) || [];
+
+      setRelatedEntries(entriesWithQuotes);
+    } catch (error) {
+      console.error("Error fetching related entries:", error);
+      toast.error("Failed to load related entries");
+    }
   };
 
   if (loading) {
@@ -239,30 +298,27 @@ export const PatternInsights = () => {
               </Button>
             </div>
             <SheetDescription>
-              Patterns related to this item
+              Journal entries mentioning this item
             </SheetDescription>
           </SheetHeader>
           <div className="mt-6 space-y-4">
-            {relatedPatterns.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No related patterns found</p>
+            {relatedEntries.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No entries found mentioning this item</p>
             ) : (
-              relatedPatterns.map((pattern) => (
-                <Card key={pattern.id} className="p-3">
+              relatedEntries.map((entry) => (
+                <Card key={entry.id} className="p-4">
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">{getPatternIcon(pattern.pattern_type)}</span>
-                      <h4 className="font-semibold text-sm">{pattern.title}</h4>
+                    <div className="flex items-start justify-between gap-2">
+                      <h4 className="font-semibold text-sm">{entry.title}</h4>
+                      <Badge variant="outline" className="text-xs">
+                        {format(new Date(entry.entry_date), "MMM dd, yyyy")}
+                      </Badge>
                     </div>
-                    <Badge variant="secondary" className={`text-xs ${getPatternColor(pattern.pattern_type)}`}>
-                      {pattern.pattern_type}
-                    </Badge>
-                    <p className="text-xs text-muted-foreground">{pattern.description}</p>
-                    {pattern.actionable_insight && (
-                      <div className="bg-accent/50 rounded p-2 mt-2">
-                        <div className="flex items-start gap-1">
-                          <Lightbulb className="h-3 w-3 mt-0.5 text-primary flex-shrink-0" />
-                          <p className="text-xs">{pattern.actionable_insight}</p>
-                        </div>
+                    {entry.relevantQuote && (
+                      <div className="bg-muted/50 rounded-lg p-3 mt-2 border-l-2 border-primary">
+                        <p className="text-xs italic text-muted-foreground">
+                          "{entry.relevantQuote}"
+                        </p>
                       </div>
                     )}
                   </div>

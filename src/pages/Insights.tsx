@@ -8,6 +8,7 @@ import { PatternInsights } from "@/components/PatternInsights";
 import { TimelineVisualization } from "@/components/TimelineVisualization";
 import { SentimentTracking } from "@/components/SentimentTracking";
 import { GoalTracker } from "@/components/GoalTracker";
+import { ReportExport } from "@/components/ReportExport";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -94,6 +95,11 @@ const Insights = () => {
             {/* Statistics Dashboard */}
             <section>
               <StatisticsDashboard />
+            </section>
+
+            {/* Export Report */}
+            <section>
+              <ReportExport />
             </section>
 
             {/* Reflection Prompt */}
