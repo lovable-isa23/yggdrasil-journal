@@ -9,7 +9,10 @@ import { TimelineVisualization } from "@/components/TimelineVisualization";
 import { SentimentTracking } from "@/components/SentimentTracking";
 import { GoalTracker } from "@/components/GoalTracker";
 import { ReportExport } from "@/components/ReportExport";
+import { DataExport } from "@/components/DataExport";
+import { CorrelationCharts } from "@/components/CorrelationCharts";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { LogOut, BookOpen } from "lucide-react";
@@ -97,11 +100,6 @@ const Insights = () => {
               <StatisticsDashboard />
             </section>
 
-            {/* Export Report */}
-            <section>
-              <ReportExport />
-            </section>
-
             {/* Reflection Prompt */}
             {recentEntries.length > 0 && (
               <section>
@@ -114,6 +112,11 @@ const Insights = () => {
               <MoodTracker />
             </section>
 
+            {/* Correlation Charts */}
+            <section>
+              <CorrelationCharts />
+            </section>
+
             {/* Timeline Visualization */}
             <section>
               <TimelineVisualization />
@@ -122,6 +125,11 @@ const Insights = () => {
             {/* Sentiment Tracking */}
             <section>
               <SentimentTracking />
+            </section>
+
+            {/* Knowledge Graph */}
+            <section>
+              <KnowledgeGraph />
             </section>
 
             {/* Pattern Insights */}
@@ -134,9 +142,26 @@ const Insights = () => {
               <GoalTracker />
             </section>
 
-            {/* Knowledge Graph */}
+            {/* Export Options */}
             <section>
-              <KnowledgeGraph />
+              <Card>
+                <CardHeader>
+                  <CardTitle>Export Your Data</CardTitle>
+                  <CardDescription>
+                    Download your journal entries and insights
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <h3 className="text-sm font-semibold mb-2">Export All Entries</h3>
+                    <DataExport />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold mb-2">Export Insights Report</h3>
+                    <ReportExport />
+                  </div>
+                </CardContent>
+              </Card>
             </section>
           </div>
         </main>

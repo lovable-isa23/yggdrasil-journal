@@ -291,12 +291,7 @@ export const PatternInsights = () => {
       <Sheet open={selectedItem !== null} onOpenChange={(open) => !open && setSelectedItem(null)}>
         <SheetContent className="overflow-y-auto">
           <SheetHeader>
-            <div className="flex items-center justify-between">
-              <SheetTitle>{selectedItem}</SheetTitle>
-              <Button variant="ghost" size="icon" onClick={() => setSelectedItem(null)}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+            <SheetTitle>{selectedItem}</SheetTitle>
             <SheetDescription>
               Journal entries mentioning this item
             </SheetDescription>

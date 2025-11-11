@@ -5,9 +5,11 @@ import { Button } from "./ui/button";
 import { Calendar } from "./ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Badge } from "./ui/badge";
-import { Loader2, Calendar as CalendarIcon, TrendingUp } from "lucide-react";
+import { Loader2, Calendar as CalendarIcon, TrendingUp, Download } from "lucide-react";
 import { format, subMonths } from "date-fns";
 import { cn } from "@/lib/utils";
+import jsPDF from "jspdf";
+import { useToast } from "@/hooks/use-toast";
 
 interface TimelineData {
   date: string;
@@ -24,6 +26,7 @@ export const TimelineVisualization = () => {
     from: subMonths(new Date(), 3),
     to: new Date(),
   });
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchTimelineData();
@@ -94,6 +97,135 @@ export const TimelineVisualization = () => {
       .slice(0, 5);
   };
 
+  const exportTimelinePDF = () => {
+    if (timelineData.length === 0) {
+      toast({
+        title: "No data to export",
+        description: "Select a date range with entries",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const pdf = new jsPDF();
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 20;
+    let yPosition = margin;
+
+    // Title
+    pdf.setFontSize(20);
+    pdf.setFont("helvetica", "bold");
+    pdf.text("Timeline Visualization", margin, yPosition);
+    yPosition += 10;
+
+    pdf.setFontSize(10);
+    pdf.setFont("helvetica", "normal");
+    pdf.text(
+      `${format(dateRange.from, "MMM d, yyyy")} - ${format(dateRange.to, "MMM d, yyyy")}`,
+      margin,
+      yPosition
+    );
+    yPosition += 15;
+
+    // Top Emotions
+    const topEmotions = getTopEmotions(timelineData);
+    if (topEmotions.length > 0) {
+      pdf.setFontSize(14);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("Top Emotions", margin, yPosition);
+      yPosition += 8;
+
+      pdf.setFontSize(10);
+      pdf.setFont("helvetica", "normal");
+      topEmotions.forEach(([emotion, intensity]) => {
+        pdf.text(`• ${emotion} (${Math.round(intensity)})`, margin + 5, yPosition);
+        yPosition += 6;
+      });
+      yPosition += 10;
+    }
+
+    // Top Themes
+    const topThemes = getTopThemes(timelineData);
+    if (topThemes.length > 0) {
+      pdf.setFontSize(14);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("Top Themes", margin, yPosition);
+      yPosition += 8;
+
+      pdf.setFontSize(10);
+      pdf.setFont("helvetica", "normal");
+      topThemes.forEach(([theme, count]) => {
+        pdf.text(`• ${theme} (${count} entries)`, margin + 5, yPosition);
+        yPosition += 6;
+      });
+      yPosition += 10;
+    }
+
+    // Timeline entries
+    pdf.setFontSize(14);
+    pdf.setFont("helvetica", "bold");
+    pdf.text("Entry Timeline", margin, yPosition);
+    yPosition += 8;
+
+    timelineData.forEach((item) => {
+      if (yPosition > pageHeight - margin * 2) {
+        pdf.addPage();
+        yPosition = margin;
+      }
+
+      pdf.setFontSize(12);
+      pdf.setFont("helvetica", "bold");
+      pdf.text(format(new Date(item.date), "MMMM d, yyyy"), margin, yPosition);
+      yPosition += 7;
+
+      if (item.themes.length > 0) {
+        pdf.setFontSize(10);
+        pdf.setFont("helvetica", "normal");
+        const themesText = pdf.splitTextToSize(
+          `Themes: ${item.themes.join(", ")}`,
+          pageWidth - margin * 2
+        );
+        themesText.forEach((line: string) => {
+          if (yPosition > pageHeight - margin * 2) {
+            pdf.addPage();
+            yPosition = margin;
+          }
+          pdf.text(line, margin + 5, yPosition);
+          yPosition += 5;
+        });
+      }
+
+      if (item.emotions.length > 0) {
+        const emotionsText = item.emotions
+          .map((e) => `${e.emotion} (${(e.intensity * 100).toFixed(0)}%)`)
+          .join(", ");
+        const emotionLines = pdf.splitTextToSize(
+          `Emotions: ${emotionsText}`,
+          pageWidth - margin * 2
+        );
+        emotionLines.forEach((line: string) => {
+          if (yPosition > pageHeight - margin * 2) {
+            pdf.addPage();
+            yPosition = margin;
+          }
+          pdf.text(line, margin + 5, yPosition);
+          yPosition += 5;
+        });
+      }
+
+      yPosition += 8;
+    });
+
+    pdf.save(
+      `timeline-${format(dateRange.from, "yyyy-MM-dd")}-to-${format(dateRange.to, "yyyy-MM-dd")}.pdf`
+    );
+    toast({
+      title: "Export successful",
+      description: "Timeline exported as PDF",
+    });
+  };
+
   if (loading) {
     return (
       <Card>
@@ -121,6 +253,10 @@ export const TimelineVisualization = () => {
             </CardDescription>
           </div>
           <div className="flex gap-2">
+            <Button onClick={exportTimelinePDF} variant="outline" size="sm" className="gap-2">
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className="gap-2">
