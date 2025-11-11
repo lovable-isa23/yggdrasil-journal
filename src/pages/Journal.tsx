@@ -3,6 +3,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { JournalEditor } from "@/components/JournalEditor";
 import { JournalEntryList } from "@/components/JournalEntryList";
 import { DataExport } from "@/components/DataExport";
+import { DataImport } from "@/components/DataImport";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -84,7 +85,10 @@ const Journal = () => {
             <section>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold">Your Entries</h2>
-                <DataExport />
+                <div className="flex flex-wrap gap-3">
+                  <DataImport onImportComplete={handleEntryCreated} />
+                  <DataExport />
+                </div>
               </div>
               <JournalEntryList refreshTrigger={refreshTrigger} />
             </section>
