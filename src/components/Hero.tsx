@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
 import yggdrasilHeroBg from "@/assets/yggdrasil-hero-bg.png";
+import { FloatingParticles } from "@/components/FloatingParticles";
 
 export const Hero = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -22,6 +23,7 @@ export const Hero = () => {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center px-6 py-20 overflow-hidden bg-[#FEF3E6]">
+      <FloatingParticles />
 
       <div className="container mx-auto max-w-6xl relative z-10">
         <div className="text-center space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
@@ -36,7 +38,7 @@ export const Hero = () => {
 
           {/* Heading */}
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight animate-in fade-in zoom-in duration-1000 delay-300">
-            <span className="bg-gradient-to-br from-earth-brown via-earth-teal via-40% via-primary via-60% to-earth-sage bg-clip-text text-transparent animate-pulse-slow inline-block hover:scale-105 transition-transform duration-500">
+            <span className="bg-gradient-to-r from-earth-brown via-earth-teal via-primary to-earth-sage bg-clip-text text-transparent inline-block hover:scale-105 transition-transform duration-500 bg-[length:200%_auto] animate-gradient">
               Cultivate Self-Awareness
             </span>
           </h1>

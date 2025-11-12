@@ -1,4 +1,6 @@
 import { useIntersectionObserver } from "@/hooks/use-intersection-observer";
+import { useEffect, useState } from "react";
+import yggdrasilHeroBg from "@/assets/yggdrasil-hero-bg.png";
 
 const JourneyCard = ({ step, index }: { step: any; index: number }) => {
   const { elementRef, isVisible } = useIntersectionObserver();
@@ -31,6 +33,16 @@ const JourneyCard = ({ step, index }: { step: any; index: number }) => {
 };
 
 export const UserJourney = () => {
+  const [scrollY, setScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const steps = [
     {
       number: "01",
@@ -53,8 +65,22 @@ export const UserJourney = () => {
   ];
 
   return (
-    <section className="py-24 px-6 bg-gradient-to-b from-background to-muted/30">
-      <div className="container mx-auto max-w-6xl">
+    <section className="py-24 px-6 relative overflow-hidden">
+      {/* Parallax Background */}
+      <div 
+        className="absolute inset-0 opacity-20"
+        style={{
+          backgroundImage: `url(${yggdrasilHeroBg})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          transform: `translateY(${scrollY * 0.5}px)`,
+        }}
+      />
+      
+      {/* Gradient Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/70 to-muted/80" />
+
+      <div className="container mx-auto max-w-6xl relative z-10">
         <div className="text-center mb-16 space-y-4">
           <h2 className="text-4xl md:text-5xl font-bold">
             <span className="bg-gradient-to-r from-earth-brown to-primary bg-clip-text text-transparent">
