@@ -16,13 +16,21 @@ export const WaitlistCTA = () => {
           <p className="text-xl md:text-2xl opacity-90 max-w-2xl mx-auto">
             Join our waitlist for early access to Yggdrasil and discover a new dimension of self-awareness through journaling.
           </p>
-          <div className="pt-6">
+          <div className="pt-6 flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button 
               size="lg" 
               className="text-lg px-10 py-6 bg-background text-foreground hover:bg-background/90 shadow-2xl hover:scale-105 transition-all duration-300"
+              onClick={() => window.open('https://book.stripe.com/28E14n0B2bDJ6wE3ojfYY00', '_blank')}
+            >
+              Save Your Seat - $29
+            </Button>
+            <Button 
+              size="lg" 
+              variant="outline"
+              className="text-lg px-10 py-6 bg-background/10 text-primary-foreground border-2 border-background/20 hover:bg-background/20 shadow-xl hover:scale-105 transition-all duration-300"
               asChild
             >
-              <Link to="/waitlist">Join the Waitlist</Link>
+              <Link to="/waitlist">Join Free Waitlist</Link>
             </Button>
           </div>
           <p className="text-sm opacity-75 pt-4">
