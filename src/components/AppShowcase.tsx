@@ -1,4 +1,5 @@
 import { useIntersectionObserver } from "@/hooks/use-intersection-observer";
+import { useState } from "react";
 import {
   Carousel,
   CarouselContent,
@@ -6,6 +7,11 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import {
+  Dialog,
+  DialogContent,
+} from "@/components/ui/dialog";
+import Autoplay from "embla-carousel-autoplay";
 import insightsImage1 from "@/assets/screenshot-insights-1.png";
 import insightsImage2 from "@/assets/screenshot-insights-2.png";
 import analyticsImage from "@/assets/screenshot-analytics.png";
@@ -60,8 +66,28 @@ const screenshots = [
 
 export const AppShowcase = () => {
   const { elementRef, isVisible } = useIntersectionObserver();
+  const [selectedImage, setSelectedImage] = useState<{ src: string; alt: string; title: string } | null>(null);
 
   return (
+    <>
+      <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
+        <DialogContent className="max-w-5xl w-full p-0 border-0">
+          {selectedImage && (
+            <div className="relative">
+              <img
+                src={selectedImage.src}
+                alt={selectedImage.alt}
+                className="w-full h-auto rounded-lg"
+              />
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background/90 to-transparent p-6">
+                <h3 className="text-xl font-semibold text-foreground">
+                  {selectedImage.title}
+                </h3>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     <section 
       ref={elementRef}
       className="py-24 px-6 bg-gradient-to-b from-muted/30 to-background"
@@ -92,13 +118,23 @@ export const AppShowcase = () => {
               align: "start",
               loop: true,
             }}
+            plugins={[
+              Autoplay({
+                delay: 4000,
+                stopOnInteraction: true,
+                stopOnMouseEnter: true,
+              }),
+            ]}
             className="w-full"
           >
             <CarouselContent>
               {screenshots.map((screenshot, index) => (
                 <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
                   <div className="p-2">
-                    <div className="group relative overflow-hidden rounded-2xl border border-border bg-card shadow-soft hover:shadow-medium transition-all duration-300">
+                    <div 
+                      className="group relative overflow-hidden rounded-2xl border border-border bg-card shadow-soft hover:shadow-medium transition-all duration-300 cursor-pointer"
+                      onClick={() => setSelectedImage(screenshot)}
+                    >
                       <div className="aspect-[4/3] overflow-hidden">
                         <img
                           src={screenshot.src}
@@ -122,5 +158,6 @@ export const AppShowcase = () => {
         </div>
       </div>
     </section>
+    </>
   );
 };

@@ -64,13 +64,21 @@ export const Hero = () => {
                 <Button 
                   size="lg" 
                   className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-primary to-earth-brown hover:scale-105"
-                  asChild
+                  onClick={() => window.open('https://book.stripe.com/28E14n0B2bDJ6wE3ojfYY00', '_blank')}
                 >
-                  <Link to="/waitlist">Join the Waitlist</Link>
+                  Join Beta now!
                 </Button>
                 <Button 
                   size="lg" 
                   className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all duration-300 bg-earth-brown text-white hover:scale-105 hover:bg-earth-brown/90"
+                  asChild
+                >
+                  <Link to="/waitlist">Join Free Waitlist</Link>
+                </Button>
+                <Button 
+                  size="lg" 
+                  variant="outline"
+                  className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                   asChild
                 >
                   <Link to="/login">Sign In</Link>
