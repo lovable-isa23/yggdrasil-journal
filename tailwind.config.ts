@@ -57,6 +57,9 @@ export default {
           teal: "hsl(var(--cosmic-teal))",
           cream: "hsl(var(--soft-cream))",
         },
+        testimonials: {
+          bg: "hsl(var(--testimonials-bg))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

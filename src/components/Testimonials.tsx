@@ -4,25 +4,25 @@ import { Star } from "lucide-react";
 
 const testimonials = [
   {
-    name: "Sarah Johnson",
+    name: "Sarah",
     role: "Content Creator",
     content: "This is amazing. I really like it. The timeline is sick!",
     rating: 5,
-    avatar: "SJ"
+    avatar: "S"
   },
   {
-    name: "Michael Chen",
+    name: "Michael",
     role: "Software Developer",
     content: "The knowledge graph visualization completely changed how I reflect on my thoughts. It's like seeing the connections in my mind come to life.",
     rating: 5,
-    avatar: "MC"
+    avatar: "M"
   },
   {
-    name: "Emily Rodriguez",
+    name: "Emily",
     role: "Psychology Student",
     content: "Finally, a journaling app that goes beyond simple note-taking. The AI insights are incredibly perceptive and helpful for my personal growth journey.",
     rating: 5,
-    avatar: "ER"
+    avatar: "E"
   }
 ];
 
@@ -32,7 +32,7 @@ export const Testimonials = () => {
   return (
     <section 
       ref={elementRef}
-      className="py-24 px-6 bg-gradient-to-b from-background to-muted/30"
+      className="py-24 px-6 bg-testimonials-bg"
     >
       <div className="container mx-auto max-w-6xl">
         <div 

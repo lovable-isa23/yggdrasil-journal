@@ -3,10 +3,11 @@ import * as d3 from "d3";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { Loader2, Calendar, FileText } from "lucide-react";
+import { Loader2, Calendar, FileText, Maximize2 } from "lucide-react";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
+import { Button } from "./ui/button";
 
 interface GraphNode extends d3.SimulationNodeDatum {
   id: string;
@@ -40,6 +41,7 @@ export const KnowledgeGraph = () => {
   const [relationships, setRelationships] = useState<any[]>([]);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const zoomRef = useRef<any>(null);
 
   useEffect(() => {
     fetchGraphData();
@@ -198,6 +200,33 @@ export const KnowledgeGraph = () => {
     setGraphData({ nodes, links });
   };
 
+  const handleShowAll = () => {
+    if (!svgRef.current || !zoomRef.current) return;
+    
+    const svg = d3.select(svgRef.current);
+    const bounds = svg.select("g").node() as SVGGElement;
+    if (!bounds) return;
+    
+    const bbox = bounds.getBBox();
+    const width = 800;
+    const height = 600;
+    const padding = 50;
+    
+    const scale = Math.min(
+      (width - padding * 2) / bbox.width,
+      (height - padding * 2) / bbox.height,
+      1
+    );
+    
+    const translateX = (width - bbox.width * scale) / 2 - bbox.x * scale;
+    const translateY = (height - bbox.height * scale) / 2 - bbox.y * scale;
+    
+    svg.transition().duration(750).call(
+      zoomRef.current.transform,
+      d3.zoomIdentity.translate(translateX, translateY).scale(scale)
+    );
+  };
+
   const renderGraph = () => {
     if (!svgRef.current || graphData.nodes.length === 0) return;
 
@@ -213,12 +242,15 @@ export const KnowledgeGraph = () => {
     const g = svg.append("g");
     
     const zoom = d3.zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.5, 5])
+      .scaleExtent([0.1, 5])
       .on("zoom", (event) => {
         g.attr("transform", event.transform);
+        // Scale text inversely to maintain constant visual size
+        g.selectAll("text").attr("font-size", `${14 / event.transform.k}px`);
       });
 
     svg.call(zoom);
+    zoomRef.current = zoom;
 
     const simulation = d3
       .forceSimulation(graphData.nodes)
@@ -359,8 +391,21 @@ export const KnowledgeGraph = () => {
               <TabsTrigger value="keywords">Keywords</TabsTrigger>
             </TabsList>
             <TabsContent value={activeTab}>
-              <div className="relative w-full flex justify-center bg-background/50 rounded-lg border p-4">
-                <svg ref={svgRef} className="max-w-full" />
+              <div className="relative w-full bg-background/50 rounded-lg border p-4">
+                <div className="flex justify-end mb-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleShowAll}
+                    className="gap-2"
+                  >
+                    <Maximize2 className="h-4 w-4" />
+                    Show All
+                  </Button>
+                </div>
+                <div className="flex justify-center">
+                  <svg ref={svgRef} className="max-w-full" />
+                </div>
               </div>
             </TabsContent>
           </Tabs>

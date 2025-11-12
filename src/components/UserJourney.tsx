@@ -57,7 +57,7 @@ export const UserJourney = () => {
     <section className="py-24 px-6 relative overflow-hidden">
       {/* Static Background */}
       <div 
-        className="absolute inset-0 opacity-60"
+        className="absolute inset-0 opacity-80"
         style={{
           backgroundImage: `url(${yggdrasilHeroBg})`,
           backgroundSize: 'cover',
