@@ -2,6 +2,7 @@ import { Hero } from "@/components/Hero";
 import { Features } from "@/components/Features";
 import { UserJourney } from "@/components/UserJourney";
 import { AppShowcase } from "@/components/AppShowcase";
+import { Testimonials } from "@/components/Testimonials";
 import { WaitlistCTA } from "@/components/WaitlistCTA";
 
 const Index = () => {
@@ -11,6 +12,7 @@ const Index = () => {
       <UserJourney />
       <Features />
       <AppShowcase />
+      <Testimonials />
       <WaitlistCTA />
     </main>
   );
