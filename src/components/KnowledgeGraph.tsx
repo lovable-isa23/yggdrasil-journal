@@ -3,12 +3,16 @@ import * as d3 from "d3";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { Loader2, Calendar, FileText, Maximize2 } from "lucide-react";
+import { Loader2, Calendar, FileText, Maximize2, Download, Image as ImageIcon, FileDown } from "lucide-react";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
 import { Button } from "./ui/button";
 import { Slider } from "./ui/slider";
+import { toPng } from "html-to-image";
+import jsPDF from "jspdf";
+import { useToast } from "@/hooks/use-toast";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 
 interface GraphNode extends d3.SimulationNodeDatum {
   id: string;
@@ -44,6 +48,8 @@ export const KnowledgeGraph = () => {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const zoomRef = useRef<any>(null);
   const [minStrength, setMinStrength] = useState(1);
+  const graphContainerRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchGraphData();
@@ -242,6 +248,68 @@ export const KnowledgeGraph = () => {
     );
   };
 
+  const exportAsPNG = async () => {
+    if (!graphContainerRef.current) return;
+    
+    try {
+      const dataUrl = await toPng(graphContainerRef.current, {
+        quality: 1,
+        pixelRatio: 2,
+        backgroundColor: '#ffffff',
+      });
+      
+      const link = document.createElement('a');
+      link.download = `knowledge-graph-${activeTab}-${new Date().toISOString().split('T')[0]}.png`;
+      link.href = dataUrl;
+      link.click();
+      
+      toast({
+        title: "Export successful",
+        description: "Graph exported as PNG",
+      });
+    } catch (error) {
+      console.error("Error exporting PNG:", error);
+      toast({
+        title: "Export failed",
+        description: "Failed to export graph as PNG",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const exportAsPDF = async () => {
+    if (!graphContainerRef.current) return;
+    
+    try {
+      const dataUrl = await toPng(graphContainerRef.current, {
+        quality: 1,
+        pixelRatio: 2,
+        backgroundColor: '#ffffff',
+      });
+      
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'px',
+        format: [800, 600],
+      });
+      
+      pdf.addImage(dataUrl, 'PNG', 0, 0, 800, 600);
+      pdf.save(`knowledge-graph-${activeTab}-${new Date().toISOString().split('T')[0]}.pdf`);
+      
+      toast({
+        title: "Export successful",
+        description: "Graph exported as PDF",
+      });
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+      toast({
+        title: "Export failed",
+        description: "Failed to export graph as PDF",
+        variant: "destructive",
+      });
+    }
+  };
+
   const renderGraph = () => {
     if (!svgRef.current || graphData.nodes.length === 0) return;
 
@@ -407,8 +475,8 @@ export const KnowledgeGraph = () => {
             </TabsList>
             <TabsContent value={activeTab}>
               <div className="relative w-full bg-background/50 rounded-lg border p-4">
-                <div className="flex justify-between items-center mb-4 gap-4">
-                  <div className="flex-1">
+                <div className="flex justify-between items-center mb-4 gap-4 flex-wrap">
+                  <div className="flex-1 min-w-[200px]">
                     <label className="text-sm font-medium mb-2 block">
                       Filter by Connection Strength: {minStrength}
                     </label>
@@ -421,17 +489,37 @@ export const KnowledgeGraph = () => {
                       className="w-full max-w-xs"
                     />
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleShowAll}
-                    className="gap-2"
-                  >
-                    <Maximize2 className="h-4 w-4" />
-                    Show All
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleShowAll}
+                      className="gap-2"
+                    >
+                      <Maximize2 className="h-4 w-4" />
+                      Show All
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="gap-2">
+                          <Download className="h-4 w-4" />
+                          Export
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={exportAsPNG} className="gap-2">
+                          <ImageIcon className="h-4 w-4" />
+                          Export as PNG
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={exportAsPDF} className="gap-2">
+                          <FileDown className="h-4 w-4" />
+                          Export as PDF
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
-                <div className="flex justify-center">
+                <div className="flex justify-center" ref={graphContainerRef}>
                   <svg ref={svgRef} className="max-w-full" />
                 </div>
               </div>

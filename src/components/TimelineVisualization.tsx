@@ -86,13 +86,18 @@ export const TimelineVisualization = () => {
   };
 
   const getTopEmotions = (data: TimelineData[]) => {
-    const emotionMap = new Map<string, number>();
+    const emotionMap = new Map<string, { count: number; totalIntensity: number }>();
     data.forEach(item => {
       item.emotions.forEach(({ emotion, intensity }) => {
-        emotionMap.set(emotion, (emotionMap.get(emotion) || 0) + intensity);
+        const current = emotionMap.get(emotion) || { count: 0, totalIntensity: 0 };
+        emotionMap.set(emotion, {
+          count: current.count + 1,
+          totalIntensity: current.totalIntensity + intensity
+        });
       });
     });
     return Array.from(emotionMap.entries())
+      .map(([emotion, data]) => [emotion, data.count, data.totalIntensity] as [string, number, number])
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5);
   };
@@ -178,8 +183,8 @@ export const TimelineVisualization = () => {
 
       pdf.setFontSize(10);
       pdf.setFont("helvetica", "normal");
-      topEmotions.forEach(([emotion, intensity]) => {
-        pdf.text(`• ${emotion} (${Math.round(intensity)})`, margin + 5, yPosition);
+      topEmotions.forEach(([emotion, count]) => {
+        pdf.text(`• ${emotion} (${count} entries)`, margin + 5, yPosition);
         yPosition += 6;
       });
       yPosition += 10;
@@ -347,14 +352,14 @@ export const TimelineVisualization = () => {
             <div>
               <h4 className="text-sm font-semibold mb-3">Top Emotions in Period</h4>
               <div className="flex flex-wrap gap-2">
-                {topEmotions.map(([emotion, intensity]) => (
+                {topEmotions.map(([emotion, count]) => (
                   <Badge 
                     key={emotion} 
                     variant="secondary" 
                     className="text-sm cursor-pointer hover:bg-secondary/80 transition-colors"
                     onClick={() => handleTagClick(emotion, 'emotion')}
                   >
-                    {emotion} ({Math.round(intensity)})
+                    {emotion} ({count} {count === 1 ? 'entry' : 'entries'})
                   </Badge>
                 ))}
               </div>
