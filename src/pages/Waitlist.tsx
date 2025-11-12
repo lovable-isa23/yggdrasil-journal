@@ -68,7 +68,7 @@ const Waitlist = () => {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 bg-card p-8 rounded-2xl border border-border shadow-medium">
           <div className="space-y-2">
-            <Label htmlFor="name">Name (optional)</Label>
+            <Label htmlFor="name">Name</Label>
             <Input
               id="name"
               type="text"

@@ -38,7 +38,7 @@ export const Hero = () => {
 
           {/* Heading */}
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight animate-in fade-in zoom-in duration-1000 delay-300">
-            <span className="bg-gradient-to-r from-earth-brown via-earth-teal via-primary to-earth-sage bg-clip-text text-transparent inline-block hover:scale-105 transition-transform duration-500 bg-[length:200%_auto] animate-gradient">
+            <span className="bg-gradient-to-r from-earth-brown via-earth-teal via-primary to-earth-sage bg-clip-text text-transparent inline-block hover:scale-105 transition-transform duration-500">
               Cultivate Self-Awareness
             </span>
           </h1>

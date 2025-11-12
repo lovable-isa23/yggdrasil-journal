@@ -68,12 +68,13 @@ export const UserJourney = () => {
     <section className="py-24 px-6 relative overflow-hidden">
       {/* Parallax Background */}
       <div 
-        className="absolute inset-0 opacity-20"
+        className="absolute inset-0 opacity-40"
         style={{
           backgroundImage: `url(${yggdrasilHeroBg})`,
           backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          transform: `translateY(${scrollY * 0.5}px)`,
+          backgroundPosition: 'center center',
+          backgroundAttachment: 'fixed',
+          transform: `translateY(${scrollY * 0.3}px)`,
         }}
       />
       
