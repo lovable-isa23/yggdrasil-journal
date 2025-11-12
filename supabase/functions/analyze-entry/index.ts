@@ -242,13 +242,25 @@ Respond with ONLY a valid JSON object in this exact format:
     // Parse the JSON response
     let analysis;
     try {
-      // Remove markdown code blocks if present
-      const cleanContent = aiContent.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      // Remove markdown code blocks if present - handle various formats
+      let cleanContent = aiContent.trim();
+      
+      // Remove opening markdown blocks
+      cleanContent = cleanContent.replace(/^```json\s*/i, '');
+      cleanContent = cleanContent.replace(/^```\s*/i, '');
+      
+      // Remove closing markdown blocks
+      cleanContent = cleanContent.replace(/\s*```\s*$/i, '');
+      
+      // Trim whitespace
+      cleanContent = cleanContent.trim();
+      
       analysis = JSON.parse(cleanContent);
       console.log('Parsed analysis:', analysis);
     } catch (parseError) {
       console.error('Failed to parse AI response:', aiContent);
-      throw new Error('Failed to parse AI analysis');
+      console.error('Parse error details:', parseError);
+      throw new Error('Failed to parse AI analysis: ' + (parseError instanceof Error ? parseError.message : 'Unknown parse error'));
     }
 
     // Store insights in database (supabase client already initialized above)
