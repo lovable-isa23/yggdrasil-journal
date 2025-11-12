@@ -239,26 +239,35 @@ Respond with ONLY a valid JSON object in this exact format:
       throw new Error('No content in AI response');
     }
 
-    // Parse the JSON response
-    let analysis;
+    // Parse the JSON response with robust sanitization
+    let analysis: any;
     try {
-      // Remove markdown code blocks if present - handle various formats
       let cleanContent = aiContent.trim();
-      
-      // Remove opening markdown blocks
+
+      // 1) Strip common markdown code fences
       cleanContent = cleanContent.replace(/^```json\s*/i, '');
       cleanContent = cleanContent.replace(/^```\s*/i, '');
-      
-      // Remove closing markdown blocks
       cleanContent = cleanContent.replace(/\s*```\s*$/i, '');
-      
-      // Trim whitespace
-      cleanContent = cleanContent.trim();
-      
+
+      // 2) Extract JSON object between first '{' and last '}'
+      const start = cleanContent.indexOf('{');
+      const end = cleanContent.lastIndexOf('}');
+      if (start !== -1 && end !== -1 && end > start) {
+        cleanContent = cleanContent.slice(start, end + 1);
+      }
+
+      // 3) Normalize smart quotes
+      cleanContent = cleanContent
+        .replace(/[\u2018\u2019]/g, "'")
+        .replace(/[\u201C\u201D]/g, '"');
+
+      // 4) Remove trailing commas before closing } or ]
+      cleanContent = cleanContent.replace(/,(\s*[}\]])/g, '$1');
+
       analysis = JSON.parse(cleanContent);
-      console.log('Parsed analysis:', analysis);
+      console.log('Parsed analysis (sanitized):', analysis);
     } catch (parseError) {
-      console.error('Failed to parse AI response:', aiContent);
+      console.error('Failed to parse AI response raw:', aiContent);
       console.error('Parse error details:', parseError);
       throw new Error('Failed to parse AI analysis: ' + (parseError instanceof Error ? parseError.message : 'Unknown parse error'));
     }
