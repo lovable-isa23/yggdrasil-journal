@@ -273,7 +273,7 @@ Respond with ONLY a valid JSON object in this exact format:
 
     const { error: insertError } = await supabase
       .from('entry_insights')
-      .upsert(insightData);
+      .upsert(insightData, { onConflict: 'entry_id' });
 
     if (insertError) {
       console.error('Database insert error:', insertError);
