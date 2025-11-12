@@ -8,6 +8,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
 import { Button } from "./ui/button";
+import { Slider } from "./ui/slider";
 
 interface GraphNode extends d3.SimulationNodeDatum {
   id: string;
@@ -42,6 +43,7 @@ export const KnowledgeGraph = () => {
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const zoomRef = useRef<any>(null);
+  const [minStrength, setMinStrength] = useState(1);
 
   useEffect(() => {
     fetchGraphData();
@@ -51,7 +53,7 @@ export const KnowledgeGraph = () => {
     if (allInsights.length > 0) {
       buildGraph(allInsights);
     }
-  }, [activeTab, allInsights]);
+  }, [activeTab, allInsights, minStrength]);
 
   useEffect(() => {
     if (graphData.nodes.length > 0) {
@@ -187,17 +189,30 @@ export const KnowledgeGraph = () => {
       const [sourceId, targetId] = key.split("||");
       const sourceNode = nodeMap.get(sourceId);
       const targetNode = nodeMap.get(targetId);
+      const strength = connData.strength || connData.entryIds.size;
       
-      if (sourceNode && targetNode) {
+      // Filter by minimum strength
+      if (sourceNode && targetNode && strength >= minStrength) {
         links.push({
           source: sourceNode,
           target: targetNode,
-          value: connData.strength || connData.entryIds.size,
+          value: strength,
         });
       }
     });
 
-    setGraphData({ nodes, links });
+    // Filter out nodes with no connections
+    const connectedNodeIds = new Set<string>();
+    links.forEach(link => {
+      const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
+      const targetId = typeof link.target === 'object' ? link.target.id : link.target;
+      connectedNodeIds.add(sourceId);
+      connectedNodeIds.add(targetId);
+    });
+    
+    const filteredNodes = nodes.filter(node => connectedNodeIds.has(node.id));
+
+    setGraphData({ nodes: filteredNodes, links });
   };
 
   const handleShowAll = () => {
@@ -308,7 +323,7 @@ export const KnowledgeGraph = () => {
       .append("text")
       .text((d) => d.name)
       .attr("text-anchor", "middle")
-      .attr("dy", (d) => d.value + 18)
+      .attr("dy", (d) => -(d.value + 8))
       .attr("font-size", "12px")
       .attr("font-weight", "500")
       .attr("fill", "hsl(var(--foreground))")
@@ -392,7 +407,20 @@ export const KnowledgeGraph = () => {
             </TabsList>
             <TabsContent value={activeTab}>
               <div className="relative w-full bg-background/50 rounded-lg border p-4">
-                <div className="flex justify-end mb-2">
+                <div className="flex justify-between items-center mb-4 gap-4">
+                  <div className="flex-1">
+                    <label className="text-sm font-medium mb-2 block">
+                      Filter by Connection Strength: {minStrength}
+                    </label>
+                    <Slider
+                      value={[minStrength]}
+                      onValueChange={(value) => setMinStrength(value[0])}
+                      min={1}
+                      max={10}
+                      step={1}
+                      className="w-full max-w-xs"
+                    />
+                  </div>
                   <Button
                     variant="outline"
                     size="sm"
@@ -413,7 +441,7 @@ export const KnowledgeGraph = () => {
       </Card>
 
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <SheetContent className="w-[400px] sm:w-[540px]">
+        <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto">
           {selectedNode && (
             <>
               <SheetHeader>
@@ -430,8 +458,9 @@ export const KnowledgeGraph = () => {
                 </SheetDescription>
               </SheetHeader>
 
-              <div className="mt-6 space-y-6">
-                <div>
+              <ScrollArea className="h-[calc(100vh-120px)] pr-4">
+                <div className="mt-6 space-y-6">
+                  <div>
                   <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                     Connected {activeTab}
                   </h3>
@@ -470,40 +499,39 @@ export const KnowledgeGraph = () => {
                     <FileText className="h-5 w-5" />
                     Related Journal Entries
                   </h3>
-                  <ScrollArea className="h-[calc(100vh-450px)]">
-                    {(() => {
-                      const relatedEntries = allEntries.filter(e => selectedNode.entryIds.includes(e.id));
-                      return relatedEntries.length > 0 ? (
-                        <div className="space-y-4">
-                          {relatedEntries.map((entry) => (
-                          <Card key={entry.id} className="p-4 hover:bg-accent/50 transition-colors">
-                            <div className="space-y-2">
-                              <h4 className="font-semibold text-base">{entry.title}</h4>
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Calendar className="h-4 w-4" />
-                                {new Date(entry.entry_date).toLocaleDateString('en-US', {
-                                  weekday: 'short',
-                                  year: 'numeric',
-                                  month: 'short',
-                                  day: 'numeric'
-                                })}
-                              </div>
-                              <p className="text-sm text-muted-foreground line-clamp-3">
-                                {entry.content}
-                              </p>
+                  {(() => {
+                    const relatedEntries = allEntries.filter(e => selectedNode.entryIds.includes(e.id));
+                    return relatedEntries.length > 0 ? (
+                      <div className="space-y-4">
+                        {relatedEntries.map((entry) => (
+                        <Card key={entry.id} className="p-4 hover:bg-accent/50 transition-colors">
+                          <div className="space-y-2">
+                            <h4 className="font-semibold text-base">{entry.title}</h4>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Calendar className="h-4 w-4" />
+                              {new Date(entry.entry_date).toLocaleDateString('en-US', {
+                                weekday: 'short',
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              })}
                             </div>
-                          </Card>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-muted-foreground text-center py-8">
-                          No entries found
-                        </p>
-                      );
-                    })()}
-                  </ScrollArea>
+                            <p className="text-sm text-muted-foreground line-clamp-3">
+                              {entry.content}
+                            </p>
+                          </div>
+                        </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-center py-8">
+                        No entries found
+                      </p>
+                    );
+                  })()}
+                  </div>
                 </div>
-              </div>
+              </ScrollArea>
             </>
           )}
         </SheetContent>

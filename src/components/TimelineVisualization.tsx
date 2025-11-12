@@ -5,11 +5,13 @@ import { Button } from "./ui/button";
 import { Calendar } from "./ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Badge } from "./ui/badge";
-import { Loader2, Calendar as CalendarIcon, TrendingUp, Download } from "lucide-react";
+import { Loader2, Calendar as CalendarIcon, TrendingUp, Download, FileText } from "lucide-react";
 import { format, subMonths } from "date-fns";
 import { cn } from "@/lib/utils";
 import jsPDF from "jspdf";
 import { useToast } from "@/hooks/use-toast";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
+import { ScrollArea } from "./ui/scroll-area";
 
 interface TimelineData {
   date: string;
@@ -28,6 +30,9 @@ export const TimelineVisualization = () => {
     to: new Date(),
   });
   const { toast } = useToast();
+  const [selectedTag, setSelectedTag] = useState<{ tag: string; type: 'theme' | 'emotion' | 'entity' } | null>(null);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [tagEntries, setTagEntries] = useState<any[]>([]);
 
   useEffect(() => {
     fetchTimelineData();
@@ -102,6 +107,34 @@ export const TimelineVisualization = () => {
     return Array.from(themeMap.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5);
+  };
+
+  const handleTagClick = async (tag: string, type: 'theme' | 'emotion' | 'entity') => {
+    setSelectedTag({ tag, type });
+    setIsSheetOpen(true);
+    
+    // Find all entries that contain this tag
+    const relatedEntryIds = timelineData
+      .filter(item => {
+        if (type === 'theme') return item.themes.includes(tag);
+        if (type === 'emotion') return item.emotions.some(e => e.emotion === tag);
+        if (type === 'entity') return item.entities.includes(tag);
+        return false;
+      })
+      .map(item => item.entryId);
+    
+    // Fetch full entry data
+    if (relatedEntryIds.length > 0) {
+      const { data } = await supabase
+        .from("journal_entries")
+        .select("*")
+        .in("id", relatedEntryIds)
+        .order("entry_date", { ascending: false });
+      
+      if (data) {
+        setTagEntries(data);
+      }
+    }
   };
 
   const exportTimelinePDF = () => {
@@ -315,7 +348,12 @@ export const TimelineVisualization = () => {
               <h4 className="text-sm font-semibold mb-3">Top Emotions in Period</h4>
               <div className="flex flex-wrap gap-2">
                 {topEmotions.map(([emotion, intensity]) => (
-                  <Badge key={emotion} variant="secondary" className="text-sm">
+                  <Badge 
+                    key={emotion} 
+                    variant="secondary" 
+                    className="text-sm cursor-pointer hover:bg-secondary/80 transition-colors"
+                    onClick={() => handleTagClick(emotion, 'emotion')}
+                  >
                     {emotion} ({Math.round(intensity)})
                   </Badge>
                 ))}
@@ -327,7 +365,12 @@ export const TimelineVisualization = () => {
               <h4 className="text-sm font-semibold mb-3">Top Themes in Period</h4>
               <div className="flex flex-wrap gap-2">
                 {topThemes.map(([theme, count]) => (
-                  <Badge key={theme} variant="outline" className="text-sm">
+                  <Badge 
+                    key={theme} 
+                    variant="outline" 
+                    className="text-sm cursor-pointer hover:bg-accent transition-colors"
+                    onClick={() => handleTagClick(theme, 'theme')}
+                  >
                     {theme} ({count})
                   </Badge>
                 ))}
@@ -350,7 +393,12 @@ export const TimelineVisualization = () => {
                       {item.themes.length > 0 && (
                         <div className="flex flex-wrap gap-1">
                           {item.themes.slice(0, 3).map((theme, i) => (
-                            <Badge key={i} variant="outline" className="text-xs">
+                            <Badge 
+                              key={i} 
+                              variant="outline" 
+                              className="text-xs cursor-pointer hover:bg-accent transition-colors"
+                              onClick={() => handleTagClick(theme, 'theme')}
+                            >
                               {theme}
                             </Badge>
                           ))}
@@ -359,7 +407,12 @@ export const TimelineVisualization = () => {
                       {item.emotions.length > 0 && (
                         <div className="flex flex-wrap gap-1">
                           {item.emotions.slice(0, 3).map((emo, i) => (
-                            <Badge key={i} variant="secondary" className="text-xs">
+                            <Badge 
+                              key={i} 
+                              variant="secondary" 
+                              className="text-xs cursor-pointer hover:bg-secondary/80 transition-colors"
+                              onClick={() => handleTagClick(emo.emotion, 'emotion')}
+                            >
                               {emo.emotion}
                             </Badge>
                           ))}
@@ -373,6 +426,66 @@ export const TimelineVisualization = () => {
           </>
         )}
       </CardContent>
+
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto">
+          {selectedTag && (
+            <>
+              <SheetHeader>
+                <SheetTitle className="flex items-center gap-2">
+                  <span className="text-2xl">{selectedTag.tag}</span>
+                </SheetTitle>
+                <SheetDescription>
+                  <Badge variant="secondary" className="mt-2">
+                    {selectedTag.type}
+                  </Badge>
+                  <span className="ml-2 text-muted-foreground">
+                    Appears in {tagEntries.length} {tagEntries.length === 1 ? 'entry' : 'entries'}
+                  </span>
+                </SheetDescription>
+              </SheetHeader>
+
+              <ScrollArea className="h-[calc(100vh-120px)] pr-4">
+                <div className="mt-6 space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      Related Journal Entries
+                    </h3>
+                    {tagEntries.length > 0 ? (
+                      <div className="space-y-4">
+                        {tagEntries.map((entry) => (
+                          <Card key={entry.id} className="p-4 hover:bg-accent/50 transition-colors">
+                            <div className="space-y-2">
+                              <h4 className="font-semibold text-base">{entry.title}</h4>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <CalendarIcon className="h-4 w-4" />
+                                {new Date(entry.entry_date).toLocaleDateString('en-US', {
+                                  weekday: 'short',
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                })}
+                              </div>
+                              <p className="text-sm text-muted-foreground line-clamp-3">
+                                {entry.content}
+                              </p>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-center py-8">
+                        No entries found
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </ScrollArea>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
     </Card>
   );
 };
