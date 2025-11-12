@@ -173,7 +173,7 @@ export const KnowledgeGraph = () => {
       nodes.push({
         id: name,
         name,
-        value: Math.max(count * 20, 30),
+        value: Math.max(count * 8, 15),
         type: typeMap[activeTab],
         color: getColor(),
         entryIds
@@ -308,10 +308,10 @@ export const KnowledgeGraph = () => {
       .append("text")
       .text((d) => d.name)
       .attr("text-anchor", "middle")
-      .attr("dy", "0.3em")
-      .attr("font-size", "14px")
-      .attr("font-weight", "normal")
-      .attr("fill", "black")
+      .attr("dy", (d) => d.value + 18)
+      .attr("font-size", "12px")
+      .attr("font-weight", "500")
+      .attr("fill", "hsl(var(--foreground))")
       .attr("pointer-events", "none");
 
     // Add hover and click effects
@@ -430,43 +430,79 @@ export const KnowledgeGraph = () => {
                 </SheetDescription>
               </SheetHeader>
 
-              <div className="mt-6">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Related Journal Entries
-                </h3>
-                <ScrollArea className="h-[calc(100vh-250px)]">
-                  {(() => {
-                    const relatedEntries = allEntries.filter(e => selectedNode.entryIds.includes(e.id));
-                    return relatedEntries.length > 0 ? (
-                      <div className="space-y-4">
-                        {relatedEntries.map((entry) => (
-                        <Card key={entry.id} className="p-4 hover:bg-accent/50 transition-colors">
-                          <div className="space-y-2">
-                            <h4 className="font-semibold text-base">{entry.title}</h4>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Calendar className="h-4 w-4" />
-                              {new Date(entry.entry_date).toLocaleDateString('en-US', {
-                                weekday: 'short',
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric'
-                              })}
-                            </div>
-                            <p className="text-sm text-muted-foreground line-clamp-3">
-                              {entry.content}
-                            </p>
+              <div className="mt-6 space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    Connected {activeTab}
+                  </h3>
+                  <div className="space-y-2">
+                    {(() => {
+                      const connectedNodes = graphData.links
+                        .filter((link: any) => 
+                          (typeof link.source === 'object' ? link.source.id : link.source) === selectedNode.id ||
+                          (typeof link.target === 'object' ? link.target.id : link.target) === selectedNode.id
+                        )
+                        .map((link: any) => {
+                          const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
+                          const targetId = typeof link.target === 'object' ? link.target.id : link.target;
+                          const connectedId = sourceId === selectedNode.id ? targetId : sourceId;
+                          const connectedNode = graphData.nodes.find(n => n.id === connectedId);
+                          return { node: connectedNode, strength: link.value };
+                        })
+                        .filter(item => item.node);
+
+                      return connectedNodes.length > 0 ? (
+                        connectedNodes.map(({ node, strength }: any) => (
+                          <div key={node.id} className="flex items-center justify-between p-2 rounded-md bg-accent/30">
+                            <span className="font-medium">{node.name}</span>
+                            <Badge variant="outline">Strength: {strength}</Badge>
                           </div>
-                        </Card>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground text-center py-8">
-                        No entries found
-                      </p>
-                    );
-                  })()}
-                </ScrollArea>
+                        ))
+                      ) : (
+                        <p className="text-muted-foreground text-sm">No connections found</p>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Related Journal Entries
+                  </h3>
+                  <ScrollArea className="h-[calc(100vh-450px)]">
+                    {(() => {
+                      const relatedEntries = allEntries.filter(e => selectedNode.entryIds.includes(e.id));
+                      return relatedEntries.length > 0 ? (
+                        <div className="space-y-4">
+                          {relatedEntries.map((entry) => (
+                          <Card key={entry.id} className="p-4 hover:bg-accent/50 transition-colors">
+                            <div className="space-y-2">
+                              <h4 className="font-semibold text-base">{entry.title}</h4>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Calendar className="h-4 w-4" />
+                                {new Date(entry.entry_date).toLocaleDateString('en-US', {
+                                  weekday: 'short',
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                })}
+                              </div>
+                              <p className="text-sm text-muted-foreground line-clamp-3">
+                                {entry.content}
+                              </p>
+                            </div>
+                          </Card>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground text-center py-8">
+                          No entries found
+                        </p>
+                      );
+                    })()}
+                  </ScrollArea>
+                </div>
               </div>
             </>
           )}
