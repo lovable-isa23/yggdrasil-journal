@@ -22,7 +22,7 @@ export const WaitlistCTA = () => {
               className="text-lg px-10 py-6 bg-background text-foreground hover:bg-background/90 shadow-2xl hover:scale-105 transition-all duration-300"
               onClick={() => window.open('https://book.stripe.com/28E14n0B2bDJ6wE3ojfYY00', '_blank')}
             >
-              Save Your Seat - $29
+              Join Beta now!
             </Button>
             <Button 
               size="lg" 
