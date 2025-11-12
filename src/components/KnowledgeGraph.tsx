@@ -174,8 +174,7 @@ export const KnowledgeGraph = () => {
         value: Math.max(count * 20, 30),
         type: typeMap[activeTab],
         color: getColor(),
-        entryIds,
-        entries: allEntries.filter(e => entryIds.includes(e.id))
+        entryIds
       });
     });
 
@@ -392,9 +391,11 @@ export const KnowledgeGraph = () => {
                   Related Journal Entries
                 </h3>
                 <ScrollArea className="h-[calc(100vh-250px)]">
-                  {selectedNode.entries && selectedNode.entries.length > 0 ? (
-                    <div className="space-y-4">
-                      {selectedNode.entries.map((entry) => (
+                  {(() => {
+                    const relatedEntries = allEntries.filter(e => selectedNode.entryIds.includes(e.id));
+                    return relatedEntries.length > 0 ? (
+                      <div className="space-y-4">
+                        {relatedEntries.map((entry) => (
                         <Card key={entry.id} className="p-4 hover:bg-accent/50 transition-colors">
                           <div className="space-y-2">
                             <h4 className="font-semibold text-base">{entry.title}</h4>
@@ -412,13 +413,14 @@ export const KnowledgeGraph = () => {
                             </p>
                           </div>
                         </Card>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground text-center py-8">
-                      No entries found
-                    </p>
-                  )}
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-center py-8">
+                        No entries found
+                      </p>
+                    );
+                  })()}
                 </ScrollArea>
               </div>
             </>
