@@ -21,7 +21,11 @@ interface JournalEditorProps {
 }
 
 export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
-  const [entryDate, setEntryDate] = useState<Date>(new Date());
+  const [entryDate, setEntryDate] = useState<Date>(() => {
+    const today = new Date();
+    today.setHours(12, 0, 0, 0);
+    return today;
+  });
   
   const {
     register,
@@ -67,7 +71,9 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
 
       toast.success("Journal entry created (AES-256 encrypted)!");
       reset();
-      setEntryDate(new Date());
+      const today = new Date();
+      today.setHours(12, 0, 0, 0);
+      setEntryDate(today);
       onEntryCreated();
     } catch (error: any) {
       toast.error(error.message || "Failed to create entry");
@@ -110,7 +116,14 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
             <Calendar
               mode="single"
               selected={entryDate}
-              onSelect={(date) => date && setEntryDate(date)}
+              onSelect={(date) => {
+                if (date) {
+                  // Set to noon local time to avoid timezone boundary issues
+                  const adjustedDate = new Date(date);
+                  adjustedDate.setHours(12, 0, 0, 0);
+                  setEntryDate(adjustedDate);
+                }
+              }}
               initialFocus
               className="pointer-events-auto"
             />
