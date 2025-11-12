@@ -71,7 +71,7 @@ export const Features = () => {
   ];
 
   return (
-    <section className="py-24 px-6 relative overflow-hidden">
+    <section className="py-32 px-6 relative overflow-hidden">
       {/* Subtle background pattern */}
       <div className="absolute inset-0 opacity-[0.02]">
         <div className="absolute inset-0" style={{
@@ -81,7 +81,7 @@ export const Features = () => {
       </div>
 
       <div className="container mx-auto max-w-6xl relative z-10">
-        <div className="text-center mb-16 space-y-4">
+        <div className="text-center mb-24 space-y-4">
           <h2 className="text-4xl md:text-5xl font-bold">
             <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               Powerful Features
@@ -92,7 +92,7 @@ export const Features = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 md:gap-16">
           {features.map((feature, index) => (
             <FeatureCard key={index} feature={feature} index={index} />
           ))}

@@ -21,7 +21,7 @@ export const Hero = () => {
   }, []);
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center px-6 py-20 overflow-hidden bg-[#F5F1E8]">
+    <section className="relative min-h-screen flex items-center justify-center px-6 py-20 overflow-hidden bg-[#FEF3E6]">
 
       <div className="container mx-auto max-w-6xl relative z-10">
         <div className="text-center space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
@@ -35,8 +35,8 @@ export const Hero = () => {
           </div>
 
           {/* Heading */}
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
-            <span className="bg-gradient-to-br from-earth-brown via-earth-teal via-40% via-primary via-60% to-earth-sage bg-clip-text text-transparent">
+          <h1 className="text-5xl md:text-7xl font-bold tracking-tight animate-in fade-in zoom-in duration-1000 delay-300">
+            <span className="bg-gradient-to-br from-earth-brown via-earth-teal via-40% via-primary via-60% to-earth-sage bg-clip-text text-transparent animate-pulse-slow inline-block hover:scale-105 transition-transform duration-500">
               Cultivate Self-Awareness
             </span>
           </h1>
@@ -68,8 +68,7 @@ export const Hero = () => {
                 </Button>
                 <Button 
                   size="lg" 
-                  variant="outline" 
-                  className="text-lg px-8 py-6 border-2 hover:bg-muted/50 transition-all duration-300"
+                  className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all duration-300 bg-earth-brown text-white hover:scale-105 hover:bg-earth-brown/90"
                   asChild
                 >
                   <Link to="/login">Sign In</Link>
