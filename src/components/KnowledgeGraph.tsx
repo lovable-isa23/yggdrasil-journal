@@ -328,8 +328,9 @@ export const KnowledgeGraph = () => {
       .scaleExtent([0.1, 5])
       .on("zoom", (event) => {
         g.attr("transform", event.transform);
-        // Scale text inversely to maintain constant visual size
-        g.selectAll("text").attr("font-size", `${14 / event.transform.k}px`);
+        // Scale text with zoom for better legibility, with reasonable bounds
+        const fontSize = Math.max(10, Math.min(20, 12 * event.transform.k));
+        g.selectAll("text").attr("font-size", `${fontSize}px`);
       });
 
     svg.call(zoom);
