@@ -4,7 +4,7 @@ import { Star } from "lucide-react";
 
 const testimonials = [
   {
-    name: "Sarah",
+    name: "Sny",
     role: "Content Creator",
     content: "This is amazing. I really like it. The timeline is sick!",
     rating: 5,
@@ -41,7 +41,7 @@ export const Testimonials = () => {
           }`}
         >
           <h2 className="text-4xl md:text-5xl font-bold">
-            <span className="bg-gradient-to-r from-primary via-earth-teal to-earth-sage bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-earth-brown to-primary bg-clip-text text-transparent">
               What Our Users Say
             </span>
           </h2>

@@ -63,7 +63,7 @@ export const Hero = () => {
               <>
                 <Button 
                   size="lg" 
-                  className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-primary to-earth-brown hover:scale-105"
+                  className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all duration-300 bg-[hsl(var(--sage-green))] text-primary-foreground hover:scale-105 hover:bg-[hsl(var(--sage-green))]/90"
                   onClick={() => window.open('https://book.stripe.com/28E14n0B2bDJ6wE3ojfYY00', '_blank')}
                 >
                   Join Beta now!

@@ -196,7 +196,7 @@ serve(async (req) => {
 
 Analyze the journal entry and extract:
 - entities: Key people, places, events, or concepts (max 10)
-- themes: Overarching themes or topics (max 5)
+- themes: Overarching themes or topics (max 5). Use simple, general descriptions to ensure commonality across entries (e.g., "personal growth", "relationships", "work stress", "mental health", "creativity"). Avoid overly specific or unique phrasing.
 - emotions: Emotions with intensity 1-10 (format: [{"emotion": "happy", "intensity": 8}])
 - keywords: Significant keywords (max 15)
 - summary: Brief 2-3 sentence summary
