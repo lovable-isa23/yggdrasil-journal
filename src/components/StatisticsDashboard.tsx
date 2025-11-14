@@ -28,17 +28,32 @@ export const StatisticsDashboard = () => {
 
   const fetchStatistics = async () => {
     try {
-      const { data: entries, error } = await supabase
-        .from("journal_entries")
-        .select("*")
-        .order("entry_date", { ascending: true });
+      // Call decrypt-entries function to get decrypted data
+      const { data: decryptedData, error: decryptError } = await supabase.functions.invoke("decrypt-entries");
+      
+      if (decryptError) {
+        console.error("Error decrypting entries:", decryptError);
+        // Fallback to regular fetch if decrypt fails
+        const { data: entries, error } = await supabase
+          .from("journal_entries")
+          .select("*")
+          .order("entry_date", { ascending: true });
 
-      if (error) throw error;
-
-      if (entries && entries.length > 0) {
-        calculateStreaks(entries);
-        calculateWordCounts(entries);
-        calculateActiveHours(entries);
+        if (error) throw error;
+        
+        if (entries && entries.length > 0) {
+          calculateStreaks(entries);
+          calculateWordCounts(entries);
+          calculateActiveHours(entries);
+        }
+      } else {
+        const entries = decryptedData?.entries || [];
+        
+        if (entries.length > 0) {
+          calculateStreaks(entries);
+          calculateWordCounts(entries);
+          calculateActiveHours(entries);
+        }
       }
     } catch (error) {
       console.error("Error fetching statistics:", error);

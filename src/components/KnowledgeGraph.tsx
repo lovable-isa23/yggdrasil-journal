@@ -3,7 +3,7 @@ import * as d3 from "d3";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { Loader2, Calendar, FileText, Maximize2, Download, Image as ImageIcon, FileDown } from "lucide-react";
+import { Loader2, Calendar, FileText, Maximize2, Download, Image as ImageIcon, FileDown, TrendingUp } from "lucide-react";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
@@ -43,6 +43,7 @@ export const KnowledgeGraph = () => {
 
   const [allInsights, setAllInsights] = useState<any[]>([]);
   const [allEntries, setAllEntries] = useState<any[]>([]);
+  const [decryptedEntries, setDecryptedEntries] = useState<any[]>([]);
   const [relationships, setRelationships] = useState<any[]>([]);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -69,7 +70,7 @@ export const KnowledgeGraph = () => {
 
   const fetchGraphData = async () => {
     try {
-      const [insightsResult, entriesResult, relationshipsResult] = await Promise.all([
+      const [insightsResult, entriesResult, relationshipsResult, decryptedResult] = await Promise.all([
         supabase
           .from("entry_insights")
           .select("*")
@@ -81,7 +82,8 @@ export const KnowledgeGraph = () => {
         supabase
           .from("knowledge_relationships")
           .select("*")
-          .order("strength", { ascending: false })
+          .order("strength", { ascending: false }),
+        supabase.functions.invoke("decrypt-entries")
       ]);
 
       if (insightsResult.error) throw insightsResult.error;
@@ -94,6 +96,10 @@ export const KnowledgeGraph = () => {
       
       if (entriesResult.data && entriesResult.data.length > 0) {
         setAllEntries(entriesResult.data);
+      }
+
+      if (!decryptedResult.error && decryptedResult.data?.entries) {
+        setDecryptedEntries(decryptedResult.data.entries);
       }
 
       if (relationshipsResult.data && relationshipsResult.data.length > 0) {
@@ -520,9 +526,21 @@ export const KnowledgeGraph = () => {
                     </DropdownMenu>
                   </div>
                 </div>
-                <div className="flex justify-center" ref={graphContainerRef}>
-                  <svg ref={svgRef} className="max-w-full" />
-                </div>
+                {graphData.nodes.length === 0 && !loading ? (
+                  <div className="flex justify-center items-center h-[600px] bg-muted/20 rounded-lg border mt-4">
+                    <div className="text-center p-8">
+                      <TrendingUp className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                      <p className="text-lg font-medium mb-2">No connections at this strength</p>
+                      <p className="text-sm text-muted-foreground">
+                        Try lowering the connection strength filter to see more nodes
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex justify-center" ref={graphContainerRef}>
+                    <svg ref={svgRef} className="max-w-full" />
+                  </div>
+                )}
               </div>
             </TabsContent>
           </Tabs>
@@ -589,7 +607,9 @@ export const KnowledgeGraph = () => {
                     Related Journal Entries
                   </h3>
                   {(() => {
-                    const relatedEntries = allEntries.filter(e => selectedNode.entryIds.includes(e.id));
+                    const relatedEntries = decryptedEntries.length > 0 
+                      ? decryptedEntries.filter(e => selectedNode.entryIds.includes(e.id))
+                      : allEntries.filter(e => selectedNode.entryIds.includes(e.id));
                     return relatedEntries.length > 0 ? (
                       <div className="space-y-4">
                         {relatedEntries.map((entry) => (
@@ -618,7 +638,7 @@ export const KnowledgeGraph = () => {
                       </p>
                     );
                   })()}
-                  </div>
+                </div>
                 </div>
               </ScrollArea>
             </>
