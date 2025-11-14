@@ -25,7 +25,7 @@ const JourneyCard = ({ step, index }: { step: any; index: number }) => {
       
       {/* Connecting line for desktop */}
       {index < 2 && (
-        <div className="hidden lg:block absolute top-1/2 -right-4 w-8 h-0.5 bg-gradient-to-r from-primary/50 to-transparent" />
+        <div className="hidden lg:block absolute top-1/2 -right-4 w-8 h-1 bg-gradient-to-r from-primary to-primary/30" />
       )}
     </div>
   );
