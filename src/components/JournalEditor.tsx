@@ -2,16 +2,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ReactMarkdown from "react-markdown";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Target, X } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { journalEntrySchema, type JournalEntryFormData } from "@/lib/validations";
@@ -20,12 +21,21 @@ interface JournalEditorProps {
   onEntryCreated: () => void;
 }
 
+interface Goal {
+  id: string;
+  title: string;
+  goal_type: string;
+  status: string;
+}
+
 export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
   const [entryDate, setEntryDate] = useState<Date>(() => {
     const today = new Date();
     today.setHours(12, 0, 0, 0);
     return today;
   });
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   
   const {
     register,
@@ -44,6 +54,33 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
   const title = watch("title");
   const content = watch("content");
 
+  useEffect(() => {
+    fetchGoals();
+  }, []);
+
+  const fetchGoals = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("goals")
+        .select("id, title, goal_type, status")
+        .eq("status", "active")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setGoals(data || []);
+    } catch (error) {
+      console.error("Error fetching goals:", error);
+    }
+  };
+
+  const toggleGoal = (goalId: string) => {
+    setSelectedGoals(prev =>
+      prev.includes(goalId)
+        ? prev.filter(id => id !== goalId)
+        : [...prev, goalId]
+    );
+  };
+
   const onSubmit = async (data: JournalEntryFormData) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -59,18 +96,20 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
       const day = String(entryDate.getDate()).padStart(2, '0');
       const localDate = `${year}-${month}-${day}`;
 
-      const { error } = await supabase.functions.invoke('encrypt-entry', {
+      const { data: entryData, error: encryptError } = await supabase.functions.invoke('encrypt-entry', {
         body: {
           title: data.title,
           content: data.content,
           entry_date: localDate,
+          linked_goals: selectedGoals,
         },
       });
 
-      if (error) throw error;
+      if (encryptError) throw encryptError;
 
       toast.success("Journal entry created (AES-256 encrypted)!");
       reset();
+      setSelectedGoals([]);
       const today = new Date();
       today.setHours(12, 0, 0, 0);
       setEntryDate(today);
@@ -95,6 +134,45 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
           <p className="text-sm text-destructive">{errors.title.message}</p>
         )}
       </div>
+
+      {goals.length > 0 && (
+        <div className="space-y-3">
+          <Label className="flex items-center gap-2">
+            <Target className="h-4 w-4" />
+            Link to Active Journeys (Optional)
+          </Label>
+          <p className="text-sm text-muted-foreground">
+            Connect this entry to your spiritual journeys
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {goals.map((goal) => {
+              const isSelected = selectedGoals.includes(goal.id);
+              return (
+                <button
+                  key={goal.id}
+                  type="button"
+                  onClick={() => toggleGoal(goal.id)}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2 rounded-lg border transition-all",
+                    isSelected
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border hover:border-primary/50"
+                  )}
+                >
+                  <span className="text-sm">{goal.title}</span>
+                  {isSelected && <X className="h-3 w-3" />}
+                </button>
+              );
+            })}
+          </div>
+          {selectedGoals.length > 0 && (
+            <div className="flex gap-2 items-center text-sm text-muted-foreground">
+              <Badge variant="secondary">{selectedGoals.length}</Badge>
+              <span>journey{selectedGoals.length > 1 ? "s" : ""} linked</span>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label>Entry Date</Label>
