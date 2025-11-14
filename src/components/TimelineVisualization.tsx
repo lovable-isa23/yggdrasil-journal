@@ -341,16 +341,17 @@ export const TimelineVisualization = () => {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {timelineData.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            No entries found in this date range
-          </div>
-        ) : (
-          <>
-            {/* Top Emotions */}
-            <div>
-              <h4 className="text-sm font-semibold mb-3">Top Emotions in Period</h4>
+      <CardContent>
+        <ScrollArea className="h-[600px] pr-4">
+          {timelineData.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No entries found in this date range
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Top Emotions */}
+              <div>
+                <h4 className="text-sm font-semibold mb-3">Top Emotions in Period</h4>
               <div className="flex flex-wrap gap-2">
                 {topEmotions.map(([emotion, count]) => (
                   <Badge 
@@ -428,8 +429,9 @@ export const TimelineVisualization = () => {
                 ))}
               </div>
             </div>
-          </>
-        )}
+          </div>
+          )}
+        </ScrollArea>
       </CardContent>
 
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
