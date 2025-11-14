@@ -14,6 +14,8 @@ import { PracticeManager } from "./PracticeManager";
 import { JourneyTimeline } from "./JourneyTimeline";
 import { WisdomCaptureDialog } from "./WisdomCaptureDialog";
 import { ReflectionDialog } from "./ReflectionDialog";
+import { SpiritualGuidePanel } from "./SpiritualGuidePanel";
+import { MoonPhaseIndicator } from "./MoonPhaseIndicator";
 
 interface Goal {
   id: string;
@@ -105,6 +107,7 @@ export const GoalTracker = () => {
         status: formData.status,
         goal_type: formData.goalType,
         intention: formData.intention || null,
+        moon_phase_set: formData.moonPhase || null,
         linked_patterns: formData.linkedPatterns.map((patternId: string) => {
           const pattern = patterns.find(p => p.id === patternId);
           return pattern ? { id: pattern.id, title: pattern.title, pattern_type: pattern.pattern_type } : null;
