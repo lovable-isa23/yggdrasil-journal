@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,29 @@ interface ReflectionPromptProps {
 export const ReflectionPrompt = ({ recentEntries }: ReflectionPromptProps) => {
   const [prompt, setPrompt] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Load the most recent saved prompt on mount
+  useEffect(() => {
+    loadSavedPrompt();
+  }, []);
+
+  const loadSavedPrompt = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("reflection_prompts")
+        .select("prompt")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (data?.prompt) {
+        setPrompt(data.prompt);
+      }
+    } catch (error) {
+      console.error("Error loading saved prompt:", error);
+    }
+  };
 
   const generatePrompt = async () => {
     if (recentEntries.length === 0) {
