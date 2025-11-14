@@ -92,12 +92,31 @@ export const SpiritualGuidePanel = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      // Fetch full pattern objects from the database
+      let enrichedPatterns = [];
+      if (goal.linked_pattern_ids && goal.linked_pattern_ids.length > 0) {
+        const { data: patterns, error: patternsError } = await supabase
+          .from("pattern_insights")
+          .select("id, title, pattern_type")
+          .in("id", goal.linked_pattern_ids);
+
+        if (patternsError) {
+          console.error("Error fetching patterns:", patternsError);
+        } else if (patterns) {
+          enrichedPatterns = patterns.map(p => ({
+            id: p.id,
+            title: p.title,
+            pattern_type: p.pattern_type,
+          }));
+        }
+      }
+
       const { error } = await supabase.from("goals").insert({
         user_id: user.id,
         title: goal.title,
         description: goal.description,
         goal_type: goal.goal_type,
-        linked_patterns: goal.linked_pattern_ids,
+        linked_patterns: enrichedPatterns,
         status: "active",
         phase: "initiation",
         intention: `Goal suggested by Yggi based on your journal patterns`,
