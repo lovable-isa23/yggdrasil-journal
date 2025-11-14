@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { LogOut, BookOpen, Settings as SettingsIcon } from "lucide-react";
+import { LogOut, BookOpen, Settings as SettingsIcon, BarChart3, Brain, TrendingUp, Target, FileText } from "lucide-react";
 import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
 
 const Insights = () => {
@@ -96,81 +96,102 @@ const Insights = () => {
         </header>
 
         {/* Main Content */}
-        <main className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 max-w-4xl">
-          <div className="space-y-8 sm:space-y-12">
-            {/* Welcome Section */}
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary">
-                Your Insights & Analytics
-              </h2>
-              <p className="text-base sm:text-lg text-muted-foreground">
-                Track your emotional journey and patterns
-              </p>
+        <main className="container mx-auto px-4 sm:px-6 py-8 sm:py-12">
+          {/* Hero Section */}
+          <div className="text-center space-y-3 mb-12">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-2">
+              <BarChart3 className="h-5 w-5" />
+              <span className="text-sm font-medium">Analytics Dashboard</span>
             </div>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary">
+              Your Insights & Analytics
+            </h2>
+            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
+              Track your emotional journey, discover patterns, and gain deeper self-understanding
+            </p>
+          </div>
 
-            {/* Statistics Dashboard */}
+          <div className="space-y-12">
+            {/* Overview Section */}
             <section>
-              <StatisticsDashboard />
+              <div className="flex items-center gap-2 mb-6">
+                <BarChart3 className="h-6 w-6 text-primary" />
+                <h3 className="text-2xl font-bold">Overview</h3>
+              </div>
+              <div className="grid gap-6">
+                <StatisticsDashboard />
+                {recentEntries.length > 0 && <ReflectionPrompt recentEntries={recentEntries} />}
+              </div>
             </section>
 
-            {/* Reflection Prompt */}
-            {recentEntries.length > 0 && (
-              <section>
-                <ReflectionPrompt recentEntries={recentEntries} />
-              </section>
-            )}
-
-            {/* Mood Tracker */}
+            {/* Emotional Analysis Section */}
             <section>
-              <MoodTracker />
+              <div className="flex items-center gap-2 mb-6">
+                <Brain className="h-6 w-6 text-primary" />
+                <h3 className="text-2xl font-bold">Emotional Analysis</h3>
+              </div>
+              <div className="grid gap-6 lg:grid-cols-2">
+                <MoodTracker />
+                <SentimentTracking />
+              </div>
             </section>
 
-            {/* Timeline */}
+            {/* Visualizations Section */}
             <section>
-              <TimelineVisualization />
+              <div className="flex items-center gap-2 mb-6">
+                <TrendingUp className="h-6 w-6 text-primary" />
+                <h3 className="text-2xl font-bold">Visualizations</h3>
+              </div>
+              <div className="grid gap-6">
+                <TimelineVisualization />
+                <KnowledgeGraph />
+              </div>
             </section>
 
-            {/* Sentiment Tracking */}
+            {/* Goals & Patterns Section */}
             <section>
-              <SentimentTracking />
+              <div className="flex items-center gap-2 mb-6">
+                <Target className="h-6 w-6 text-primary" />
+                <h3 className="text-2xl font-bold">Goals & Patterns</h3>
+              </div>
+              <div className="grid gap-6 lg:grid-cols-2">
+                <PatternInsights />
+                <GoalTracker />
+              </div>
             </section>
 
-            {/* Knowledge Graph */}
+            {/* Export Options Section */}
             <section>
-              <KnowledgeGraph />
-            </section>
-
-            {/* Pattern Insights */}
-            <section>
-              <PatternInsights />
-            </section>
-
-            {/* Goal Tracker */}
-            <section>
-              <GoalTracker />
-            </section>
-
-            {/* Export Options */}
-            <section>
-              <Card>
+              <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-secondary/5">
                 <CardHeader>
-                  <CardTitle className="text-lg sm:text-xl">Export Your Data</CardTitle>
-                  <CardDescription className="text-sm">
-                    Download your journal entries and insights
+                  <CardTitle className="text-xl flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Export Your Data
+                  </CardTitle>
+                  <CardDescription>
+                    Download your journal entries and comprehensive insights reports
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <h3 className="text-sm font-semibold mb-2">Export All Entries</h3>
-                    <DataExport />
+                <CardContent className="space-y-6">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-semibold">Export All Entries</h4>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Download all your journal entries in JSON format
+                      </p>
+                      <DataExport />
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-semibold">Export Reports</h4>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Generate comprehensive PDF reports with insights
+                      </p>
+                      <div className="flex flex-col gap-2">
+                        <ReportExport />
+                        <ReportExport showAllData />
+                      </div>
+                    </div>
                   </div>
-                <div>
-                  <h3 className="text-sm font-semibold mb-2">Export Reports</h3>
-                  <div className="flex flex-col gap-2">
-                    <ReportExport />
-                    <ReportExport showAllData />
-                  </div>
-                </div>
                 </CardContent>
               </Card>
             </section>

@@ -53,6 +53,8 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
           keywords: (data.keywords as string[]) || [],
           summary: data.summary || "",
           safety_concerns: (data.safety_concerns as { flag: boolean; concerns: string[] }) || { flag: false, concerns: [] },
+          chakra_tags: (data.chakra_tags as Array<{ chakra: string; description: string }>) || [],
+          tarot_tags: (data.tarot_tags as Array<{ card: string; description: string }>) || [],
         });
         setHasAnalyzed(true);
       }

@@ -80,7 +80,10 @@ export const GoalTracker = () => {
         description: formData.description || null,
         target_date: formData.target_date ? format(formData.target_date, "yyyy-MM-dd") : null,
         status: formData.status,
-        linked_patterns: formData.linked_patterns,
+        linked_patterns: formData.linked_patterns.map(patternId => {
+          const pattern = patterns.find(p => p.id === patternId);
+          return pattern ? { id: pattern.id, title: pattern.title, pattern_type: pattern.pattern_type } : null;
+        }).filter(Boolean),
       };
 
       if (editingGoal) {
@@ -130,12 +133,16 @@ export const GoalTracker = () => {
 
   const openEditDialog = (goal: Goal) => {
     setEditingGoal(goal);
+    // Extract pattern IDs from pattern objects if they exist
+    const patternIds = goal.linked_patterns && Array.isArray(goal.linked_patterns)
+      ? goal.linked_patterns.map((p: any) => typeof p === 'string' ? p : p.id)
+      : [];
     setFormData({
       title: goal.title,
       description: goal.description || "",
       target_date: goal.target_date ? new Date(goal.target_date) : undefined,
       status: goal.status,
-      linked_patterns: goal.linked_patterns || [],
+      linked_patterns: patternIds,
     });
     setIsDialogOpen(true);
   };
@@ -307,14 +314,11 @@ export const GoalTracker = () => {
                     <div>
                       <p className="text-xs text-muted-foreground mb-1">Linked Patterns:</p>
                       <div className="flex flex-wrap gap-1">
-                        {goal.linked_patterns.map((patternId: string) => {
-                          const pattern = patterns.find(p => p.id === patternId);
-                          return pattern ? (
-                            <Badge key={patternId} variant="secondary" className="text-xs">
-                              {pattern.title}
-                            </Badge>
-                          ) : null;
-                        })}
+                        {goal.linked_patterns.map((pattern: any) => (
+                          <Badge key={pattern.id} variant="secondary" className="text-xs">
+                            {pattern.title}
+                          </Badge>
+                        ))}
                       </div>
                     </div>
                   )}
