@@ -63,12 +63,12 @@ const Journal = () => {
                 </Button>
                 <Button
                   variant="ghost"
-                  onClick={() => navigate("/sacred-journeys")}
+                  onClick={() => navigate("/goals")}
                   className="gap-1 sm:gap-2 px-2 sm:px-4"
                   size="sm"
                 >
                   <Sparkles className="h-4 w-4" />
-                  <span className="hidden sm:inline">Sacred Journeys</span>
+                  <span className="hidden sm:inline">Goals</span>
                 </Button>
                 <Button
                   variant="ghost"
