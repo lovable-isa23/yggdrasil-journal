@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
-import { Sparkles, Heart, Lightbulb, Loader2, Target } from "lucide-react";
+import { Sparkles, Heart, Lightbulb, Loader2, Target, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
@@ -84,6 +84,39 @@ export const SpiritualGuidePanel = () => {
       toast.error("Couldn't generate goal suggestions. Try again soon.");
     } finally {
       setIsSuggestingGoals(false);
+    }
+  };
+
+  const saveGoal = async (goal: GoalSuggestion) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { error } = await supabase.from("goals").insert({
+        user_id: user.id,
+        title: goal.title,
+        description: goal.description,
+        goal_type: goal.goal_type,
+        linked_patterns: goal.linked_pattern_ids,
+        status: "active",
+        phase: "initiation",
+        intention: `Goal suggested by Yggi based on your journal patterns`,
+      });
+
+      if (error) throw error;
+
+      toast.success(`"${goal.title}" added to your goals! 🎯`);
+      
+      // Remove the saved goal from suggestions
+      setGoalSuggestions(prev => prev.filter(g => g.title !== goal.title));
+      
+      // Close dialog if no more suggestions
+      if (goalSuggestions.length === 1) {
+        setShowGoalsDialog(false);
+      }
+    } catch (error) {
+      console.error("Error saving goal:", error);
+      toast.error("Failed to save goal. Please try again.");
     }
   };
 
@@ -186,7 +219,7 @@ export const SpiritualGuidePanel = () => {
               <Card key={index} className="p-4 border-primary/20">
                 <div className="flex items-start gap-3">
                   <Target className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                  <div className="flex-1 space-y-2">
+                  <div className="flex-1 space-y-3">
                     <div className="flex items-start justify-between gap-2">
                       <h4 className="font-semibold text-lg">{goal.title}</h4>
                       <Badge variant="secondary" className="capitalize">
@@ -199,10 +232,23 @@ export const SpiritualGuidePanel = () => {
                         Linked to {goal.linked_pattern_ids.length} pattern{goal.linked_pattern_ids.length !== 1 ? 's' : ''}
                       </div>
                     )}
+                    <Button
+                      size="sm"
+                      onClick={() => saveGoal(goal)}
+                      className="w-full gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add to My Goals
+                    </Button>
                   </div>
                 </div>
               </Card>
             ))}
+            {goalSuggestions.length === 0 && (
+              <p className="text-center text-muted-foreground py-8">
+                All suggestions have been saved! ✨
+              </p>
+            )}
           </div>
         </ScrollArea>
       </DialogContent>
