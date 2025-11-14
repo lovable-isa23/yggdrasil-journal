@@ -11,6 +11,8 @@ import { Badge } from "./ui/badge";
 import { CalendarIcon, Sparkles, Target, BookOpen, Heart, Lightbulb, Palette, Users } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { getCurrentMoonPhase } from "@/lib/moon-phases";
+import { MoonPhaseIndicator } from "./MoonPhaseIndicator";
 
 interface Pattern {
   id: string;
@@ -95,7 +97,11 @@ export const GoalDialog = ({ open, onOpenChange, onSave, editingGoal, patterns }
   };
 
   const handleSave = async () => {
-    await onSave(formData);
+    const currentMoonPhase = getCurrentMoonPhase();
+    await onSave({
+      ...formData,
+      moonPhase: currentMoonPhase.phase,
+    });
     setStep(1);
   };
 
@@ -169,7 +175,7 @@ export const GoalDialog = ({ open, onOpenChange, onSave, editingGoal, patterns }
           )}
 
           {/* Step 2: Details */}
-          {step === 2 && (
+          {step === 3 && (
             <div className="space-y-6 animate-in fade-in-50">
               <div className="space-y-2">
                 <Label htmlFor="title">Journey Title *</Label>

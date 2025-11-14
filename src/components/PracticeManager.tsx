@@ -1,15 +1,47 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
+import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Loader2, Plus, CheckCircle2, Calendar, Sparkles, BookOpen, Heart, Wind, Flame, Brain } from "lucide-react";
+import { Switch } from "./ui/switch";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from "./ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import { 
+  Plus, 
+  Sparkles,
+  Heart,
+  Book,
+  Flower2,
+  Flame,
+  CheckCircle2,
+  Circle,
+  Trash2,
+  Edit2,
+  Play,
+  Bell,
+  Loader2,
+  Calendar,
+  Wind,
+  Brain,
+  BookOpen
+} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface Practice {
   id: string;

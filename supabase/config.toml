@@ -17,3 +17,6 @@ verify_jwt = true
 
 [functions.decrypt-entries]
 verify_jwt = true
+
+[functions.spiritual-guide]
+verify_jwt = true
