@@ -209,59 +209,64 @@ export const StatisticsDashboard = () => {
         </Card>
       </div>
 
-      {/* Word Count Trend */}
-      {wordCountData.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Word Count Trend</CardTitle>
-            <CardDescription>Last 30 days of writing activity</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={wordCountData}>
-                <CartesianAxis strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="date" 
-                  tick={{ fill: 'black', fontWeight: 'normal' }}
-                />
-                <YAxis 
-                  tick={{ fill: 'black', fontWeight: 'normal' }}
-                  label={{ value: 'Words', angle: -90, position: 'insideLeft', fill: 'black', fontWeight: 'normal' }}
-                />
-                <Tooltip />
-                <Bar dataKey="wordCount" fill="hsl(var(--primary))" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      )}
+      {/* Charts Grid */}
+      {(wordCountData.length > 0 || hourlyData.length > 0) && (
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Word Count Trend */}
+          {wordCountData.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Word Count Trend</CardTitle>
+                <CardDescription>Last 30 days of writing activity</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={wordCountData}>
+                    <CartesianAxis strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fill: 'black', fontWeight: 'normal' }}
+                    />
+                    <YAxis 
+                      tick={{ fill: 'black', fontWeight: 'normal' }}
+                      label={{ value: 'Words', angle: -90, position: 'insideLeft', fill: 'black', fontWeight: 'normal' }}
+                    />
+                    <Tooltip />
+                    <Bar dataKey="wordCount" fill="hsl(var(--primary))" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
 
-      {/* Most Active Hours */}
-      {hourlyData.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Most Active Hours</CardTitle>
-            <CardDescription>When you write most often</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={hourlyData}>
-                <CartesianAxis strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="hour" 
-                  tick={{ fill: 'black', fontWeight: 'normal' }}
-                  label={{ value: 'Hour of Day', position: 'insideBottom', offset: -5, fill: 'black', fontWeight: 'normal' }}
-                />
-                <YAxis 
-                  tick={{ fill: 'black', fontWeight: 'normal' }}
-                  label={{ value: 'Entries', angle: -90, position: 'insideLeft', fill: 'black', fontWeight: 'normal' }}
-                />
-                <Tooltip />
-                <Bar dataKey="count" fill="hsl(var(--primary))" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+          {/* Most Active Hours */}
+          {hourlyData.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Most Active Hours</CardTitle>
+                <CardDescription>When you write most often</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={hourlyData}>
+                    <CartesianAxis strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="hour" 
+                      tick={{ fill: 'black', fontWeight: 'normal' }}
+                      label={{ value: 'Hour of Day', position: 'insideBottom', offset: -5, fill: 'black', fontWeight: 'normal' }}
+                    />
+                    <YAxis 
+                      tick={{ fill: 'black', fontWeight: 'normal' }}
+                      label={{ value: 'Entries', angle: -90, position: 'insideLeft', fill: 'black', fontWeight: 'normal' }}
+                    />
+                    <Tooltip />
+                    <Bar dataKey="count" fill="hsl(var(--primary))" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       )}
     </div>
   );
