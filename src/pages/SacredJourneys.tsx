@@ -1,27 +1,20 @@
-import { useState } from "react";
 import { AuthGuard } from "@/components/AuthGuard";
-import { JournalEditor } from "@/components/JournalEditor";
-import { JournalEntryList } from "@/components/JournalEntryList";
-import { DataExport } from "@/components/DataExport";
-import { DataImport } from "@/components/DataImport";
+import { GoalTracker } from "@/components/GoalTracker";
+import { MoonPhaseIndicator } from "@/components/MoonPhaseIndicator";
+import { SpiritualGuidePanel } from "@/components/SpiritualGuidePanel";
 import { NPSTooltip } from "@/components/NPSTooltip";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { LogOut, BarChart3, History, Settings as SettingsIcon, Sparkles } from "lucide-react";
+import { LogOut, BookOpen, BarChart3, Settings as SettingsIcon } from "lucide-react";
 import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
 
-const Journal = () => {
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+const SacredJourneys = () => {
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     navigate("/");
-  };
-
-  const handleEntryCreated = () => {
-    setRefreshTrigger(prev => prev + 1);
   };
 
   return (
@@ -54,21 +47,12 @@ const Journal = () => {
                 </Button>
                 <Button
                   variant="ghost"
-                  onClick={() => navigate("/import-history")}
+                  onClick={() => navigate("/journal")}
                   className="gap-1 sm:gap-2 px-2 sm:px-4"
                   size="sm"
                 >
-                  <History className="h-4 w-4" />
-                  <span className="hidden md:inline">Import History</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => navigate("/sacred-journeys")}
-                  className="gap-1 sm:gap-2 px-2 sm:px-4"
-                  size="sm"
-                >
-                  <Sparkles className="h-4 w-4" />
-                  <span className="hidden sm:inline">Sacred Journeys</span>
+                  <BookOpen className="h-4 w-4" />
+                  <span className="hidden sm:inline">Journal</span>
                 </Button>
                 <Button
                   variant="ghost"
@@ -94,40 +78,29 @@ const Journal = () => {
         </header>
 
         {/* Main Content */}
-        <main className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 max-w-4xl">
-          <div className="space-y-8 sm:space-y-12">
-            {/* Welcome Section */}
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary">
-                Your Sacred Space
-              </h2>
-              <p className="text-base sm:text-lg text-muted-foreground">
-                Record your thoughts, reflections, and insights
-              </p>
-            </div>
-
-            {/* Editor */}
-            <section>
-              <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Create New Entry</h2>
-              <JournalEditor onEntryCreated={handleEntryCreated} />
-            </section>
-
-            {/* Entries List */}
-            <section>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
-                <h2 className="text-xl sm:text-2xl font-bold">Your Entries</h2>
-                <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
-                  <DataImport onImportComplete={handleEntryCreated} />
-                  <DataExport />
-                </div>
-              </div>
-              <JournalEntryList refreshTrigger={refreshTrigger} />
-            </section>
+        <main className="container mx-auto px-4 sm:px-6 py-8 sm:py-12">
+          {/* Hero Section */}
+          <div className="text-center space-y-3 mb-12">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              Sacred Journeys
+            </h2>
+            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
+              Set intentions, track spiritual goals with moon phase guidance, and reflect on your growth
+            </p>
           </div>
+
+          {/* Moon Phase & Spiritual Guide Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
+            <MoonPhaseIndicator />
+            <SpiritualGuidePanel />
+          </div>
+
+          {/* Goal Tracker */}
+          <GoalTracker />
         </main>
       </div>
     </AuthGuard>
   );
 };
 
-export default Journal;
+export default SacredJourneys;

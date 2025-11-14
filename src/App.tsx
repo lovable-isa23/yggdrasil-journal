@@ -13,6 +13,7 @@ import Journal from "./pages/Journal";
 import Insights from "./pages/Insights";
 import ImportHistory from "./pages/ImportHistory";
 import Settings from "./pages/Settings";
+import SacredJourneys from "./pages/SacredJourneys";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/insights" element={<Insights />} />
           <Route path="/import-history" element={<ImportHistory />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/sacred-journeys" element={<SacredJourneys />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
