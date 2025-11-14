@@ -51,9 +51,9 @@ export const Features = () => {
       gradient: "from-secondary to-earth-teal"
     },
     {
-      icon: "✍️",
-      title: "Markdown Support",
-      description: "Express yourself freely with flexible markdown formatting, giving you full control over how you capture your thoughts and reflections.",
+      icon: "🌙",
+      title: "Sacred Journeys",
+      description: "Set intentions, track spiritual goals with moon phase guidance, and reflect on your growth through meaningful practices and milestones.",
       gradient: "from-earth-teal to-earth-brown"
     },
     {

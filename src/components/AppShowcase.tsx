@@ -16,8 +16,8 @@ import patternsImage from "@/assets/screenshot-patterns.png";
 const screenshots = [
   {
     src: insightsImage1,
-    alt: "Journal entry insights showing themes, emotions, and keywords",
-    title: "Deep Entry Analysis"
+    alt: "AI-powered crisis detection with emergency resources including 988 Suicide & Crisis Lifeline and Crisis Text Line",
+    title: "Crisis Safety Support"
   },
   {
     src: insightsImage2,

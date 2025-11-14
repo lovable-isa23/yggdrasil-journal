@@ -7,7 +7,6 @@ import { StatisticsDashboard } from "@/components/StatisticsDashboard";
 import { PatternInsights } from "@/components/PatternInsights";
 import { TimelineVisualization } from "@/components/TimelineVisualization";
 import { SentimentTracking } from "@/components/SentimentTracking";
-import { GoalTracker } from "@/components/GoalTracker";
 import { ReportExport } from "@/components/ReportExport";
 import { DataExport } from "@/components/DataExport";
 import { NPSTooltip } from "@/components/NPSTooltip";
@@ -16,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { LogOut, BookOpen, Settings as SettingsIcon, BarChart3, Brain, TrendingUp, Target, FileText } from "lucide-react";
+import { LogOut, BookOpen, Settings as SettingsIcon, BarChart3, Brain, TrendingUp, Target, FileText, Sparkles } from "lucide-react";
 import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
 
 const Insights = () => {
@@ -80,6 +79,15 @@ const Insights = () => {
                 >
                   <BookOpen className="h-4 w-4" />
                   <span className="hidden sm:inline">Journal</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => navigate("/sacred-journeys")}
+                  className="gap-1 sm:gap-2 px-2 sm:px-4"
+                  size="sm"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  <span className="hidden sm:inline">Sacred Journeys</span>
                 </Button>
                 <Button
                   variant="ghost"
@@ -148,16 +156,13 @@ const Insights = () => {
               </div>
             </section>
 
-            {/* Goals & Patterns Section */}
+            {/* Patterns Section */}
             <section>
               <div className="flex items-center gap-2 mb-6">
                 <Target className="h-6 w-6 text-primary" />
-                <h3 className="text-2xl font-bold">Goals & Patterns</h3>
+                <h3 className="text-2xl font-bold">Pattern Insights</h3>
               </div>
-              <div className="grid gap-6 lg:grid-cols-2">
-                <PatternInsights />
-                <GoalTracker />
-              </div>
+              <PatternInsights />
             </section>
 
             {/* Export Options Section */}
