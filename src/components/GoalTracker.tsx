@@ -199,9 +199,21 @@ export const GoalTracker = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2 mb-6">
-        <Sparkles className="h-6 w-6 text-primary" />
-        <h3 className="text-2xl font-bold">Your Sacred Journeys</h3>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-6 w-6 text-primary" />
+          <h3 className="text-2xl font-bold">Your Goals</h3>
+        </div>
+        <Button
+          onClick={() => {
+            setEditingGoal(null);
+            setIsDialogOpen(true);
+          }}
+          className="gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          Add Goal
+        </Button>
       </div>
 
       <GoalDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} onSave={handleSaveGoal} editingGoal={editingGoal} patterns={patterns} />

@@ -452,7 +452,10 @@ export const KnowledgeGraph = () => {
     return (
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>Knowledge Graph</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Knowledge Graph
+          </CardTitle>
           <CardDescription>Visualize connections in your journal</CardDescription>
         </CardHeader>
         <CardContent>
@@ -468,7 +471,10 @@ export const KnowledgeGraph = () => {
     <>
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>Knowledge Graph</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Knowledge Graph
+          </CardTitle>
           <CardDescription>
             Explore connections between {activeTab} in your journal. Click on nodes to view details.
           </CardDescription>
