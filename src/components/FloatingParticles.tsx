@@ -29,7 +29,7 @@ export const FloatingParticles = () => {
 
     // Create particles
     const particles: Particle[] = [];
-    const particleCount = 50;
+    const particleCount = 150; // Increased from 50
 
     for (let i = 0; i < particleCount; i++) {
       particles.push({
@@ -45,6 +45,26 @@ export const FloatingParticles = () => {
     // Animation loop
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw connections between nearby particles (neural network style)
+      const connectionDistance = 120;
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+
+          if (distance < connectionDistance) {
+            const opacity = (1 - distance / connectionDistance) * 0.15;
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(139, 92, 71, ${opacity})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
+      }
 
       particles.forEach((particle) => {
         // Update position
