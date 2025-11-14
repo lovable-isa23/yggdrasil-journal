@@ -37,10 +37,10 @@ export const SpiritualGuidePanel = () => {
       if (error) throw error;
 
       setCurrentGuidance(data.guidance);
-      toast.success("Guidance received ✨");
+      toast.success("Guidance from Yggi received ✨");
     } catch (error) {
       console.error("Error generating guidance:", error);
-      toast.error("Failed to connect with spiritual guide");
+      toast.error("Couldn't reach Yggi right now. Try again soon.");
     } finally {
       setIsGenerating(false);
     }
@@ -52,7 +52,7 @@ export const SpiritualGuidePanel = () => {
     <Card className="p-6 bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/20">
       <div className="flex items-center gap-2 mb-4">
         <Sparkles className="h-5 w-5 text-primary" />
-        <h3 className="font-semibold text-lg">Spiritual Guidance</h3>
+        <h3 className="font-semibold text-lg">Guidance from Yggi</h3>
       </div>
 
       {displayGuidance ? (
@@ -68,7 +68,7 @@ export const SpiritualGuidePanel = () => {
         </div>
       ) : (
         <p className="text-sm text-muted-foreground mb-4">
-          Connect with your spiritual guide for personalized wisdom and practices tailored to your journey.
+          Connect with Yggi, your spiritual guide, for personalized wisdom and practices tailored to your journey.
         </p>
       )}
 

@@ -111,8 +111,8 @@ const Insights = () => {
               <BarChart3 className="h-5 w-5" />
               <span className="text-sm font-medium">Analytics Dashboard</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary">
-              Your Insights & Analytics
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              Your Journey Insights
             </h2>
             <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
               Track your emotional journey, discover patterns, and gain deeper self-understanding

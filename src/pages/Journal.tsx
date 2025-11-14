@@ -8,7 +8,7 @@ import { NPSTooltip } from "@/components/NPSTooltip";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { LogOut, BarChart3, History, Settings as SettingsIcon, Sparkles } from "lucide-react";
+import { LogOut, BarChart3, History, Settings as SettingsIcon, Sparkles, BookOpen, FileText } from "lucide-react";
 import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
 
 const Journal = () => {
@@ -98,8 +98,8 @@ const Journal = () => {
           <div className="space-y-8 sm:space-y-12">
             {/* Welcome Section */}
             <div className="text-center space-y-2">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary">
-                Your Sacred Space
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                Your Journal
               </h2>
               <p className="text-base sm:text-lg text-muted-foreground">
                 Record your thoughts, reflections, and insights
@@ -108,14 +108,20 @@ const Journal = () => {
 
             {/* Editor */}
             <section>
-              <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Create New Entry</h2>
+              <div className="flex items-center gap-2 mb-6">
+                <BookOpen className="h-6 w-6 text-primary" />
+                <h3 className="text-2xl font-bold">Create New Entry</h3>
+              </div>
               <JournalEditor onEntryCreated={handleEntryCreated} />
             </section>
 
             {/* Entries List */}
             <section>
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
-                <h2 className="text-xl sm:text-2xl font-bold">Your Entries</h2>
+                <div className="flex items-center gap-2">
+                  <FileText className="h-6 w-6 text-primary" />
+                  <h3 className="text-2xl font-bold">Your Entries</h3>
+                </div>
                 <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
                   <DataImport onImportComplete={handleEntryCreated} />
                   <DataExport />
