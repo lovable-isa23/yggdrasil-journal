@@ -26,6 +26,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { ReflectionDialog } from "./ReflectionDialog";
 
 interface Milestone {
   id: string;
@@ -46,6 +47,8 @@ interface MilestoneManagerProps {
 export const MilestoneManager = ({ goalId, milestones, onUpdate }: MilestoneManagerProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingMilestone, setEditingMilestone] = useState<Milestone | null>(null);
+  const [isReflectionOpen, setIsReflectionOpen] = useState(false);
+  const [completingMilestoneId, setCompletingMilestoneId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -104,20 +107,44 @@ export const MilestoneManager = ({ goalId, milestones, onUpdate }: MilestoneMana
   };
 
   const handleToggleComplete = async (milestone: Milestone) => {
+    if (!milestone.completed_at) {
+      // Opening reflection dialog before marking as complete
+      setCompletingMilestoneId(milestone.id);
+      setIsReflectionOpen(true);
+    } else {
+      // Unmarking as complete
+      try {
+        const { error } = await supabase
+          .from("goal_milestones")
+          .update({ completed_at: null })
+          .eq("id", milestone.id);
+
+        if (error) throw error;
+        toast.success("Milestone reopened");
+        onUpdate();
+      } catch (error) {
+        console.error("Error toggling milestone:", error);
+        toast.error("Failed to update milestone");
+      }
+    }
+  };
+
+  const handleReflectionComplete = async () => {
+    if (!completingMilestoneId) return;
+
     try {
-      const newCompletedAt = milestone.completed_at ? null : new Date().toISOString();
-      
       const { error } = await supabase
         .from("goal_milestones")
-        .update({ completed_at: newCompletedAt })
-        .eq("id", milestone.id);
+        .update({ completed_at: new Date().toISOString() })
+        .eq("id", completingMilestoneId);
 
       if (error) throw error;
-      toast.success(newCompletedAt ? "Milestone completed! 🎉" : "Milestone reopened");
+      toast.success("Milestone completed! 🎉");
+      setCompletingMilestoneId(null);
       onUpdate();
     } catch (error) {
-      console.error("Error toggling milestone:", error);
-      toast.error("Failed to update milestone");
+      console.error("Error completing milestone:", error);
+      toast.error("Failed to complete milestone");
     }
   };
 
@@ -310,6 +337,14 @@ export const MilestoneManager = ({ goalId, milestones, onUpdate }: MilestoneMana
           ))
         )}
       </div>
+
+      <ReflectionDialog
+        open={isReflectionOpen}
+        onOpenChange={setIsReflectionOpen}
+        goalId={goalId}
+        reflectionType="milestone"
+        onComplete={handleReflectionComplete}
+      />
     </div>
   );
 };
