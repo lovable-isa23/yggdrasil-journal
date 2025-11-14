@@ -3,13 +3,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Loader2, Target, Plus, Calendar as CalendarIcon, TrendingUp, CheckCircle2, Sparkles, Edit2, Trash2, ChevronDown } from "lucide-react";
+import { Loader2, Target, Plus, Calendar as CalendarIcon, TrendingUp, CheckCircle2, Sparkles, Edit2, Trash2, ChevronDown, Heart } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { GoalDialog } from "./GoalDialog";
 import { MilestoneManager } from "./MilestoneManager";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
+import { PracticeManager } from "./PracticeManager";
+import { JourneyTimeline } from "./JourneyTimeline";
+import { WisdomCaptureDialog } from "./WisdomCaptureDialog";
+import { ReflectionDialog } from "./ReflectionDialog";
 
 interface Goal {
   id: string;
@@ -50,6 +54,10 @@ export const GoalTracker = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [openGoals, setOpenGoals] = useState<Set<string>>(new Set());
+  const [isWisdomDialogOpen, setIsWisdomDialogOpen] = useState(false);
+  const [completingGoal, setCompletingGoal] = useState<Goal | null>(null);
+  const [isReflectionOpen, setIsReflectionOpen] = useState(false);
+  const [reflectingGoalId, setReflectingGoalId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -119,6 +127,31 @@ export const GoalTracker = () => {
     } catch (error) {
       console.error("Error saving goal:", error);
       toast.error("Failed to save journey");
+    }
+  };
+
+  const handleCompleteGoal = (goal: Goal) => {
+    setCompletingGoal(goal);
+    setIsWisdomDialogOpen(true);
+  };
+
+  const handleWisdomCaptured = async () => {
+    if (!completingGoal) return;
+
+    try {
+      const { error } = await supabase
+        .from("goals")
+        .update({ status: "completed", phase: "complete" })
+        .eq("id", completingGoal.id);
+
+      if (error) throw error;
+
+      toast.success("Journey completed! 🎉");
+      setCompletingGoal(null);
+      fetchData();
+    } catch (error) {
+      console.error("Error completing goal:", error);
+      toast.error("Failed to complete journey");
     }
   };
 
@@ -227,10 +260,28 @@ export const GoalTracker = () => {
                           <div className="flex flex-wrap gap-2">{goal.linked_patterns.map((pattern: any) => <Badge key={pattern.id} variant="secondary">{pattern.title}</Badge>)}</div>
                         </div>
                       )}
+                      
                       <MilestoneManager goalId={goal.id} milestones={goalMilestones} onUpdate={fetchData} />
+                      
+                      <PracticeManager goalId={goal.id} goalType={goal.goal_type} />
+                      
+                      <JourneyTimeline goalId={goal.id} />
+                      
                       <div className="flex gap-2 pt-4 border-t">
-                        <Button variant="outline" size="sm" onClick={() => { setEditingGoal(goal); setIsDialogOpen(true); }}><Edit2 className="h-4 w-4 mr-2" />Edit Journey</Button>
-                        <Button variant="outline" size="sm" onClick={() => handleDeleteGoal(goal.id)}><Trash2 className="h-4 w-4 mr-2" />Archive</Button>
+                        <Button variant="outline" size="sm" onClick={() => { setReflectingGoalId(goal.id); setIsReflectionOpen(true); }}>
+                          <Heart className="h-4 w-4 mr-2" />Reflect
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => { setEditingGoal(goal); setIsDialogOpen(true); }}>
+                          <Edit2 className="h-4 w-4 mr-2" />Edit
+                        </Button>
+                        {goal.status === "active" && (
+                          <Button variant="outline" size="sm" onClick={() => handleCompleteGoal(goal)}>
+                            <CheckCircle2 className="h-4 w-4 mr-2" />Complete
+                          </Button>
+                        )}
+                        <Button variant="outline" size="sm" onClick={() => handleDeleteGoal(goal.id)}>
+                          <Trash2 className="h-4 w-4 mr-2" />Archive
+                        </Button>
                       </div>
                     </div>
                   </CollapsibleContent>
@@ -239,6 +290,26 @@ export const GoalTracker = () => {
             );
           })}
         </div>
+      )}
+
+      {completingGoal && (
+        <WisdomCaptureDialog
+          open={isWisdomDialogOpen}
+          onOpenChange={setIsWisdomDialogOpen}
+          goalId={completingGoal.id}
+          goalTitle={completingGoal.title}
+          onComplete={handleWisdomCaptured}
+        />
+      )}
+
+      {reflectingGoalId && (
+        <ReflectionDialog
+          open={isReflectionOpen}
+          onOpenChange={setIsReflectionOpen}
+          goalId={reflectingGoalId}
+          reflectionType="checkin"
+          onComplete={fetchData}
+        />
       )}
     </div>
   );
