@@ -1,6 +1,4 @@
-import { useState, useEffect } from "react";
 import { AuthGuard } from "@/components/AuthGuard";
-import { ReflectionPrompt } from "@/components/ReflectionPrompt";
 import { KnowledgeGraph } from "@/components/KnowledgeGraph";
 import { MoodTracker } from "@/components/MoodTracker";
 import { StatisticsDashboard } from "@/components/StatisticsDashboard";
@@ -19,24 +17,7 @@ import { LogOut, BookOpen, Settings as SettingsIcon, BarChart3, Brain, TrendingU
 import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
 
 const Insights = () => {
-  const [recentEntries, setRecentEntries] = useState<any[]>([]);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    fetchRecentEntries();
-  }, []);
-
-  const fetchRecentEntries = async () => {
-    const { data } = await supabase
-      .from("journal_entries")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(5);
-    
-    if (data) {
-      setRecentEntries(data);
-    }
-  };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -82,12 +63,12 @@ const Insights = () => {
                 </Button>
                 <Button
                   variant="ghost"
-                  onClick={() => navigate("/sacred-journeys")}
+                  onClick={() => navigate("/goals")}
                   className="gap-1 sm:gap-2 px-2 sm:px-4"
                   size="sm"
                 >
-                  <Sparkles className="h-4 w-4" />
-                  <span className="hidden sm:inline">Sacred Journeys</span>
+                  <Target className="h-4 w-4" />
+                  <span className="hidden sm:inline">Goals</span>
                 </Button>
                 <Button
                   variant="ghost"
@@ -128,7 +109,6 @@ const Insights = () => {
               </div>
               <div className="grid gap-6">
                 <StatisticsDashboard />
-                {recentEntries.length > 0 && <ReflectionPrompt recentEntries={recentEntries} />}
               </div>
             </section>
 

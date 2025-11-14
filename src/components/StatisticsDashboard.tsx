@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, CartesianAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { Flame, TrendingUp, Clock } from "lucide-react";
+import { Flame, TrendingUp, Clock, FileText } from "lucide-react";
 
 interface DayStats {
   date: string;
@@ -216,7 +216,10 @@ export const StatisticsDashboard = () => {
           {wordCountData.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Word Count Trend</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Word Count Trend
+                </CardTitle>
                 <CardDescription>Last 30 days of writing activity</CardDescription>
               </CardHeader>
               <CardContent>
@@ -243,7 +246,10 @@ export const StatisticsDashboard = () => {
           {hourlyData.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Most Active Hours</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Most Active Hours
+                </CardTitle>
                 <CardDescription>When you write most often</CardDescription>
               </CardHeader>
               <CardContent>

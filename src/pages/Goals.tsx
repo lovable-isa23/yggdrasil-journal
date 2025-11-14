@@ -1,7 +1,9 @@
+import { useState, useEffect } from "react";
 import { AuthGuard } from "@/components/AuthGuard";
 import { GoalTracker } from "@/components/GoalTracker";
 import { MoonPhaseIndicator } from "@/components/MoonPhaseIndicator";
 import { SpiritualGuidePanel } from "@/components/SpiritualGuidePanel";
+import { ReflectionPrompt } from "@/components/ReflectionPrompt";
 import { NPSTooltip } from "@/components/NPSTooltip";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,8 +11,25 @@ import { useNavigate } from "react-router-dom";
 import { LogOut, BookOpen, BarChart3, Settings as SettingsIcon } from "lucide-react";
 import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
 
-const SacredJourneys = () => {
+const Goals = () => {
+  const [recentEntries, setRecentEntries] = useState<any[]>([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchRecentEntries();
+  }, []);
+
+  const fetchRecentEntries = async () => {
+    const { data } = await supabase
+      .from("journal_entries")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(5);
+    
+    if (data) {
+      setRecentEntries(data);
+    }
+  };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -82,17 +101,20 @@ const SacredJourneys = () => {
           {/* Hero Section */}
           <div className="text-center space-y-3 mb-12">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Sacred Journeys
+              Goals & Journeys
             </h2>
             <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
-              Set intentions, track spiritual goals with moon phase guidance, and reflect on your growth
+              Set intentions, track your path, and celebrate growth
             </p>
           </div>
 
-          {/* Moon Phase & Spiritual Guide Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
+          {/* Moon Phase, Reflection & Spiritual Guide Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
             <MoonPhaseIndicator />
-            <SpiritualGuidePanel />
+            <div className="lg:col-span-2 space-y-6">
+              <ReflectionPrompt recentEntries={recentEntries} />
+              <SpiritualGuidePanel />
+            </div>
           </div>
 
           {/* Goal Tracker */}
@@ -103,4 +125,4 @@ const SacredJourneys = () => {
   );
 };
 
-export default SacredJourneys;
+export default Goals;

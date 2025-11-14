@@ -1,16 +1,35 @@
 import { useState } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
-import { Sparkles, Heart, Lightbulb, Loader2 } from "lucide-react";
+import { Sparkles, Heart, Lightbulb, Loader2, Target } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "./ui/dialog";
+import { Badge } from "./ui/badge";
+import { ScrollArea } from "./ui/scroll-area";
 
 type GuidanceType = "weekly_wisdom" | "practice_suggestion" | "pattern_insight";
+
+interface GoalSuggestion {
+  title: string;
+  description: string;
+  goal_type: string;
+  linked_pattern_ids: string[];
+}
 
 export const SpiritualGuidePanel = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentGuidance, setCurrentGuidance] = useState<string | null>(null);
+  const [isSuggestingGoals, setIsSuggestingGoals] = useState(false);
+  const [goalSuggestions, setGoalSuggestions] = useState<GoalSuggestion[]>([]);
+  const [showGoalsDialog, setShowGoalsDialog] = useState(false);
 
   const { data: recentGuidance } = useQuery({
     queryKey: ["spiritual-guidance"],
@@ -46,9 +65,32 @@ export const SpiritualGuidePanel = () => {
     }
   };
 
+  const suggestGoals = async () => {
+    setIsSuggestingGoals(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("suggest-goals");
+
+      if (error) throw error;
+
+      if (data?.goals && data.goals.length > 0) {
+        setGoalSuggestions(data.goals);
+        setShowGoalsDialog(true);
+        toast.success(`Yggi suggests ${data.goals.length} goals based on your patterns ✨`);
+      } else if (data?.error) {
+        toast.error(data.message || "No patterns found to suggest goals");
+      }
+    } catch (error) {
+      console.error("Error suggesting goals:", error);
+      toast.error("Couldn't generate goal suggestions. Try again soon.");
+    } finally {
+      setIsSuggestingGoals(false);
+    }
+  };
+
   const displayGuidance = currentGuidance || recentGuidance?.content;
 
   return (
+    <>
     <Card className="p-6 bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/20">
       <div className="flex items-center gap-2 mb-4">
         <Sparkles className="h-5 w-5 text-primary" />
@@ -77,7 +119,7 @@ export const SpiritualGuidePanel = () => {
           size="sm"
           variant="outline"
           onClick={() => generateGuidance("weekly_wisdom")}
-          disabled={isGenerating}
+          disabled={isGenerating || isSuggestingGoals}
           className="flex-1"
         >
           {isGenerating ? (
@@ -91,7 +133,7 @@ export const SpiritualGuidePanel = () => {
           size="sm"
           variant="outline"
           onClick={() => generateGuidance("practice_suggestion")}
-          disabled={isGenerating}
+          disabled={isGenerating || isSuggestingGoals}
           className="flex-1"
         >
           <Sparkles className="h-4 w-4 mr-2" />
@@ -101,13 +143,70 @@ export const SpiritualGuidePanel = () => {
           size="sm"
           variant="outline"
           onClick={() => generateGuidance("pattern_insight")}
-          disabled={isGenerating}
+          disabled={isGenerating || isSuggestingGoals}
           className="flex-1"
         >
           <Lightbulb className="h-4 w-4 mr-2" />
           Insight
         </Button>
       </div>
+
+      <div className="mt-4 pt-4 border-t border-border">
+        <Button
+          size="sm"
+          variant="default"
+          onClick={suggestGoals}
+          disabled={isGenerating || isSuggestingGoals}
+          className="w-full"
+        >
+          {isSuggestingGoals ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Target className="h-4 w-4 mr-2" />
+          )}
+          Suggest Goals from Patterns
+        </Button>
+      </div>
     </Card>
+
+    <Dialog open={showGoalsDialog} onOpenChange={setShowGoalsDialog}>
+      <DialogContent className="max-w-2xl max-h-[80vh]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            Goal Suggestions from Yggi
+          </DialogTitle>
+          <DialogDescription>
+            Based on your journal patterns, here are some goals to consider for your journey.
+          </DialogDescription>
+        </DialogHeader>
+        <ScrollArea className="max-h-[60vh] pr-4">
+          <div className="space-y-4">
+            {goalSuggestions.map((goal, index) => (
+              <Card key={index} className="p-4 border-primary/20">
+                <div className="flex items-start gap-3">
+                  <Target className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <h4 className="font-semibold text-lg">{goal.title}</h4>
+                      <Badge variant="secondary" className="capitalize">
+                        {goal.goal_type}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{goal.description}</p>
+                    {goal.linked_pattern_ids.length > 0 && (
+                      <div className="text-xs text-muted-foreground">
+                        Linked to {goal.linked_pattern_ids.length} pattern{goal.linked_pattern_ids.length !== 1 ? 's' : ''}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 };
