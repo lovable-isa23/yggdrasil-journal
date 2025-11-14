@@ -1,21 +1,19 @@
 import { useIntersectionObserver } from "@/hooks/use-intersection-observer";
 import yggdrasilHeroBg from "@/assets/yggdrasil-hero-bg.png";
-
-const JourneyCard = ({ step, index }: { step: any; index: number }) => {
-  const { elementRef, isVisible } = useIntersectionObserver();
-
-  return (
-    <div 
-      ref={elementRef}
-      className={`relative group transition-all duration-700 ${
-        isVisible 
-          ? 'opacity-100 translate-y-0' 
-          : 'opacity-0 translate-y-8'
-      }`}
-      style={{
-        transitionDelay: `${index * 150}ms`
-      }}
-    >
+const JourneyCard = ({
+  step,
+  index
+}: {
+  step: any;
+  index: number;
+}) => {
+  const {
+    elementRef,
+    isVisible
+  } = useIntersectionObserver();
+  return <div ref={elementRef} className={`relative group transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{
+    transitionDelay: `${index * 150}ms`
+  }}>
       <div className="text-center space-y-4 p-6 rounded-2xl bg-card border border-border hover:border-primary/50 transition-all duration-500 hover:shadow-medium h-full flex flex-col">
         <div className="text-5xl mb-2">{step.icon}</div>
         <div className="text-sm font-mono text-primary font-bold">{step.number}</div>
@@ -24,46 +22,33 @@ const JourneyCard = ({ step, index }: { step: any; index: number }) => {
       </div>
       
       {/* Connecting line for desktop */}
-      {index < 2 && (
-        <div className="hidden lg:block absolute top-1/2 -right-4 w-8 h-1 bg-gradient-to-r from-primary to-primary/30" />
-      )}
-    </div>
-  );
+      {index < 2}
+    </div>;
 };
-
 export const UserJourney = () => {
-  const steps = [
-    {
-      number: "01",
-      title: "Journal",
-      description: "Log in and create journal entries with personalized AI-generated prompts guiding your reflection",
-      icon: "✍️"
-    },
-    {
-      number: "02",
-      title: "Visualize",
-      description: "See your thoughts and reflections come alive through interactive semantic knowledge graphs",
-      icon: "🌐"
-    },
-    {
-      number: "03",
-      title: "Grow",
-      description: "Cultivate self-awareness and personal growth with tailored insights from your journaling journey",
-      icon: "🌱"
-    }
-  ];
-
-  return (
-    <section className="py-24 px-6 relative overflow-hidden">
+  const steps = [{
+    number: "01",
+    title: "Journal",
+    description: "Log in and create journal entries with personalized AI-generated prompts guiding your reflection",
+    icon: "✍️"
+  }, {
+    number: "02",
+    title: "Visualize",
+    description: "See your thoughts and reflections come alive through interactive semantic knowledge graphs",
+    icon: "🌐"
+  }, {
+    number: "03",
+    title: "Grow",
+    description: "Cultivate self-awareness and personal growth with tailored insights from your journaling journey",
+    icon: "🌱"
+  }];
+  return <section className="py-24 px-6 relative overflow-hidden">
       {/* Static Background */}
-      <div 
-        className="absolute inset-0 opacity-80"
-        style={{
-          backgroundImage: `url(${yggdrasilHeroBg})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center center',
-        }}
-      />
+      <div className="absolute inset-0 opacity-80" style={{
+      backgroundImage: `url(${yggdrasilHeroBg})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center center'
+    }} />
       
       {/* Gradient Overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/70 to-muted/80" />
@@ -81,11 +66,8 @@ export const UserJourney = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {steps.map((step, index) => (
-            <JourneyCard key={index} step={step} index={index} />
-          ))}
+          {steps.map((step, index) => <JourneyCard key={index} step={step} index={index} />)}
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
