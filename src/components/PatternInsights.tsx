@@ -3,10 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Loader2, TrendingUp, Lightbulb, Calendar, RefreshCw, X } from "lucide-react";
+import { Loader2, TrendingUp, Lightbulb, Calendar, RefreshCw, X, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { Progress } from "./ui/progress";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
 import { format } from "date-fns";
 
 interface Pattern {
@@ -26,6 +27,7 @@ export const PatternInsights = () => {
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
+  const [openPatterns, setOpenPatterns] = useState<Set<string>>(new Set());
   const [relatedEntries, setRelatedEntries] = useState<Array<{
     id: string;
     title: string;
@@ -33,6 +35,18 @@ export const PatternInsights = () => {
     content: string;
     relevantQuote?: string;
   }>>([]);
+
+  const togglePattern = (patternId: string) => {
+    setOpenPatterns(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(patternId)) {
+        newSet.delete(patternId);
+      } else {
+        newSet.add(patternId);
+      }
+      return newSet;
+    });
+  };
 
   useEffect(() => {
     fetchPatterns();
@@ -210,79 +224,94 @@ export const PatternInsights = () => {
         ) : (
           <div className="space-y-4">
             {patterns.map((pattern) => (
-              <Card key={pattern.id} className="p-4 hover:shadow-md transition-shadow">
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-center gap-3 flex-1">
-                      <span className="text-2xl">{getPatternIcon(pattern.pattern_type)}</span>
-                      <div>
-                        <h4 className="font-semibold text-base">{pattern.title}</h4>
-                        <Badge variant="secondary" className={`mt-1 ${getPatternColor(pattern.pattern_type)}`}>
-                          {pattern.pattern_type}
-                        </Badge>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-medium text-muted-foreground mb-1">
-                        Confidence
-                      </div>
-                      <Progress 
-                        value={pattern.confidence_score * 100} 
-                        className="w-20 h-2"
-                      />
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {Math.round(pattern.confidence_score * 100)}%
-                      </div>
-                    </div>
-                  </div>
-
-                  <p className="text-sm text-muted-foreground">
-                    {pattern.description}
-                  </p>
-
-                  {pattern.temporal_info && (
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      {pattern.temporal_info.frequency && (
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          <span className="capitalize">{pattern.temporal_info.frequency}</span>
+              <Collapsible
+                key={pattern.id}
+                open={openPatterns.has(pattern.id)}
+                onOpenChange={() => togglePattern(pattern.id)}
+              >
+                <Card className="p-4 hover:shadow-md transition-shadow">
+                  <CollapsibleTrigger className="w-full">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-center gap-3 flex-1 text-left">
+                        <span className="text-2xl">{getPatternIcon(pattern.pattern_type)}</span>
+                        <div>
+                          <h4 className="font-semibold text-base">{pattern.title}</h4>
+                          <Badge variant="secondary" className={`mt-1 ${getPatternColor(pattern.pattern_type)}`}>
+                            {pattern.pattern_type}
+                          </Badge>
                         </div>
-                      )}
-                      {pattern.temporal_info.trend && (
-                        <Badge variant="outline" className="text-xs">
-                          Trend: {pattern.temporal_info.trend}
-                        </Badge>
-                      )}
-                    </div>
-                  )}
-
-                  {pattern.related_items && Array.isArray(pattern.related_items) && pattern.related_items.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {pattern.related_items.map((item: string, idx: number) => (
-                        <Badge 
-                          key={idx} 
-                          variant="secondary" 
-                          className="text-xs cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
-                          onClick={() => handleItemClick(item)}
-                        >
-                          {item}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-
-                  {pattern.actionable_insight && (
-                    <div className="bg-accent/50 rounded-lg p-3 mt-2">
-                      <div className="flex items-start gap-2">
-                        <Lightbulb className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
-                        <p className="text-sm font-medium">
-                          {pattern.actionable_insight}
-                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <div className="text-sm font-medium text-muted-foreground mb-1">
+                            Confidence
+                          </div>
+                          <Progress 
+                            value={pattern.confidence_score * 100} 
+                            className="w-20 h-2"
+                          />
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {Math.round(pattern.confidence_score * 100)}%
+                          </div>
+                        </div>
+                        <ChevronDown 
+                          className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${
+                            openPatterns.has(pattern.id) ? 'rotate-180' : ''
+                          }`}
+                        />
                       </div>
                     </div>
-                  )}
-                </div>
-              </Card>
+                  </CollapsibleTrigger>
+
+                  <CollapsibleContent className="mt-3 space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      {pattern.description}
+                    </p>
+
+                    {pattern.temporal_info && (
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        {pattern.temporal_info.frequency && (
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            <span className="capitalize">{pattern.temporal_info.frequency}</span>
+                          </div>
+                        )}
+                        {pattern.temporal_info.trend && (
+                          <Badge variant="outline" className="text-xs">
+                            Trend: {pattern.temporal_info.trend}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+
+                    {pattern.related_items && Array.isArray(pattern.related_items) && pattern.related_items.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {pattern.related_items.map((item: string, idx: number) => (
+                          <Badge 
+                            key={idx} 
+                            variant="secondary" 
+                            className="text-xs cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                            onClick={() => handleItemClick(item)}
+                          >
+                            {item}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+
+                    {pattern.actionable_insight && (
+                      <div className="bg-accent/50 rounded-lg p-3 mt-2">
+                        <div className="flex items-start gap-2">
+                          <Lightbulb className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
+                          <p className="text-sm font-medium">
+                            {pattern.actionable_insight}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </CollapsibleContent>
+                </Card>
+              </Collapsible>
             ))}
           </div>
         )}
