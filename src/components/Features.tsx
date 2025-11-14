@@ -20,7 +20,7 @@ const FeatureCard = ({ feature, index }: { feature: any; index: number }) => {
       <div className="absolute inset-[1px] rounded-2xl bg-card z-0" />
       
       <div className="relative z-10 space-y-4">
-        <div className="text-4xl mb-4">{feature.icon}</div>
+        <div className="text-4xl mb-4 text-center">{feature.icon}</div>
         <h3 className="text-xl font-semibold">{feature.title}</h3>
         <p className="text-sm text-muted-foreground leading-relaxed">
           {feature.description}
