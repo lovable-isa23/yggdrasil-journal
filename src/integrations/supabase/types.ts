@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      beta_users: {
+        Row: {
+          created_at: string | null
+          id: string
+          joined_discord: boolean | null
+          payment_amount: number | null
+          payment_status: string | null
+          stripe_checkout_session_id: string | null
+          stripe_customer_id: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          joined_discord?: boolean | null
+          payment_amount?: number | null
+          payment_status?: string | null
+          stripe_checkout_session_id?: string | null
+          stripe_customer_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          joined_discord?: boolean | null
+          payment_amount?: number | null
+          payment_status?: string | null
+          stripe_checkout_session_id?: string | null
+          stripe_customer_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       entry_insights: {
         Row: {
           chakra_tags: Json | null
