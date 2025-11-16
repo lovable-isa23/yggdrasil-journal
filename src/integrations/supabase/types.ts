@@ -324,6 +324,30 @@ export type Database = {
           },
         ]
       }
+      import_batches: {
+        Row: {
+          created_at: string
+          entries_created: number
+          file_names: string[]
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entries_created?: number
+          file_names: string[]
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          entries_created?: number
+          file_names?: string[]
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       import_history: {
         Row: {
           created_at: string
@@ -359,35 +383,47 @@ export type Database = {
       }
       journal_entries: {
         Row: {
+          audio_url: string | null
           content: string
           created_at: string
           entry_date: string
           id: string
+          image_description: string | null
+          image_url: string | null
           import_batch_id: string | null
           linked_goals: string[] | null
           title: string
+          transcription_source: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          audio_url?: string | null
           content: string
           created_at?: string
           entry_date?: string
           id?: string
+          image_description?: string | null
+          image_url?: string | null
           import_batch_id?: string | null
           linked_goals?: string[] | null
           title: string
+          transcription_source?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          audio_url?: string | null
           content?: string
           created_at?: string
           entry_date?: string
           id?: string
+          image_description?: string | null
+          image_url?: string | null
           import_batch_id?: string | null
           linked_goals?: string[] | null
           title?: string
+          transcription_source?: string | null
           updated_at?: string
           user_id?: string
         }
