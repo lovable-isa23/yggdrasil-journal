@@ -13,6 +13,8 @@ interface ParsedEntry {
 
 export const DataImport = ({ onImportComplete }: { onImportComplete: () => void }) => {
   const [isImporting, setIsImporting] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [currentFile, setCurrentFile] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -123,9 +125,12 @@ export const DataImport = ({ onImportComplete }: { onImportComplete: () => void 
     if (!files || files.length === 0) return;
 
     setIsImporting(true);
+    setProgress(0);
     const totalFiles = files.length;
     let processedFiles = 0;
+    let totalEntriesCreated = 0;
     const failedFiles: string[] = [];
+    const fileNames: string[] = [];
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -138,14 +143,31 @@ export const DataImport = ({ onImportComplete }: { onImportComplete: () => void 
         return;
       }
 
+      // Create batch record
+      const { data: batchRecord, error: batchError } = await supabase
+        .from("import_batches")
+        .insert({
+          user_id: user.id,
+          file_names: Array.from(files).map(f => f.name),
+          entries_created: 0,
+        })
+        .select()
+        .single();
+
+      if (batchError) throw batchError;
+
       // Process each file
       for (const file of Array.from(files)) {
+        setCurrentFile(file.name);
+        fileNames.push(file.name);
+        
         try {
           const entries = await processFile(file, user);
 
           if (entries.length === 0) {
             failedFiles.push(`${file.name}: No valid entries found`);
             processedFiles++;
+            setProgress((processedFiles / totalFiles) * 100);
             continue;
           }
 
@@ -177,24 +199,33 @@ export const DataImport = ({ onImportComplete }: { onImportComplete: () => void 
 
           if (insertError) throw insertError;
 
+          totalEntriesCreated += entries.length;
           processedFiles++;
+          setProgress((processedFiles / totalFiles) * 100);
         } catch (error) {
           console.error(`Error processing ${file.name}:`, error);
           failedFiles.push(`${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
           processedFiles++;
+          setProgress((processedFiles / totalFiles) * 100);
         }
       }
+
+      // Update batch record with final count
+      await supabase
+        .from("import_batches")
+        .update({ entries_created: totalEntriesCreated })
+        .eq("id", batchRecord.id);
 
       // Show result toast
       if (failedFiles.length === 0) {
         toast({
           title: "Import successful",
-          description: `${totalFiles} ${totalFiles === 1 ? 'file' : 'files'} imported successfully`,
+          description: `${totalFiles} ${totalFiles === 1 ? 'file' : 'files'} imported successfully (${totalEntriesCreated} entries created)`,
         });
       } else if (failedFiles.length < totalFiles) {
         toast({
           title: "Partial import",
-          description: `${totalFiles - failedFiles.length} files succeeded, ${failedFiles.length} failed`,
+          description: `${totalFiles - failedFiles.length} files succeeded (${totalEntriesCreated} entries), ${failedFiles.length} failed`,
           variant: "default",
         });
       } else {
@@ -220,11 +251,13 @@ export const DataImport = ({ onImportComplete }: { onImportComplete: () => void 
       });
     } finally {
       setIsImporting(false);
+      setProgress(0);
+      setCurrentFile("");
     }
   };
 
   return (
-    <div>
+    <div className="space-y-3">
       <input
         ref={fileInputRef}
         type="file"
@@ -241,8 +274,16 @@ export const DataImport = ({ onImportComplete }: { onImportComplete: () => void 
         className="gap-2"
       >
         <Upload className="h-4 w-4" />
-        {isImporting ? "Importing..." : "Import Entries"}
+        {isImporting ? "Importing..." : "Import Files"}
       </Button>
+      {isImporting && (
+        <div className="space-y-2">
+          <Progress value={progress} className="h-2" />
+          <p className="text-sm text-muted-foreground">
+            Processing: {currentFile}
+          </p>
+        </div>
+      )}
     </div>
   );
 };

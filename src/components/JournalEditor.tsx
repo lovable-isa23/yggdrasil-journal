@@ -16,6 +16,8 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { journalEntrySchema, type JournalEntryFormData } from "@/lib/validations";
+import { AudioRecorder } from "@/components/AudioRecorder";
+import { ImageUploader } from "@/components/ImageUploader";
 
 interface JournalEditorProps {
   onEntryCreated: () => void;
@@ -36,6 +38,8 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
   });
   const [goals, setGoals] = useState<Goal[]>([]);
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
+  const [audioUrl, setAudioUrl] = useState<string | undefined>();
+  const [imageUrl, setImageUrl] = useState<string | undefined>();
   
   const {
     register,
@@ -81,6 +85,28 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
     );
   };
 
+  const handleTranscription = (text: string, url?: string) => {
+    // Set the transcribed text as content
+    reset({
+      title: title || text.substring(0, 50) + "...",
+      content: text,
+    });
+    if (url) {
+      setAudioUrl(url);
+    }
+    toast.success("Transcription complete! Review and edit before saving.");
+  };
+
+  const handleImageAnalysis = (description: string, url: string) => {
+    // Set the AI-analyzed description as content
+    reset({
+      title: title || "Image Entry: " + new Date().toLocaleDateString(),
+      content: description,
+    });
+    setImageUrl(url);
+    toast.success("Image analyzed! Review and edit before saving.");
+  };
+
   const onSubmit = async (data: JournalEntryFormData) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -102,6 +128,9 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
           content: data.content,
           entry_date: localDate,
           linked_goals: selectedGoals,
+          audio_url: audioUrl,
+          image_url: imageUrl,
+          transcription_source: audioUrl ? 'voice' : imageUrl ? 'image' : 'typed',
         },
       });
 
@@ -110,6 +139,8 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
       toast.success("Journal entry created (AES-256 encrypted)!");
       reset();
       setSelectedGoals([]);
+      setAudioUrl(undefined);
+      setImageUrl(undefined);
       const today = new Date();
       today.setHours(12, 0, 0, 0);
       setEntryDate(today);
@@ -207,6 +238,17 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
             />
           </PopoverContent>
         </Popover>
+      </div>
+
+      <div className="space-y-4 p-4 rounded-xl bg-muted/30 border border-border">
+        <Label>Alternative Input Methods</Label>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <AudioRecorder onTranscriptionComplete={handleTranscription} />
+          <ImageUploader onAnalysisComplete={handleImageAnalysis} />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Record your thoughts or upload an image/sketch. AI will transcribe or analyze it for you to review and edit.
+        </p>
       </div>
 
       <div className="space-y-2">

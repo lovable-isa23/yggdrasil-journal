@@ -68,7 +68,7 @@ serve(async (req) => {
       });
     }
 
-    const { title, content, entry_date, import_batch_id, linked_goals } = await req.json();
+    const { title, content, entry_date, import_batch_id, linked_goals, audio_url, image_url, transcription_source } = await req.json();
     
     if (!title || !content) {
       return new Response(JSON.stringify({ error: 'Title and content are required' }), {
@@ -104,6 +104,9 @@ serve(async (req) => {
         entry_date: entry_date || new Date().toISOString().split('T')[0],
         import_batch_id: import_batch_id || null,
         linked_goals: linked_goals || [],
+        audio_url: audio_url || null,
+        image_url: image_url || null,
+        transcription_source: transcription_source || 'typed',
       })
       .select()
       .single();
