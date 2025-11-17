@@ -240,7 +240,8 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
         </Popover>
       </div>
 
-      <div className="space-y-4 p-4 rounded-xl bg-muted/30 border border-border">
+      {/* Alternative Input Methods - Hidden for now */}
+      {/* <div className="space-y-4 p-4 rounded-xl bg-muted/30 border border-border">
         <Label>Alternative Input Methods</Label>
         <div className="flex flex-col sm:flex-row gap-3">
           <AudioRecorder onTranscriptionComplete={handleTranscription} />
@@ -249,7 +250,7 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
         <p className="text-xs text-muted-foreground">
           Record your thoughts or upload an image/sketch. AI will transcribe or analyze it for you to review and edit.
         </p>
-      </div>
+      </div> */}
 
       <div className="space-y-2">
         <Label>Content</Label>
