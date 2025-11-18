@@ -380,7 +380,7 @@ export const PracticeManager = ({ goalId, goalType, intention }: PracticeManager
               <Card key={practice.id} className="p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3 flex-1">
-                    <div className={`p-2 rounded-lg bg-accent ${iconColor}`}>
+                    <div className={`p-2 rounded-lg border border-border/30 ${iconColor}`} style={{ backgroundColor: '#F9F0E5' }}>
                       <Icon className="h-4 w-4" />
                     </div>
                     <div className="flex-1 space-y-1">
