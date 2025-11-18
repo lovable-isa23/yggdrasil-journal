@@ -85,7 +85,7 @@ const Insights = () => {
         </header>
 
         {/* Main Content */}
-        <main className="container mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <main className="container mx-auto px-6 sm:px-8 lg:px-12 py-8 sm:py-12">
           {/* Hero Section */}
           <div className="text-center space-y-3 mb-12">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-2">
@@ -127,7 +127,7 @@ const Insights = () => {
             {/* Visualizations Section */}
             <section>
               <div className="flex items-center gap-2 mb-6">
-                <TrendingUp className="h-6 w-6 text-primary" />
+                <Sparkles className="h-6 w-6 text-primary" />
                 <h3 className="text-2xl font-bold">Visualizations</h3>
               </div>
               <div className="grid gap-6">
@@ -171,10 +171,7 @@ const Insights = () => {
                       <p className="text-xs text-muted-foreground mb-2">
                         Generate comprehensive PDF reports with insights
                       </p>
-                      <div className="flex flex-col gap-2">
-                        <ReportExport />
-                        <ReportExport showAllData />
-                      </div>
+                      <ReportExport />
                     </div>
                   </div>
                 </CardContent>

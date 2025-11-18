@@ -11,21 +11,32 @@ export const DataExport = () => {
   const { toast } = useToast();
 
   const fetchAllEntries = async () => {
-    const { data, error } = await supabase
-      .from("journal_entries")
-      .select("*")
-      .order("entry_date", { ascending: false });
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const { data: decryptedData, error } = await supabase.functions.invoke('decrypt-entries', {
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+      });
 
-    if (error) {
+      if (error) {
+        toast({
+          title: "Error fetching entries",
+          description: error.message,
+          variant: "destructive",
+        });
+        return null;
+      }
+
+      return decryptedData?.entries || [];
+    } catch (error) {
       toast({
         title: "Error fetching entries",
-        description: error.message,
+        description: "Failed to decrypt entries",
         variant: "destructive",
       });
       return null;
     }
-
-    return data;
   };
 
   const exportAsJSON = async () => {

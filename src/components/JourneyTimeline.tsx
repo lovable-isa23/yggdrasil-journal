@@ -51,12 +51,19 @@ export const JourneyTimeline = ({ goalId, refreshTrigger }: JourneyTimelineProps
         .eq("goal_id", goalId)
         .order("created_at", { ascending: true });
 
-      // Fetch linked journal entries
-      const { data: entries } = await supabase
-        .from("journal_entries")
-        .select("*")
-        .contains("linked_goals", [goalId])
-        .order("entry_date", { ascending: true });
+      // Fetch and decrypt linked journal entries
+      const { data: { session } } = await supabase.auth.getSession();
+      const { data: decryptedData } = await supabase.functions.invoke('decrypt-entries', {
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+      });
+      
+      const entries = decryptedData?.entries?.filter((entry: any) => 
+        entry.linked_goals?.includes(goalId)
+      ).sort((a: any, b: any) => 
+        new Date(a.entry_date).getTime() - new Date(b.entry_date).getTime()
+      ) || [];
 
       // Fetch practices
       const { data: practices } = await supabase

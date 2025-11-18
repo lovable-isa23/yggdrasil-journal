@@ -3,7 +3,7 @@ import * as d3 from "d3";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { Loader2, Calendar, FileText, Maximize2, Download, Image as ImageIcon, FileDown, TrendingUp } from "lucide-react";
+import { Loader2, Calendar, FileText, Maximize2, Download, Image as ImageIcon, FileDown, Network } from "lucide-react";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
@@ -453,7 +453,7 @@ export const KnowledgeGraph = () => {
       <Card className="w-full">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
+            <Network className="h-5 w-5" />
             Knowledge Graph
           </CardTitle>
           <CardDescription>Visualize connections in your journal</CardDescription>
@@ -472,7 +472,7 @@ export const KnowledgeGraph = () => {
       <Card className="w-full">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
+            <Network className="h-5 w-5" />
             Knowledge Graph
           </CardTitle>
           <CardDescription>
@@ -535,7 +535,7 @@ export const KnowledgeGraph = () => {
                 {graphData.nodes.length === 0 && !loading ? (
                   <div className="flex justify-center items-center h-[600px] bg-muted/20 rounded-lg border mt-4">
                     <div className="text-center p-8">
-                      <TrendingUp className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                      <Network className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                       <p className="text-lg font-medium mb-2">No connections at this strength</p>
                       <p className="text-sm text-muted-foreground">
                         Try lowering the connection strength filter to see more nodes
