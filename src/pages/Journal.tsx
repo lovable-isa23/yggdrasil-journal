@@ -122,7 +122,7 @@ const Journal = () => {
                   <FileText className="h-6 w-6 text-primary" />
                   <h3 className="text-2xl font-bold">Your Entries</h3>
                 </div>
-                <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
+                <div className="flex gap-2 sm:gap-3">
                   <DataImport onImportComplete={handleEntryCreated} />
                   <DataExport />
                 </div>

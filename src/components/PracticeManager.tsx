@@ -64,6 +64,7 @@ interface PracticeLog {
 interface PracticeManagerProps {
   goalId: string;
   goalType: string;
+  intention?: string;
 }
 
 const practiceTypeIcons: Record<string, any> = {
@@ -102,7 +103,7 @@ const suggestedPractices: Record<string, Array<{ title: string; description: str
   ],
 };
 
-export const PracticeManager = ({ goalId, goalType }: PracticeManagerProps) => {
+export const PracticeManager = ({ goalId, goalType, intention }: PracticeManagerProps) => {
   const [practices, setPractices] = useState<Practice[]>([]);
   const [logs, setLogs] = useState<Record<string, PracticeLog[]>>({});
   const [loading, setLoading] = useState(true);
@@ -206,10 +207,21 @@ export const PracticeManager = ({ goalId, goalType }: PracticeManagerProps) => {
   const handleSuggestPractices = async () => {
     setLoadingAI(true);
     try {
-      const suggested = suggestedPractices[goalType] || suggestedPractices["spiritual-practice"];
+      // Call the edge function to get AI-generated practice suggestions
+      const { data, error } = await supabase.functions.invoke("suggest-practices", {
+        body: { intention: intention || "general spiritual growth", goalType },
+      });
+
+      if (error) throw error;
+
+      const suggested = data?.practices || [];
       
-      // Show the suggestions
-      toast.success(`Found ${suggested.length} suggested practices for ${goalType}`);
+      if (suggested.length === 0) {
+        toast.error("No practice suggestions generated. Please try again.");
+        return;
+      }
+      
+      toast.success(`Yggi suggests ${suggested.length} practices for your journey ✨`);
       
       // Add them to the list
       const { data: { user } } = await supabase.auth.getUser();

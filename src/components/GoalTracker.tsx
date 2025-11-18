@@ -3,10 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Loader2, Target, Plus, Calendar as CalendarIcon, TrendingUp, CheckCircle2, Sparkles, Edit2, Trash2, ChevronDown, Heart } from "lucide-react";
+import { Loader2, Target, Plus, Calendar as CalendarIcon, TrendingUp, CheckCircle2, Sparkles, Edit2, Trash2, ChevronDown, Heart, BookOpen, Lightbulb, Palette, Users } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
 import { GoalDialog } from "./GoalDialog";
 import { MilestoneManager } from "./MilestoneManager";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
@@ -60,6 +61,22 @@ export const GoalTracker = () => {
   const [completingGoal, setCompletingGoal] = useState<Goal | null>(null);
   const [isReflectionOpen, setIsReflectionOpen] = useState(false);
   const [reflectingGoalId, setReflectingGoalId] = useState<string | null>(null);
+  const [timelineRefreshTrigger, setTimelineRefreshTrigger] = useState(0);
+
+  const { data: goalsData, refetch } = useQuery({
+    queryKey: ["goals"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("goals").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  useEffect(() => {
+    if (goalsData) {
+      setGoals(goalsData);
+    }
+  }, [goalsData]);
 
   useEffect(() => {
     fetchData();
@@ -86,6 +103,9 @@ export const GoalTracker = () => {
         return acc;
       }, {} as Record<string, Milestone[]>);
       setMilestones(milestonesByGoal);
+      
+      // Trigger timeline refresh
+      setTimelineRefreshTrigger(prev => prev + 1);
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Failed to load goals");
@@ -192,7 +212,11 @@ export const GoalTracker = () => {
     const types: Record<string, { icon: any; color: string }> = {
       "shadow-work": { icon: Sparkles, color: "text-purple-500" },
       "spiritual-practice": { icon: Target, color: "text-blue-500" },
-      "emotional-healing": { icon: TrendingUp, color: "text-pink-500" },
+      "emotional-healing": { icon: Heart, color: "text-pink-500" },
+      "manifestation": { icon: Lightbulb, color: "text-yellow-500" },
+      "creative-expression": { icon: Palette, color: "text-orange-500" },
+      "relationship-work": { icon: Users, color: "text-green-500" },
+      "general": { icon: BookOpen, color: "text-gray-500" },
     };
     return types[goalType] || { icon: Target, color: "text-gray-500" };
   };
@@ -268,9 +292,9 @@ export const GoalTracker = () => {
                       
                       <MilestoneManager goalId={goal.id} milestones={goalMilestones} onUpdate={fetchData} />
                       
-                      <PracticeManager goalId={goal.id} goalType={goal.goal_type} />
+                      <PracticeManager goalId={goal.id} goalType={goal.goal_type} intention={goal.intention || undefined} />
                       
-                      <JourneyTimeline goalId={goal.id} />
+                      <JourneyTimeline goalId={goal.id} refreshTrigger={timelineRefreshTrigger} />
                       
                       <div className="flex gap-2 pt-4 border-t">
                         <Button variant="outline" size="sm" onClick={() => { setReflectingGoalId(goal.id); setIsReflectionOpen(true); }}>
