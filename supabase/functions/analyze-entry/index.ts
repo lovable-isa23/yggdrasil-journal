@@ -206,6 +206,12 @@ ${enableTarotTags ? `- tarot_tags: Identify relevant tarot archetypes (format: [
 
 IMPORTANT: For safety_concerns, only flag true if there is genuine risk language (e.g., "I want to end my life", "not worth living", "plan to hurt myself", "everyone would be better off without me"). Do not flag general sadness, stress, or normal difficult emotions.
 
+CRITICAL JSON RULES:
+- Return ONLY valid JSON - no markdown, no code blocks, no explanations
+- Each string in arrays must be complete and properly quoted on a single line
+- Do not split strings across multiple lines within the JSON
+- Ensure all quotes are properly closed
+
 Respond with ONLY a valid JSON object in this exact format:
 {
   "entities": ["entity1", "entity2"],
@@ -264,12 +270,35 @@ Respond with ONLY a valid JSON object in this exact format:
       // 4) Remove trailing commas before closing } or ]
       cleanContent = cleanContent.replace(/,(\s*[}\]])/g, '$1');
 
+      // 5) Fix broken string fragments in arrays (e.g., "\n   parcial" -> "parcial")
+      // This handles cases where AI splits strings across lines without proper quotes
+      cleanContent = cleanContent.replace(/"\s*\n\s+([a-zA-Z][^",\]]*?)"/g, ' $1"');
+
       analysis = JSON.parse(cleanContent);
       console.log('Parsed analysis (sanitized):', analysis);
     } catch (parseError) {
       console.error('Failed to parse AI response raw:', aiContent);
       console.error('Parse error details:', parseError);
-      throw new Error('Failed to parse AI analysis: ' + (parseError instanceof Error ? parseError.message : 'Unknown parse error'));
+      
+      // Provide a fallback with basic analysis
+      console.log('Attempting fallback analysis...');
+      analysis = {
+        entities: [],
+        themes: ['reflection', 'personal growth'],
+        emotions: [{ emotion: 'contemplative', intensity: 5 }],
+        keywords: ['journal', 'reflection'],
+        summary: 'Unable to fully analyze entry due to processing error. Please try again.',
+        safety_concerns: { flag: false, concerns: [] }
+      };
+      
+      if (enableChakraTags) {
+        analysis.chakra_tags = [];
+      }
+      if (enableTarotTags) {
+        analysis.tarot_tags = [];
+      }
+      
+      console.log('Using fallback analysis:', analysis);
     }
 
     // Store insights in database (supabase client already initialized above)
