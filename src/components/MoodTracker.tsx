@@ -6,7 +6,7 @@ import { format, subDays, isWithinInterval } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, RefreshCw } from "lucide-react";
+import { CalendarIcon, RefreshCw, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type EmotionData = {
@@ -157,24 +157,27 @@ export const MoodTracker = () => {
   }
 
   return (
-    <Card className="p-6">
-      <div className="space-y-4">
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="text-xl font-normal mb-2">Mood Over Time</h3>
-            <p className="text-sm text-muted-foreground">
-              Tracking emotional intensity from negative (-10) to positive (+10)
-            </p>
+      <Card className="p-6">
+        <div className="space-y-4">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-2">
+              <Heart className="h-5 w-5 text-primary" />
+              <div>
+                <h3 className="text-xl font-normal">Mood Over Time</h3>
+                <p className="text-sm text-muted-foreground">
+                  Tracking emotional intensity from negative (-10) to positive (+10)
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={fetchMoodData}
+              className="h-8 w-8"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={fetchMoodData}
-            className="h-8 w-8"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-        </div>
 
         <div className="flex flex-wrap gap-2 items-center">
           <Popover>
