@@ -263,7 +263,7 @@ export const GoalTracker = () => {
                   <CollapsibleTrigger className="w-full p-6 text-left">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-start gap-3 flex-1">
-                        <div className={cn("p-2 rounded-lg", color)} style={{ backgroundColor: '#F9F0E5' }}><GoalIcon className="h-5 w-5" /></div>
+                        <div className={cn("p-2 rounded-lg border border-border/30", color)} style={{ backgroundColor: '#F9F0E5' }}><GoalIcon className="h-5 w-5" /></div>
                         <div className="flex-1 space-y-2">
                           <div className="flex items-center gap-2 flex-wrap">
                             <h3 className="text-xl font-semibold">{goal.title}</h3>
