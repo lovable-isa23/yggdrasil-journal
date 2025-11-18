@@ -4,6 +4,8 @@ import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Loader2, Calendar, BookOpen, Target, Sparkles, Heart } from "lucide-react";
 import { format } from "date-fns";
+import { ReflectionViewDialog } from "./ReflectionViewDialog";
+import { cn } from "@/lib/utils";
 
 interface TimelineEvent {
   id: string;
@@ -12,19 +14,23 @@ interface TimelineEvent {
   title: string;
   description?: string;
   completed?: boolean;
+  fullData?: any;
 }
 
 interface JourneyTimelineProps {
   goalId: string;
+  refreshTrigger?: number;
 }
 
-export const JourneyTimeline = ({ goalId }: JourneyTimelineProps) => {
+export const JourneyTimeline = ({ goalId, refreshTrigger }: JourneyTimelineProps) => {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedReflection, setSelectedReflection] = useState<any>(null);
+  const [isReflectionDialogOpen, setIsReflectionDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchTimelineData();
-  }, [goalId]);
+  }, [goalId, refreshTrigger]);
 
   const fetchTimelineData = async () => {
     try {
@@ -81,6 +87,7 @@ export const JourneyTimeline = ({ goalId }: JourneyTimelineProps) => {
           type: "reflection",
           title: `${reflection.reflection_type} reflection`,
           description: reflection.insights || reflection.what_worked || undefined,
+          fullData: reflection,
         });
       });
 
@@ -153,48 +160,69 @@ export const JourneyTimeline = ({ goalId }: JourneyTimelineProps) => {
     );
   }
 
+  const handleReflectionClick = (event: TimelineEvent) => {
+    if (event.type === "reflection" && event.fullData) {
+      setSelectedReflection(event.fullData);
+      setIsReflectionDialogOpen(true);
+    }
+  };
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Calendar className="h-5 w-5 text-primary" />
-        <h4 className="font-semibold">Journey Timeline</h4>
-      </div>
-      
-      <div className="relative space-y-4 pl-8 border-l-2 border-border">
-        {events.map((event, index) => {
-          const Icon = getEventIcon(event.type);
-          const iconColor = getEventColor(event.type);
-          
-          return (
-            <div key={event.id} className="relative">
-              <div className={`absolute -left-[37px] p-2 rounded-full bg-background border-2 border-border ${iconColor}`}>
-                <Icon className="h-4 w-4" />
-              </div>
-              
-              <Card className="p-4 hover:shadow-md transition-shadow">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <h5 className="font-medium">{event.title}</h5>
-                    <Badge variant="outline" className="text-xs">
-                      {format(new Date(event.date), "MMM d, yyyy")}
-                    </Badge>
-                  </div>
-                  
-                  {event.description && (
-                    <p className="text-sm text-muted-foreground">{event.description}</p>
-                  )}
-                  
-                  {event.type === "milestone" && event.completed && (
-                    <Badge variant="secondary" className="text-xs bg-green-500/10 text-green-700 dark:text-green-400">
-                      Completed
-                    </Badge>
-                  )}
+    <>
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Calendar className="h-5 w-5 text-primary" />
+          <h4 className="font-semibold">Journey Timeline</h4>
+        </div>
+        
+        <div className="relative space-y-4 pl-8 border-l-2 border-border">
+          {events.map((event, index) => {
+            const Icon = getEventIcon(event.type);
+            const iconColor = getEventColor(event.type);
+            
+            return (
+              <div key={event.id} className="relative">
+                <div className={`absolute -left-[37px] p-2 rounded-full bg-background border-2 border-border ${iconColor}`}>
+                  <Icon className="h-4 w-4" />
                 </div>
-              </Card>
-            </div>
-          );
-        })}
+                
+                <Card 
+                  className={cn(
+                    "p-4 hover:shadow-md transition-shadow",
+                    event.type === "reflection" && "cursor-pointer"
+                  )}
+                  onClick={() => event.type === "reflection" && handleReflectionClick(event)}
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <h5 className="font-medium">{event.title}</h5>
+                      <Badge variant="outline" className="text-xs">
+                        {format(new Date(event.date), "MMM d, yyyy")}
+                      </Badge>
+                    </div>
+                    
+                    {event.description && (
+                      <p className="text-sm text-muted-foreground">{event.description}</p>
+                    )}
+                    
+                    {event.type === "milestone" && event.completed && (
+                      <Badge variant="secondary" className="text-xs bg-green-500/10 text-green-700 dark:text-green-400">
+                        Completed
+                      </Badge>
+                    )}
+                  </div>
+                </Card>
+              </div>
+            );
+          })}
+        </div>
       </div>
-    </div>
+
+      <ReflectionViewDialog
+        open={isReflectionDialogOpen}
+        onOpenChange={setIsReflectionDialogOpen}
+        reflection={selectedReflection}
+      />
+    </>
   );
 };

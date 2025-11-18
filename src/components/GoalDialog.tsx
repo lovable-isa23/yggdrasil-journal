@@ -174,8 +174,8 @@ export const GoalDialog = ({ open, onOpenChange, onSave, editingGoal, patterns }
             </div>
           )}
 
-          {/* Step 2: Details */}
-          {step === 3 && (
+          {/* Step 2: Define Your Path */}
+          {step === 2 && (
             <div className="space-y-6 animate-in fade-in-50">
               <div className="space-y-2">
                 <Label htmlFor="title">Journey Title *</Label>
@@ -192,30 +192,29 @@ export const GoalDialog = ({ open, onOpenChange, onSave, editingGoal, patterns }
                 <Label htmlFor="description">Path Description</Label>
                 <Textarea
                   id="description"
-                  placeholder="Describe the specifics of this journey... What will you do? How will you practice?"
+                  placeholder="How will this journey unfold? What steps will you take?"
                   value={formData.description}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  className="min-h-24"
+                  className="min-h-32 text-base"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label>Target Completion Date (Optional)</Label>
+                <Label>Target Completion</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
-                      type="button"
                       variant="outline"
                       className={cn(
-                        "w-full h-12 justify-start text-left font-normal",
+                        "w-full justify-start text-left font-normal h-12",
                         !formData.targetDate && "text-muted-foreground"
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.targetDate ? format(formData.targetDate, "PPP") : "Pick a date"}
+                      {formData.targetDate ? format(formData.targetDate, "PPP") : "Choose a date"}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
+                  <PopoverContent className="w-auto p-0">
                     <Calendar
                       mode="single"
                       selected={formData.targetDate}
@@ -224,12 +223,12 @@ export const GoalDialog = ({ open, onOpenChange, onSave, editingGoal, patterns }
                     />
                   </PopoverContent>
                 </Popover>
-                <p className="text-sm text-muted-foreground">Honor your own timeline - this is guidance, not pressure.</p>
+                <p className="text-sm text-muted-foreground">Optional: When do you envision completing this journey?</p>
               </div>
             </div>
           )}
 
-          {/* Step 3: Patterns & Status */}
+          {/* Step 3: Connect & Commit */}
           {step === 3 && (
             <div className="space-y-6 animate-in fade-in-50">
               {patterns.length > 0 && (

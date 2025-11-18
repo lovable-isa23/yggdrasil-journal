@@ -4,7 +4,8 @@ import { Button } from "./ui/button";
 import { Sparkles, Heart, Lightbulb, Loader2, Target, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import ReactMarkdown from "react-markdown";
 import {
   Dialog,
   DialogContent,
@@ -27,9 +28,11 @@ interface GoalSuggestion {
 export const SpiritualGuidePanel = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentGuidance, setCurrentGuidance] = useState<string | null>(null);
+  const [currentGuidanceDate, setCurrentGuidanceDate] = useState<string | null>(null);
   const [isSuggestingGoals, setIsSuggestingGoals] = useState(false);
   const [goalSuggestions, setGoalSuggestions] = useState<GoalSuggestion[]>([]);
   const [showGoalsDialog, setShowGoalsDialog] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: recentGuidance } = useQuery({
     queryKey: ["spiritual-guidance"],
@@ -56,6 +59,7 @@ export const SpiritualGuidePanel = () => {
       if (error) throw error;
 
       setCurrentGuidance(data.guidance);
+      setCurrentGuidanceDate(new Date().toISOString());
       toast.success("Guidance from Yggi received ✨");
     } catch (error) {
       console.error("Error generating guidance:", error);
@@ -126,6 +130,9 @@ export const SpiritualGuidePanel = () => {
 
       toast.success(`"${goal.title}" added to your goals! 🎯`);
       
+      // Invalidate goals query to trigger refresh
+      queryClient.invalidateQueries({ queryKey: ["goals"] });
+      
       // Remove the saved goal from suggestions
       setGoalSuggestions(prev => prev.filter(g => g.title !== goal.title));
       
@@ -151,12 +158,12 @@ export const SpiritualGuidePanel = () => {
 
       {displayGuidance ? (
         <div className="space-y-4">
-          <div className="prose prose-sm max-w-none text-muted-foreground whitespace-pre-wrap">
-            {displayGuidance}
+          <div className="prose prose-sm max-w-none text-muted-foreground">
+            <ReactMarkdown>{displayGuidance}</ReactMarkdown>
           </div>
           <div className="text-xs text-muted-foreground">
-            {recentGuidance?.created_at && 
-              `Received ${new Date(recentGuidance.created_at).toLocaleDateString()}`
+            {(currentGuidanceDate || recentGuidance?.created_at) && 
+              `Received ${new Date(currentGuidanceDate || recentGuidance.created_at).toLocaleDateString()}`
             }
           </div>
         </div>
