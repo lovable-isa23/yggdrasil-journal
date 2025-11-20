@@ -391,7 +391,11 @@ export type Database = {
           image_description: string | null
           image_url: string | null
           import_batch_id: string | null
+          is_favorite: boolean | null
           linked_goals: string[] | null
+          mood_color: string | null
+          mood_type: string | null
+          tags: Json | null
           title: string
           transcription_source: string | null
           updated_at: string
@@ -406,7 +410,11 @@ export type Database = {
           image_description?: string | null
           image_url?: string | null
           import_batch_id?: string | null
+          is_favorite?: boolean | null
           linked_goals?: string[] | null
+          mood_color?: string | null
+          mood_type?: string | null
+          tags?: Json | null
           title: string
           transcription_source?: string | null
           updated_at?: string
@@ -421,7 +429,11 @@ export type Database = {
           image_description?: string | null
           image_url?: string | null
           import_batch_id?: string | null
+          is_favorite?: boolean | null
           linked_goals?: string[] | null
+          mood_color?: string | null
+          mood_type?: string | null
+          tags?: Json | null
           title?: string
           transcription_source?: string | null
           updated_at?: string

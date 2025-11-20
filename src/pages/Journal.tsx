@@ -5,6 +5,7 @@ import { JournalEntryList } from "@/components/JournalEntryList";
 import { DataExport } from "@/components/DataExport";
 import { DataImport } from "@/components/DataImport";
 import { NPSTooltip } from "@/components/NPSTooltip";
+import { EntryFilters, FilterOptions, SortOption } from "@/components/EntryFilters";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -13,6 +14,12 @@ import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
 
 const Journal = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [filters, setFilters] = useState<FilterOptions>({
+    showFavoritesOnly: false,
+    selectedMoods: [],
+    selectedTags: [],
+  });
+  const [sortOption, setSortOption] = useState<SortOption>('date-desc');
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -127,6 +134,14 @@ const Journal = () => {
                   <DataExport />
                 </div>
               </div>
+              
+              <EntryFilters
+                onFilterChange={setFilters}
+                onSortChange={setSortOption}
+                totalEntries={0}
+                filteredCount={0}
+              />
+              
               <JournalEntryList refreshTrigger={refreshTrigger} />
             </section>
           </div>
