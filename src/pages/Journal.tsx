@@ -9,7 +9,7 @@ import { EntryFilters, FilterOptions, SortOption } from "@/components/EntryFilte
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { LogOut, BarChart3, History, Settings as SettingsIcon, Sparkles, BookOpen, FileText } from "lucide-react";
+import { LogOut, BarChart3, History, Settings as SettingsIcon, Target, BookOpen, FileText } from "lucide-react";
 import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
 
 const Journal = () => {
@@ -74,7 +74,7 @@ const Journal = () => {
                   className="gap-1 sm:gap-2 px-2 sm:px-4"
                   size="sm"
                 >
-                  <Sparkles className="h-4 w-4" />
+                  <Target className="h-4 w-4" />
                   <span className="hidden sm:inline">Goals</span>
                 </Button>
                 <Button
@@ -142,7 +142,11 @@ const Journal = () => {
                 filteredCount={0}
               />
               
-              <JournalEntryList refreshTrigger={refreshTrigger} />
+              <JournalEntryList 
+                refreshTrigger={refreshTrigger} 
+                filters={filters}
+                sortOption={sortOption}
+              />
             </section>
           </div>
         </main>
