@@ -1,30 +1,17 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Trash2, Calendar as CalendarIcon, Edit2, ChevronDown, ChevronUp } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import { EntryInsights } from "@/components/EntryInsights";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Trash2, Calendar as CalendarIcon, ChevronDown, ChevronUp, Mic, Image as ImageIcon } from "lucide-react";
+import ReactMarkdown from 'react-markdown';
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { format } from "date-fns";
+import { EntryInsights } from "./EntryInsights";
+import { EntryQuickActions } from "./EntryQuickActions";
+import { Badge } from "@/components/ui/badge";
+import { MOOD_OPTIONS } from "./MoodPicker";
+import { useToast } from "@/hooks/use-toast";
 
 interface JournalEntry {
   id: string;
@@ -33,233 +20,163 @@ interface JournalEntry {
   created_at: string;
   updated_at: string;
   entry_date: string;
+  is_favorite?: boolean;
+  tags?: string[];
+  mood_type?: string;
+  mood_color?: string;
+  audio_url?: string;
+  image_url?: string;
+  transcription_source?: string;
 }
 
 interface JournalEntryListProps {
   refreshTrigger: number;
 }
 
-export const JournalEntryList = ({ refreshTrigger }: JournalEntryListProps) => {
+const getPreview = (content: string): string => {
+  const stripped = content.replace(/[#*`_~\[\]]/g, '').trim();
+  if (stripped.length <= 150) return stripped;
+  const truncated = stripped.substring(0, 150);
+  const lastSpace = truncated.lastIndexOf(' ');
+  return lastSpace > 0 ? truncated.substring(0, lastSpace) + '...' : truncated + '...';
+};
+
+const getWordCount = (text: string): number => {
+  return text.trim().split(/\s+/).filter(w => w.length > 0).length;
+};
+
+const getReadingTime = (wordCount: number): string => {
+  const minutes = Math.ceil(wordCount / 200);
+  return minutes === 1 ? '1 min read' : `${minutes} min read`;
+};
+
+const getMoodStyles = (moodType?: string) => {
+  const moods = {
+    dream: { bg: 'from-purple-100 to-purple-50 dark:from-purple-950/30 dark:to-purple-900/20', border: 'border-l-purple-400', textAccent: 'text-purple-700 dark:text-purple-300' },
+    reflection: { bg: 'from-blue-100 to-blue-50 dark:from-blue-950/30 dark:to-blue-900/20', border: 'border-l-blue-400', textAccent: 'text-blue-700 dark:text-blue-300' },
+    gratitude: { bg: 'from-amber-100 to-yellow-50 dark:from-amber-950/30 dark:to-yellow-900/20', border: 'border-l-amber-400', textAccent: 'text-amber-700 dark:text-amber-300' },
+    challenge: { bg: 'from-orange-100 to-amber-50 dark:from-orange-950/30 dark:to-amber-900/20', border: 'border-l-orange-400', textAccent: 'text-orange-700 dark:text-orange-300' },
+    celebration: { bg: 'from-pink-100 to-pink-50 dark:from-pink-950/30 dark:to-pink-900/20', border: 'border-l-rose-400', textAccent: 'text-rose-700 dark:text-rose-300' },
+    general: { bg: 'from-[#F9F0E5] to-[#FFF7ED] dark:from-[#2A2420] dark:to-[#1F1A17]', border: 'border-l-[#D4A574]', textAccent: 'text-[#8B6F47] dark:text-[#D4A574]' }
+  };
+  return moods[moodType as keyof typeof moods] || moods.general;
+};
+
+export function JournalEntryList({ refreshTrigger }: JournalEntryListProps) {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [openEntries, setOpenEntries] = useState<Set<string>>(new Set());
-  const [editingDateId, setEditingDateId] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const fetchEntries = async () => {
     try {
       setLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        console.error('No session found');
-        return;
-      }
-
+      if (!session) return;
       const { data, error } = await supabase.functions.invoke('decrypt-entries');
-
       if (error) throw error;
-
       setEntries(data?.entries || []);
     } catch (error: any) {
       console.error("Error fetching entries:", error);
-      toast.error("Failed to load journal entries");
+      toast({ title: "Error", description: "Failed to load journal entries", variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchEntries();
-  }, [refreshTrigger]);
+  useEffect(() => { fetchEntries(); }, [refreshTrigger]);
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from("journal_entries")
-        .delete()
-        .eq("id", id);
-
+      const { error } = await supabase.from("journal_entries").delete().eq("id", id);
       if (error) throw error;
-      
-      toast.success("Entry deleted");
+      toast({ title: "Success", description: "Entry deleted" });
       fetchEntries();
     } catch (error: any) {
-      console.error("Error deleting entry:", error);
-      toast.error("Failed to delete entry");
+      toast({ title: "Error", description: "Failed to delete entry", variant: "destructive" });
     }
   };
 
   const toggleOpen = (id: string) => {
     setOpenEntries(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
+      newSet.has(id) ? newSet.delete(id) : newSet.add(id);
       return newSet;
     });
   };
 
   const handleDateUpdate = async (entryId: string, newDate: Date) => {
     try {
-      // Format date in local timezone to avoid shifting
-      const year = newDate.getFullYear();
-      const month = String(newDate.getMonth() + 1).padStart(2, '0');
-      const day = String(newDate.getDate()).padStart(2, '0');
-      const localDate = `${year}-${month}-${day}`;
-
-      const { error } = await supabase
-        .from("journal_entries")
-        .update({ entry_date: localDate })
-        .eq("id", entryId);
-
+      const localDate = `${newDate.getFullYear()}-${String(newDate.getMonth() + 1).padStart(2, '0')}-${String(newDate.getDate()).padStart(2, '0')}`;
+      const { error } = await supabase.from("journal_entries").update({ entry_date: localDate }).eq("id", entryId);
       if (error) throw error;
-
-      toast.success("Entry date updated");
-      setEditingDateId(null);
+      toast({ title: "Success", description: "Entry date updated" });
       fetchEntries();
     } catch (error: any) {
-      console.error("Error updating date:", error);
-      toast.error("Failed to update date");
+      toast({ title: "Error", description: "Failed to update entry date", variant: "destructive" });
     }
   };
 
-  if (loading) {
-    return (
-      <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-        <p className="text-muted-foreground">Loading your entries...</p>
-      </div>
-    );
-  }
-
-  if (entries.length === 0) {
-    return (
-      <div className="text-center py-12 bg-card rounded-2xl border border-border">
-        <div className="text-5xl mb-4">📝</div>
-        <h3 className="text-xl font-semibold mb-2">No entries yet</h3>
-        <p className="text-muted-foreground">
-          Start your journey by creating your first journal entry above
-        </p>
-      </div>
-    );
-  }
+  const handleEntryUpdate = (entryId: string, updates: Partial<JournalEntry>) => {
+    setEntries(prev => prev.map(entry => entry.id === entryId ? { ...entry, ...updates } : entry));
+  };
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold mb-6">Your Journal Entries</h2>
-      {entries.map((entry) => {
-        const isOpen = openEntries.has(entry.id);
-        return (
-          <Collapsible
-            key={entry.id}
-            open={isOpen}
-            onOpenChange={() => toggleOpen(entry.id)}
-          >
-            <div className="bg-card rounded-2xl border border-border shadow-soft hover:shadow-medium transition-all duration-300">
-              <div className="p-6">
-                <div className="flex items-start justify-between gap-4 mb-3">
-                  <div className="flex-grow flex items-center gap-2">
-                    <CollapsibleTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </Button>
-                    </CollapsibleTrigger>
-                    <h3 className="text-xl font-semibold">{entry.title}</h3>
-                  </div>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete this entry?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This action cannot be undone. This will permanently delete your journal entry.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleDelete(entry.id)}
-                          className="bg-destructive hover:bg-destructive/90"
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
+      {loading ? <p className="text-center text-muted-foreground">Loading entries...</p> :
+       entries.length === 0 ? <p className="text-center text-muted-foreground">No entries yet. Create your first entry above!</p> :
+       entries.map((entry) => {
+         const isOpen = openEntries.has(entry.id);
+         const moodStyles = getMoodStyles(entry.mood_type);
+         const wordCount = getWordCount(entry.content);
+         const preview = getPreview(entry.content);
+         const moodOption = MOOD_OPTIONS.find(m => m.value === (entry.mood_type || 'general'));
 
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                  <CalendarIcon className="h-4 w-4" />
-                  {editingDateId === entry.id ? (
-                    <Popover open={editingDateId === entry.id} onOpenChange={(open) => !open && setEditingDateId(null)}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={cn("text-sm font-normal")}
-                        >
-                          {format(new Date(entry.entry_date), "MMMM d, yyyy")}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={new Date(entry.entry_date)}
-                          onSelect={(date) => date && handleDateUpdate(entry.id, date)}
-                          initialFocus
-                          className="pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  ) : (
-                    <time className="flex items-center gap-2">
-                      {format(new Date(entry.entry_date), "MMMM d, yyyy")}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setEditingDateId(entry.id)}
-                        className="h-6 w-6 p-0"
-                      >
-                        <Edit2 className="h-3 w-3" />
-                      </Button>
-                    </time>
-                  )}
-                </div>
-
-                <CollapsibleContent>
-                  <div className="prose prose-sm max-w-none dark:prose-invert mb-6">
-                    <ReactMarkdown
-                      disallowedElements={['script', 'iframe', 'object', 'embed']}
-                      unwrapDisallowed={true}
-                    >
-                      {entry.content}
-                    </ReactMarkdown>
-                  </div>
-
-                  {/* AI Insights */}
-                  <div className="border-t border-border pt-6">
-                    <EntryInsights 
-                      entryId={entry.id}
-                      title={entry.title}
-                      content={entry.content}
-                    />
-                  </div>
-                </CollapsibleContent>
-              </div>
-            </div>
-          </Collapsible>
-        );
-      })}
+         return (
+           <Card key={entry.id} className={`overflow-hidden border-l-4 ${moodStyles.border} bg-gradient-to-br ${moodStyles.bg} transition-all duration-200 hover:-translate-y-1 hover:shadow-lg`}>
+             <CardHeader className="pb-3">
+               <div className="flex items-start justify-between gap-4">
+                 <div className="flex-1 space-y-2">
+                   <button onClick={() => toggleOpen(entry.id)} className="flex items-center gap-2 w-full text-left hover:opacity-70 transition-opacity">
+                     <CardTitle className="text-lg">{entry.title}</CardTitle>
+                     {isOpen ? <ChevronUp className="h-5 w-5 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 text-muted-foreground" />}
+                   </button>
+                   {(entry.transcription_source || entry.audio_url || entry.image_url) && (
+                     <div className="flex flex-wrap items-center gap-2 text-xs">
+                       {entry.transcription_source && <Badge variant="secondary" className="gap-1 h-6"><span>📄</span><span>Voice transcribed</span></Badge>}
+                       {entry.audio_url && <Badge variant="secondary" className="gap-1 h-6"><Mic className="h-3 w-3" /><span>Audio</span></Badge>}
+                       {entry.image_url && <Badge variant="secondary" className="gap-1 h-6"><ImageIcon className="h-3 w-3" /><span>Image</span></Badge>}
+                     </div>
+                   )}
+                   {!isOpen && <p className="text-sm text-muted-foreground line-clamp-2">{preview}</p>}
+                   <div className="flex flex-wrap items-center gap-2">
+                     {moodOption && <Badge variant="outline" className={`gap-1 ${moodStyles.textAccent}`}><span>{moodOption.icon}</span><span>{moodOption.label}</span></Badge>}
+                     {entry.tags?.map(tag => <Badge key={tag} variant="secondary">#{tag}</Badge>)}
+                   </div>
+                   <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                     <span>{wordCount.toLocaleString()} words</span><span>•</span>
+                     <span>{getReadingTime(wordCount)}</span><span>•</span>
+                     <span>{format(new Date(entry.entry_date), "MMM d, yyyy")}</span>
+                   </div>
+                   <EntryQuickActions entryId={entry.id} isFavorite={entry.is_favorite || false} moodType={entry.mood_type || 'general'} tags={entry.tags || []}
+                     onFavoriteChange={(isFavorite) => handleEntryUpdate(entry.id, { is_favorite: isFavorite })}
+                     onMoodChange={(mood_type) => handleEntryUpdate(entry.id, { mood_type })}
+                     onTagsChange={(tags) => handleEntryUpdate(entry.id, { tags })} />
+                 </div>
+                 <div className="flex gap-2">
+                   <Popover>
+                     <PopoverTrigger asChild><Button variant="outline" size="icon"><CalendarIcon className="h-4 w-4" /></Button></PopoverTrigger>
+                     <PopoverContent className="w-auto p-0" align="end"><Calendar mode="single" selected={new Date(entry.entry_date)} onSelect={(date) => date && handleDateUpdate(entry.id, date)} initialFocus /></PopoverContent>
+                   </Popover>
+                   <Button variant="outline" size="icon" onClick={() => handleDelete(entry.id)}><Trash2 className="h-4 w-4" /></Button>
+                 </div>
+               </div>
+             </CardHeader>
+             {isOpen && (<><CardContent className="pt-4 border-t"><div className="prose prose-sm max-w-none dark:prose-invert"><ReactMarkdown>{entry.content}</ReactMarkdown></div></CardContent>
+             <CardFooter><EntryInsights entryId={entry.id} title={entry.title} content={entry.content} /></CardFooter></>)}
+           </Card>
+         );
+       })}
     </div>
   );
-};
+}
