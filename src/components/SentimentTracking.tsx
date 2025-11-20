@@ -119,10 +119,11 @@ export const SentimentTracking = () => {
   }));
 
   const correlations = getEmotionCorrelations();
+  // Count how many entries each emotion appears in (not intensity sum)
   const topEmotions = Array.from(
     sentimentData.reduce((acc, d) => {
       d.emotions.forEach((intensity, emotion) => {
-        acc.set(emotion, (acc.get(emotion) || 0) + intensity);
+        acc.set(emotion, (acc.get(emotion) || 0) + 1); // Count entries, not sum intensity
       });
       return acc;
     }, new Map<string, number>())
@@ -169,16 +170,16 @@ export const SentimentTracking = () => {
 
             {/* Top Emotions */}
             <div>
-              <h4 className="text-sm font-semibold mb-3">Most Frequent Emotions</h4>
+              <h4 className="text-sm font-semibold mb-3">Most Frequent Emotions in Period</h4>
               <div className="flex flex-wrap gap-2">
-                {topEmotions.map(([emotion, intensity]) => (
+                {topEmotions.map(([emotion, count]) => (
                   <Badge
                     key={emotion}
                     variant={selectedEmotion === emotion ? "default" : "secondary"}
                     className="cursor-pointer text-sm"
                     onClick={() => setSelectedEmotion(selectedEmotion === emotion ? null : emotion)}
                   >
-                    {emotion} ({Math.round(intensity)})
+                    {emotion} ({count})
                   </Badge>
                 ))}
               </div>

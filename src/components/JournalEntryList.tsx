@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
+import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2, Calendar as CalendarIcon, ChevronDown, ChevronUp, Mic, Image as ImageIcon } from "lucide-react";
+import { Trash2, Calendar as CalendarIcon, ChevronDown, ChevronUp, Mic, Image as ImageIcon, Loader2, FileText } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -31,6 +32,13 @@ interface JournalEntry {
 
 interface JournalEntryListProps {
   refreshTrigger: number;
+  filters?: {
+    showFavoritesOnly: boolean;
+    selectedMoods: string[];
+    selectedTags: string[];
+    hasMedia?: boolean;
+  };
+  sortOption?: 'date-desc' | 'date-asc' | 'word-count-desc' | 'word-count-asc' | 'favorites-first';
 }
 
 const getPreview = (content: string): string => {
@@ -62,7 +70,7 @@ const getMoodStyles = (moodType?: string) => {
   return moods[moodType as keyof typeof moods] || moods.general;
 };
 
-export function JournalEntryList({ refreshTrigger }: JournalEntryListProps) {
+export function JournalEntryList({ refreshTrigger, filters, sortOption }: JournalEntryListProps) {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [openEntries, setOpenEntries] = useState<Set<string>>(new Set());
@@ -85,6 +93,64 @@ export function JournalEntryList({ refreshTrigger }: JournalEntryListProps) {
   };
 
   useEffect(() => { fetchEntries(); }, [refreshTrigger]);
+
+  // Apply filters and sorting
+  const filteredAndSortedEntries = React.useMemo(() => {
+    let result = [...entries];
+
+    // Apply filters
+    if (filters) {
+      if (filters.showFavoritesOnly) {
+        result = result.filter(entry => entry.is_favorite);
+      }
+
+      if (filters.selectedMoods.length > 0) {
+        result = result.filter(entry => 
+          entry.mood_type && filters.selectedMoods.includes(entry.mood_type)
+        );
+      }
+
+      if (filters.selectedTags.length > 0) {
+        result = result.filter(entry => 
+          entry.tags && Array.isArray(entry.tags) && 
+          entry.tags.some(tag => filters.selectedTags.includes(tag))
+        );
+      }
+
+      if (filters.hasMedia) {
+        result = result.filter(entry => 
+          entry.audio_url || entry.image_url || entry.transcription_source
+        );
+      }
+    }
+
+    // Apply sorting
+    if (sortOption) {
+      switch (sortOption) {
+        case 'date-desc':
+          result.sort((a, b) => new Date(b.entry_date).getTime() - new Date(a.entry_date).getTime());
+          break;
+        case 'date-asc':
+          result.sort((a, b) => new Date(a.entry_date).getTime() - new Date(b.entry_date).getTime());
+          break;
+        case 'word-count-desc':
+          result.sort((a, b) => getWordCount(b.content) - getWordCount(a.content));
+          break;
+        case 'word-count-asc':
+          result.sort((a, b) => getWordCount(a.content) - getWordCount(b.content));
+          break;
+        case 'favorites-first':
+          result.sort((a, b) => {
+            if (a.is_favorite && !b.is_favorite) return -1;
+            if (!a.is_favorite && b.is_favorite) return 1;
+            return new Date(b.entry_date).getTime() - new Date(a.entry_date).getTime();
+          });
+          break;
+      }
+    }
+
+    return result;
+  }, [entries, filters, sortOption]);
 
   const handleDelete = async (id: string) => {
     try {
@@ -121,11 +187,41 @@ export function JournalEntryList({ refreshTrigger }: JournalEntryListProps) {
     setEntries(prev => prev.map(entry => entry.id === entryId ? { ...entry, ...updates } : entry));
   };
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (entries.length === 0) {
+    return (
+      <Card className="border-dashed">
+        <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+          <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+          <p className="text-lg font-medium text-muted-foreground">No journal entries yet</p>
+          <p className="text-sm text-muted-foreground mt-2">Start writing your first entry above</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (filteredAndSortedEntries.length === 0) {
+    return (
+      <Card className="border-dashed">
+        <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+          <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+          <p className="text-lg font-medium text-muted-foreground">No entries match your filters</p>
+          <p className="text-sm text-muted-foreground mt-2">Try adjusting your filters</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      {loading ? <p className="text-center text-muted-foreground">Loading entries...</p> :
-       entries.length === 0 ? <p className="text-center text-muted-foreground">No entries yet. Create your first entry above!</p> :
-       entries.map((entry) => {
+      {filteredAndSortedEntries.map((entry) => {
          const isOpen = openEntries.has(entry.id);
          const moodStyles = getMoodStyles(entry.mood_type);
          const wordCount = getWordCount(entry.content);
