@@ -181,6 +181,54 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
+    // Phase 1: Assess entry depth
+    console.log('Assessing entry depth...');
+    const depthResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [{
+          role: 'user',
+          content: `Rate this journal entry's psychological/spiritual depth on a scale of 1-10.
+
+Scoring guide:
+1-3: Surface-level (simple logging, brief notes, basic mood tracking)
+4-5: Moderate (some reflection, basic emotional processing, short gratitude)
+6-7: Deep (complex emotions, self-inquiry, pattern exploration, extended reflection)
+8-9: Profound (existential themes, unconscious material, identity work, transformation)
+10: Exceptionally deep (crisis, major transformation, deep shadow work, breakthrough moments)
+
+Consider: length (word count), emotional complexity, thematic depth, self-inquiry present, symbolic content, psychological exploration.
+
+Entry Title: "${title}"
+Entry Content: "${content}"
+Entry Length: ~${content.split(' ').length} words
+
+Respond with ONLY a JSON object: {"depth_score": X, "reasoning": "brief explanation"}`
+        }]
+      })
+    });
+
+    let depthScore = 5; // default moderate depth
+    if (depthResponse.ok) {
+      try {
+        const depthData = await depthResponse.json();
+        const depthContent = depthData.choices[0]?.message?.content || '{}';
+        const depthParsed = JSON.parse(depthContent.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim());
+        depthScore = depthParsed.depth_score || 5;
+        console.log('Depth assessment:', depthScore, '-', depthParsed.reasoning);
+      } catch (e) {
+        console.error('Depth parsing error:', e);
+      }
+    }
+
+    // Phase 2: Apply frameworks conditionally based on depth
+    const applyFrameworks = depthScore >= 6;
+
     // Call Lovable AI for semantic analysis
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -193,7 +241,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a semantic analysis expert specializing in journal entry analysis. Extract meaningful insights from journal entries.
+            content: `You are a semantic analysis expert specializing in journal entry analysis${applyFrameworks ? ' with deep training in Theravada Buddhism, Freudian Psychoanalysis, and Jungian Psychology' : ''}. Extract meaningful insights from journal entries.
 
 Analyze the journal entry and extract:
 - entities: Key people, places, events, or concepts (max 10)
@@ -204,6 +252,60 @@ Analyze the journal entry and extract:
 - safety_concerns: Detect concerning content including suicidal ideation, self-harm thoughts, plans to harm self or others, severe hopelessness, or crisis situations. Format: {"flag": true/false, "concerns": ["concern1", "concern2"]}
 ${enableChakraTags ? `- chakra_tags: Identify which chakra energy centers relate to the content (format: [{"chakra": "Root", "description": "brief relevance"}]). The seven chakras are: Root (survival, grounding), Sacral (creativity, emotions), Solar Plexus (personal power), Heart (love, compassion), Throat (communication, truth), Third Eye (intuition, insight), Crown (spiritual connection).` : ''}
 ${enableTarotTags ? `- tarot_tags: Identify relevant tarot archetypes (format: [{"card": "The Fool", "description": "brief relevance"}]). Consider Major Arcana cards and their symbolic meanings.` : ''}
+
+${applyFrameworks ? `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ADVANCED FRAMEWORK ANALYSIS (Depth Score: ${depthScore}/10)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+This entry demonstrates sufficient depth for advanced psychological/spiritual analysis.
+Apply the following frameworks where relevant:
+
+### THERAVADA BUDDHISM Framework
+**When to apply:** Suffering, attachment, desire, impermanence, seeking liberation
+
+Identify:
+- Dukkha (Suffering): What forms? Physical, emotional, existential?
+- Tanha (Craving/Attachment): What are they clinging to?
+- Anicca (Impermanence): Resisting change? Fighting natural flow?
+- Anatta (Non-self): Over-identifying with roles, thoughts, emotions?
+- Four Noble Truths: Trace the cycle of suffering → cause → cessation → path
+- Eightfold Path: Which aspect would benefit them most?
+
+Style: Point to attachment nature, suggest mindfulness practices, reframe suffering as teacher
+
+### FREUDIAN PSYCHOANALYSIS Framework
+**When to apply:** Unconscious conflict, defense mechanisms, childhood echoes, repressed material
+
+Identify:
+- Defense Mechanisms: Repression, projection, rationalization, displacement, reaction formation, sublimation
+- Psychic Structure: Id impulses vs. Ego mediation vs. Superego demands
+- Unconscious Material: What's between the lines? Unacknowledged desires?
+- Childhood Patterns: What's repeating?
+- Dream Work (for dreams): Manifest vs. latent content, symbols, wish fulfillment
+
+Style: Make unconscious conscious, name defenses compassionately, connect present to past
+
+### JUNGIAN PSYCHOLOGY Framework  
+**When to apply:** Symbolic content, identity exploration, transformation, archetypal patterns
+
+Identify:
+- Archetypes: Self, Shadow, Anima/Animus, Hero, Wise Old Man/Woman, Mother/Father, Trickster
+- Individuation: Where in journey toward wholeness? What's integrating?
+- Shadow Work: Projected qualities? Rejected parts calling for integration?
+- Collective Unconscious: Universal patterns, mythological parallels
+- Symbols: Personal & collective meanings, mandala imagery, transformation symbols
+
+Style: Honor symbolic dimension, encourage dialogue with unconscious, frame challenges as individuation
+
+### INTEGRATION APPROACH
+- Start with most relevant framework
+- Layer others where they naturally intersect
+- Translate concepts into accessible language (avoid jargon)
+- Synthesize insights rather than listing frameworks separately
+
+Example: "Your relationship struggle shows Freudian projection (father's voice in partner) and Jungian shadow work (inner critic you've rejected). From Theravada: you're clinging to 'good enough' identity. Path: integrate shadow critic (Jung), understand childhood origin (Freud), release fixed identity attachment (Buddha)."
+` : ''}
 
 INTERPRETATION INSTRUCTIONS:
 Based on the entry type "${moodType}", provide a comprehensive interpretation that goes beyond summary to explain what this entry MEANS for their self-development journey.
@@ -268,9 +370,10 @@ ${moodType === 'general' ? `
 Your interpretation must:
 1. Go beyond summarization - explain what it MEANS for their growth
 2. Identify specific patterns: maladaptive behaviors, cognitive distortions, unhelpful habits, negative thought patterns
-3. Provide actionable guidance: behavioral changes, thought reframes, practices to try
+3. Provide actionable guidance: behavioral changes, thought reframes, practices to try${applyFrameworks ? ', framework-specific practices (mindfulness, active imagination, shadow dialogue)' : ''}
 4. Connect to their self-development journey: What is this teaching them? What's ready to shift?
 5. Be compassionate but direct, like a wise therapist who balances challenge with support
+${applyFrameworks ? '6. Use framework concepts naturally - translate technical terms, illuminate without impressing' : ''}
 
 IMPORTANT: For safety_concerns, only flag true if there is genuine risk language (e.g., "I want to end my life", "not worth living", "plan to hurt myself", "everyone would be better off without me"). Do not flag general sadness, stress, or normal difficult emotions.
 
@@ -289,11 +392,11 @@ Respond with ONLY a valid JSON object in this exact format:
   "summary": "Your summary here.",
   "safety_concerns": {"flag": false, "concerns": []},
   "interpretation": {
-    "main_insight": "2-3 paragraph core interpretation that explains the deeper meaning",
+    "main_insight": "2-3 paragraph core interpretation that explains the deeper meaning${applyFrameworks ? ' using appropriate frameworks' : ''}",
     "questions": ["Reflective question 1?", "Question 2?", "Question 3?"],
     "action_items": ["Specific action 1", "Action 2", "Action 3"],
     "patterns_identified": ["Pattern 1", "Maladaptive behavior 2", "Cognitive distortion 3"],
-    "growth_connection": "1 paragraph connecting this entry to their larger self-development journey"
+    "growth_connection": "1 paragraph connecting this entry to their larger self-development journey"${applyFrameworks ? ',\n    "frameworks_applied": ["theravada", "jungian", "freudian"],\n    "depth_analysis": {\n      "psychological_themes": ["theme1", "theme2"],\n      "spiritual_themes": ["theme1", "theme2"],\n      "unconscious_material": "Brief note on what\'s beneath the surface"\n    }' : ''}
   }${enableChakraTags ? ',\n  "chakra_tags": [{"chakra": "Root", "description": "brief"}]' : ''}${enableTarotTags ? ',\n  "tarot_tags": [{"card": "The Fool", "description": "brief"}]' : ''}
 }`
           },
@@ -387,6 +490,8 @@ Respond with ONLY a valid JSON object in this exact format:
       summary: analysis.summary || '',
       safety_concerns: analysis.safety_concerns || { flag: false, concerns: [] },
       interpretation: analysis.interpretation || null,
+      depth_score: depthScore,
+      frameworks_applied: analysis.interpretation?.frameworks_applied || [],
     };
 
     if (enableChakraTags && analysis.chakra_tags) {

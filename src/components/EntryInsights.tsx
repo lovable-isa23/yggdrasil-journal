@@ -19,6 +19,12 @@ interface Interpretation {
   action_items?: string[];
   patterns_identified?: string[];
   growth_connection?: string;
+  frameworks_applied?: string[];
+  depth_analysis?: {
+    psychological_themes?: string[];
+    spiritual_themes?: string[];
+    unconscious_material?: string;
+  };
 }
 
 interface Insights {
@@ -34,6 +40,8 @@ interface Insights {
   interpretation?: Interpretation;
   chakra_tags?: Array<{ chakra: string; description: string }>;
   tarot_tags?: Array<{ card: string; description: string }>;
+  depth_score?: number;
+  frameworks_applied?: string[];
 }
 
 export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) => {
@@ -66,6 +74,8 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
           interpretation: data.interpretation ? (data.interpretation as unknown as Interpretation) : undefined,
           chakra_tags: (data.chakra_tags as Array<{ chakra: string; description: string }>) || [],
           tarot_tags: (data.tarot_tags as Array<{ card: string; description: string }>) || [],
+          depth_score: data.depth_score as number | undefined,
+          frameworks_applied: (data.frameworks_applied as string[]) || [],
         });
         setHasAnalyzed(true);
       }
@@ -191,7 +201,29 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
             <div className="flex items-start gap-3">
               <BookOpen className="h-5 w-5 text-primary flex-shrink-0 mt-1" />
               <div className="flex-grow">
-                <h4 className="font-semibold text-lg mb-3">Interpretation & Insights</h4>
+                <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                  <h4 className="font-semibold text-lg flex items-center gap-2">
+                    Interpretation & Insights
+                    {insights.depth_score && insights.depth_score >= 6 && (
+                      <Badge variant="secondary" className="text-xs">
+                        Deep Analysis
+                      </Badge>
+                    )}
+                  </h4>
+                  {insights.frameworks_applied && insights.frameworks_applied.length > 0 && (
+                    <div className="flex gap-1.5 flex-wrap">
+                      {insights.frameworks_applied.includes('theravada') && (
+                        <Badge variant="outline" className="text-xs">☸️ Buddhist</Badge>
+                      )}
+                      {insights.frameworks_applied.includes('freudian') && (
+                        <Badge variant="outline" className="text-xs">🧠 Psychoanalytic</Badge>
+                      )}
+                      {insights.frameworks_applied.includes('jungian') && (
+                        <Badge variant="outline" className="text-xs">🌓 Jungian</Badge>
+                      )}
+                    </div>
+                  )}
+                </div>
                 
                 {/* Main Insight */}
                 <div className="prose prose-sm max-w-none mb-4">

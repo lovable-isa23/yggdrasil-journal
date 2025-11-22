@@ -54,9 +54,11 @@ export type Database = {
         Row: {
           chakra_tags: Json | null
           created_at: string
+          depth_score: number | null
           emotions: Json | null
           entities: Json | null
           entry_id: string
+          frameworks_applied: Json | null
           id: string
           interpretation: Json | null
           keywords: Json | null
@@ -69,9 +71,11 @@ export type Database = {
         Insert: {
           chakra_tags?: Json | null
           created_at?: string
+          depth_score?: number | null
           emotions?: Json | null
           entities?: Json | null
           entry_id: string
+          frameworks_applied?: Json | null
           id?: string
           interpretation?: Json | null
           keywords?: Json | null
@@ -84,9 +88,11 @@ export type Database = {
         Update: {
           chakra_tags?: Json | null
           created_at?: string
+          depth_score?: number | null
           emotions?: Json | null
           entities?: Json | null
           entry_id?: string
+          frameworks_applied?: Json | null
           id?: string
           interpretation?: Json | null
           keywords?: Json | null
