@@ -58,6 +58,7 @@ export type Database = {
           entities: Json | null
           entry_id: string
           id: string
+          interpretation: Json | null
           keywords: Json | null
           safety_concerns: Json | null
           summary: string | null
@@ -72,6 +73,7 @@ export type Database = {
           entities?: Json | null
           entry_id: string
           id?: string
+          interpretation?: Json | null
           keywords?: Json | null
           safety_concerns?: Json | null
           summary?: string | null
@@ -86,6 +88,7 @@ export type Database = {
           entities?: Json | null
           entry_id?: string
           id?: string
+          interpretation?: Json | null
           keywords?: Json | null
           safety_concerns?: Json | null
           summary?: string | null

@@ -159,7 +159,7 @@ serve(async (req) => {
       throw new Error('Encryption key not configured');
     }
 
-    // Fetch the encrypted entry
+    // Fetch the encrypted entry with mood_type for context-aware interpretation
     const { data: entry, error: entryError } = await supabase
       .from('journal_entries')
       .select('*')
@@ -174,6 +174,7 @@ serve(async (req) => {
     // Decrypt the entry
     const title = await decrypt(entry.title, encryptionKey);
     const content = await decrypt(entry.content, encryptionKey);
+    const moodType = entry.mood_type || 'general';
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
@@ -204,6 +205,73 @@ Analyze the journal entry and extract:
 ${enableChakraTags ? `- chakra_tags: Identify which chakra energy centers relate to the content (format: [{"chakra": "Root", "description": "brief relevance"}]). The seven chakras are: Root (survival, grounding), Sacral (creativity, emotions), Solar Plexus (personal power), Heart (love, compassion), Throat (communication, truth), Third Eye (intuition, insight), Crown (spiritual connection).` : ''}
 ${enableTarotTags ? `- tarot_tags: Identify relevant tarot archetypes (format: [{"card": "The Fool", "description": "brief relevance"}]). Consider Major Arcana cards and their symbolic meanings.` : ''}
 
+INTERPRETATION INSTRUCTIONS:
+Based on the entry type "${moodType}", provide a comprehensive interpretation that goes beyond summary to explain what this entry MEANS for their self-development journey.
+
+Entry Type-Specific Interpretation Guidelines:
+
+${moodType === 'dream' ? `
+🌙 DREAM ENTRY - Apply dream yoga principles:
+- Symbolic meanings (archetypes, recurring symbols in dreams)
+- Unconscious patterns surfacing through dreams
+- What is your unconscious trying to communicate?
+- Dream recall techniques and lucid dreaming guidance
+- Tibetan dream analysis approach (witness consciousness)
+` : ''}
+
+${moodType === 'reflection' ? `
+💭 REFLECTION ENTRY - Deep self-inquiry:
+- Provide 3-5 powerful reflective questions for deeper exploration
+- Identify patterns in thinking and behavior
+- Cognitive distortions or limiting beliefs present
+- Shadow work opportunities (repressed aspects seeking integration)
+- Integration practices to embody insights
+` : ''}
+
+${moodType === 'gratitude' ? `
+✨ GRATITUDE ENTRY - Cultivating abundance:
+- Deeper meaning of what they're grateful for
+- Connection to their core values and life purpose
+- How gratitude is rewiring neural pathways
+- What else can flow from this grateful state?
+- Habit formation guidance for sustained practice
+` : ''}
+
+${moodType === 'challenge' ? `
+⚡ CHALLENGE ENTRY - Confronting obstacles:
+- PRIORITY: Identify maladaptive behaviors, bad habits, negative thought patterns
+- Name cognitive distortions clearly (catastrophizing, black-and-white thinking, mind-reading, overgeneralization, etc.)
+- Self-sabotage patterns and their protective function
+- DBT/CBT-informed coping strategies (opposite action, wise mind, check the facts)
+- Reframe: Alternative perspectives on the situation
+- Concrete action steps for change
+` : ''}
+
+${moodType === 'celebration' ? `
+🎉 CELEBRATION ENTRY - Integrating success:
+- Acknowledge growth and real progress made
+- How to integrate this success into self-concept
+- Build on strengths revealed in this achievement
+- Avoid toxic positivity - genuine acknowledgment
+- Next-level aspirations and expansion opportunities
+` : ''}
+
+${moodType === 'general' ? `
+📖 GENERAL ENTRY - Overall themes:
+- Life themes emerging across their journey
+- Self-development trajectory and direction
+- Areas needing attention or integration
+- Balanced perspective on their growth
+- Patterns connecting to larger life narrative
+` : ''}
+
+Your interpretation must:
+1. Go beyond summarization - explain what it MEANS for their growth
+2. Identify specific patterns: maladaptive behaviors, cognitive distortions, unhelpful habits, negative thought patterns
+3. Provide actionable guidance: behavioral changes, thought reframes, practices to try
+4. Connect to their self-development journey: What is this teaching them? What's ready to shift?
+5. Be compassionate but direct, like a wise therapist who balances challenge with support
+
 IMPORTANT: For safety_concerns, only flag true if there is genuine risk language (e.g., "I want to end my life", "not worth living", "plan to hurt myself", "everyone would be better off without me"). Do not flag general sadness, stress, or normal difficult emotions.
 
 CRITICAL JSON RULES:
@@ -219,7 +287,14 @@ Respond with ONLY a valid JSON object in this exact format:
   "emotions": [{"emotion": "joy", "intensity": 7}],
   "keywords": ["keyword1", "keyword2"],
   "summary": "Your summary here.",
-  "safety_concerns": {"flag": false, "concerns": []}${enableChakraTags ? ',\n  "chakra_tags": [{"chakra": "Root", "description": "brief"}]' : ''}${enableTarotTags ? ',\n  "tarot_tags": [{"card": "The Fool", "description": "brief"}]' : ''}
+  "safety_concerns": {"flag": false, "concerns": []},
+  "interpretation": {
+    "main_insight": "2-3 paragraph core interpretation that explains the deeper meaning",
+    "questions": ["Reflective question 1?", "Question 2?", "Question 3?"],
+    "action_items": ["Specific action 1", "Action 2", "Action 3"],
+    "patterns_identified": ["Pattern 1", "Maladaptive behavior 2", "Cognitive distortion 3"],
+    "growth_connection": "1 paragraph connecting this entry to their larger self-development journey"
+  }${enableChakraTags ? ',\n  "chakra_tags": [{"chakra": "Root", "description": "brief"}]' : ''}${enableTarotTags ? ',\n  "tarot_tags": [{"card": "The Fool", "description": "brief"}]' : ''}
 }`
           },
           {
@@ -311,6 +386,7 @@ Respond with ONLY a valid JSON object in this exact format:
       keywords: analysis.keywords || [],
       summary: analysis.summary || '',
       safety_concerns: analysis.safety_concerns || { flag: false, concerns: [] },
+      interpretation: analysis.interpretation || null,
     };
 
     if (enableChakraTags && analysis.chakra_tags) {
