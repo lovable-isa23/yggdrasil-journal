@@ -237,13 +237,13 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption }: Journa
                      <CardTitle className="text-lg">{entry.title}</CardTitle>
                      {isOpen ? <ChevronUp className="h-5 w-5 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 text-muted-foreground" />}
                    </button>
-                   {(entry.transcription_source || entry.audio_url || entry.image_url) && (
-                     <div className="flex flex-wrap items-center gap-2 text-xs">
-                       {entry.transcription_source && <Badge variant="secondary" className="gap-1 h-6"><span>📄</span><span>Voice transcribed</span></Badge>}
-                       {entry.audio_url && <Badge variant="secondary" className="gap-1 h-6"><Mic className="h-3 w-3" /><span>Audio</span></Badge>}
-                       {entry.image_url && <Badge variant="secondary" className="gap-1 h-6"><ImageIcon className="h-3 w-3" /><span>Image</span></Badge>}
-                     </div>
-                   )}
+                    {(entry.audio_url || entry.image_url) && (
+                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                        {entry.transcription_source && entry.audio_url && <Badge variant="secondary" className="gap-1 h-6"><span>📄</span><span>Voice transcribed</span></Badge>}
+                        {entry.audio_url && <Badge variant="secondary" className="gap-1 h-6"><Mic className="h-3 w-3" /><span>Audio</span></Badge>}
+                        {entry.image_url && <Badge variant="secondary" className="gap-1 h-6"><ImageIcon className="h-3 w-3" /><span>Image</span></Badge>}
+                      </div>
+                    )}
                    {!isOpen && <p className="text-sm text-muted-foreground line-clamp-2">{preview}</p>}
                    <div className="flex flex-wrap items-center gap-2">
                      {moodOption && <Badge variant="outline" className={`gap-1 ${moodStyles.textAccent}`}><span>{moodOption.icon}</span><span>{moodOption.label}</span></Badge>}
