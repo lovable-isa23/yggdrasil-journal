@@ -3,13 +3,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Sparkles, Lightbulb, Heart, Tag, AlertTriangle, Phone } from "lucide-react";
+import { Sparkles, Lightbulb, Heart, Tag, AlertTriangle, Phone, BookOpen, HelpCircle, CheckCircle, TrendingUp, AlertCircle } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface EntryInsightsProps {
   entryId: string;
   title: string;
   content: string;
+}
+
+interface Interpretation {
+  main_insight: string;
+  questions?: string[];
+  action_items?: string[];
+  patterns_identified?: string[];
+  growth_connection?: string;
 }
 
 interface Insights {
@@ -22,6 +31,7 @@ interface Insights {
     flag: boolean;
     concerns: string[];
   };
+  interpretation?: Interpretation;
   chakra_tags?: Array<{ chakra: string; description: string }>;
   tarot_tags?: Array<{ card: string; description: string }>;
 }
@@ -53,6 +63,7 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
           keywords: (data.keywords as string[]) || [],
           summary: data.summary || "",
           safety_concerns: (data.safety_concerns as { flag: boolean; concerns: string[] }) || { flag: false, concerns: [] },
+          interpretation: data.interpretation ? (data.interpretation as unknown as Interpretation) : undefined,
           chakra_tags: (data.chakra_tags as Array<{ chakra: string; description: string }>) || [],
           tarot_tags: (data.tarot_tags as Array<{ card: string; description: string }>) || [],
         });
@@ -169,6 +180,96 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
             <div>
               <h4 className="font-semibold mb-2">Summary</h4>
               <p className="text-sm text-muted-foreground">{insights.summary}</p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {insights.interpretation && (
+        <Card className="p-6 bg-gradient-to-br from-primary/10 to-secondary/10 border-primary/30">
+          <div className="space-y-4">
+            <div className="flex items-start gap-3">
+              <BookOpen className="h-5 w-5 text-primary flex-shrink-0 mt-1" />
+              <div className="flex-grow">
+                <h4 className="font-semibold text-lg mb-3">Interpretation & Insights</h4>
+                
+                {/* Main Insight */}
+                <div className="prose prose-sm max-w-none mb-4">
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                    {insights.interpretation.main_insight}
+                  </p>
+                </div>
+
+                {/* Patterns Identified */}
+                {insights.interpretation.patterns_identified && 
+                 insights.interpretation.patterns_identified.length > 0 && (
+                  <div className="mb-4 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                    <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-orange-600" />
+                      Patterns to Notice
+                    </h5>
+                    <ul className="space-y-1 text-sm">
+                      {insights.interpretation.patterns_identified.map((pattern, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <span className="text-orange-600 mt-1">•</span>
+                          <span>{pattern}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Reflective Questions */}
+                {insights.interpretation.questions && 
+                 insights.interpretation.questions.length > 0 && (
+                  <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                      <HelpCircle className="h-4 w-4 text-blue-600" />
+                      Questions for Reflection
+                    </h5>
+                    <ul className="space-y-2 text-sm">
+                      {insights.interpretation.questions.map((q, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <span className="text-blue-600 font-medium">Q{idx + 1}:</span>
+                          <span className="italic">{q}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Action Items */}
+                {insights.interpretation.action_items && 
+                 insights.interpretation.action_items.length > 0 && (
+                  <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                    <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      Action Steps
+                    </h5>
+                    <ul className="space-y-1 text-sm">
+                      {insights.interpretation.action_items.map((action, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <span className="text-green-600">→</span>
+                          <span>{action}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Growth Connection */}
+                {insights.interpretation.growth_connection && (
+                  <div className="mt-4 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                    <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-purple-600" />
+                      Your Growth Journey
+                    </h5>
+                    <p className="text-sm leading-relaxed">
+                      {insights.interpretation.growth_connection}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </Card>
