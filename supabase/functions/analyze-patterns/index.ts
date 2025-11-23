@@ -68,10 +68,10 @@ serve(async (req) => {
       throw new Error('Encryption key not configured');
     }
 
-    // Fetch all insights and entries for this user
+    // Fetch all insights with depth scores and entries for this user
     const { data: insights, error: insightsError } = await supabase
       .from("entry_insights")
-      .select("*")
+      .select("*, depth_score")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
@@ -95,9 +95,12 @@ serve(async (req) => {
       );
     }
 
-    // Build comprehensive context for AI analysis
+    // Build comprehensive context for AI analysis with depth weighting
     const insightsSummary = insights.map((insight, idx) => {
       const entry = entries?.find(e => e.id === insight.entry_id);
+      const depthScore = insight.depth_score || 5;
+      const weight = depthScore >= 7 ? 3 : 1; // 3x weight for deep entries
+      
       return {
         index: idx + 1,
         date: entry?.entry_date || "unknown",
@@ -106,6 +109,8 @@ serve(async (req) => {
         keywords: insight.keywords || [],
         emotions: insight.emotions || [],
         summary: insight.summary || "",
+        depth_score: depthScore,
+        weight: weight,
       };
     });
 
@@ -117,12 +122,21 @@ serve(async (req) => {
     const systemPrompt = `You are an expert pattern analyst specializing in psychological and behavioral insights. 
 Analyze journal entries to discover meaningful patterns, habits, and connections across time.
 
+**IMPORTANT: Depth-Weighted Analysis**
+Each entry has a depth_score (1-10) and weight multiplier:
+- Entries with depth_score ≥7 have 3x weight (deeper, more significant reflections)
+- Other entries have 1x weight (routine observations)
+
+**Prioritize patterns from deeper entries** - they contain more psychological/spiritual insight.
+
 Focus on:
 1. **Recurring relationships**: Which entities, themes, or keywords frequently appear together?
+   - Weight by entry depth: deeper entries indicate stronger connections
 2. **Temporal patterns**: Do certain themes/emotions appear at specific times or follow sequences?
 3. **Behavioral patterns**: What habits or behavioral cycles can you identify?
 4. **Emotional patterns**: How do emotions correlate with themes, events, or entities?
 5. **Causal relationships**: What potential cause-and-effect relationships exist?
+   - Deep entries often reveal underlying causality
 
 Return your analysis as a JSON object with this exact structure:
 {
@@ -132,6 +146,7 @@ Return your analysis as a JSON object with this exact structure:
       "target": "entity/theme/keyword name",
       "type": "co-occurrence|sequential|causal|emotional",
       "strength": <1-10>,
+      "weighted_strength": <calculated based on entry depths>,
       "context": "brief explanation of the relationship",
       "entry_indices": [1, 3, 5],
       "temporal_pattern": "daily|weekly|monthly|sporadic|null"
@@ -153,7 +168,11 @@ Return your analysis as a JSON object with this exact structure:
       "actionable_insight": "Practical suggestion based on this pattern"
     }
   ]
-}`;
+}
+
+**Weighted Strength Calculation:**
+For each relationship, calculate weighted_strength as: (base strength × average weight of entries involved)
+Example: strength=7, entries have weights [3, 1, 3] → weighted_strength = 7 × 2.33 = 16.3`;
 
     const userPrompt = `Analyze these ${insights.length} journal entries and identify meaningful patterns:
 
@@ -200,13 +219,14 @@ Provide deep insights about habits, emotional patterns, behavioral cycles, and r
 
     const analysis = JSON.parse(jsonContent);
 
-    // Store relationships in database
+    // Store relationships in database with weighted strength
     const relationshipsToInsert = analysis.relationships.map((rel: any) => ({
       user_id: user.id,
       relationship_type: rel.type,
       source_item: rel.source,
       target_item: rel.target,
       strength: rel.strength,
+      weighted_strength: rel.weighted_strength || rel.strength,
       context: rel.context,
       entry_ids: rel.entry_indices.map((idx: number) => insights[idx - 1]?.entry_id).filter(Boolean),
       pattern_description: rel.context,

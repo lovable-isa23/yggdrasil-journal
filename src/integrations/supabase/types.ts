@@ -472,6 +472,7 @@ export type Database = {
           temporal_pattern: string | null
           updated_at: string
           user_id: string
+          weighted_strength: number | null
         }
         Insert: {
           context?: string | null
@@ -486,6 +487,7 @@ export type Database = {
           temporal_pattern?: string | null
           updated_at?: string
           user_id: string
+          weighted_strength?: number | null
         }
         Update: {
           context?: string | null
@@ -500,6 +502,7 @@ export type Database = {
           temporal_pattern?: string | null
           updated_at?: string
           user_id?: string
+          weighted_strength?: number | null
         }
         Relationships: []
       }
