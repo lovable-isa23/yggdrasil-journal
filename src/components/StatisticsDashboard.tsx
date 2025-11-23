@@ -244,7 +244,7 @@ export const StatisticsDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-semibold text-primary">
-              {wordCountData.reduce((sum, d) => sum + d.entryCount, 0)}
+              {allWordCountData.reduce((sum, d) => sum + d.entryCount, 0)}
             </div>
           </CardContent>
         </Card>

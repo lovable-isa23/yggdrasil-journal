@@ -8,7 +8,8 @@ import { NPSTooltip } from "@/components/NPSTooltip";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { LogOut, BookOpen, BarChart3, Settings as SettingsIcon } from "lucide-react";
+import { LogOut, BookOpen, BarChart3, Settings as SettingsIcon, Target } from "lucide-react";
+import { PatternInsights } from "@/components/PatternInsights";
 import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
 
 const Goals = () => {
@@ -119,6 +120,15 @@ const Goals = () => {
 
           {/* Goal Tracker */}
           <GoalTracker />
+
+          {/* Pattern Insights Section */}
+          <section className="mt-12">
+            <div className="flex items-center gap-2 mb-6">
+              <Target className="h-6 w-6 text-primary" />
+              <h3 className="text-2xl font-bold">Pattern Insights</h3>
+            </div>
+            <PatternInsights />
+          </section>
         </main>
       </div>
     </AuthGuard>
