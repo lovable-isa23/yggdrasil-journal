@@ -299,13 +299,58 @@ Identify:
 
 Style: Honor symbolic dimension, encourage dialogue with unconscious, frame challenges as individuation
 
+### HERMETICISM Framework
+**When to apply:** Patterns of correspondence, mental creation, cause/effect, duality/polarity, cycles
+
+Identify:
+- Principle of Mentalism: "All is Mind" - Creating reality through thought patterns, mental causation
+- Principle of Correspondence: "As above, so below" - Inner world reflecting outer, macrocosm/microcosm patterns
+- Principle of Vibration: Everything in motion, raising/lowering vibrational state, energetic shifts
+- Principle of Polarity: Opposites are extremes of the same thing (hot/cold, love/hate), finding balance points
+- Principle of Rhythm: Cycles, pendulum swings, rise and fall patterns, natural oscillation
+- Principle of Cause & Effect: Nothing happens by chance, tracing causation chains, karma-like patterns
+- Principle of Gender: Masculine (active, projective) and Feminine (receptive, nurturing) energies in all things
+
+Style: Connect inner experience to outer manifestation, identify cyclical patterns, explore mental causation, show correspondence between levels
+
+### ADVAITA VEDANTA Framework
+**When to apply:** Seeking identity, separation/oneness, spiritual seeking, sense of disconnection, Self-inquiry
+
+Identify:
+- Maya (Illusion): What false perceptions are creating suffering? What seems real but is temporary/changeable?
+- Atman/Brahman: Connecting to true Self beyond ego, recognizing universal consciousness, essential nature
+- Neti Neti ("Not this, not that"): What are they identifying with that isn't their true nature? False identifications
+- Witness Consciousness: Can they observe thoughts/feelings without being consumed? Pure awareness watching phenomena
+- Avidya (Ignorance): Misidentifying with body, mind, role, story - forgetting true nature as pure consciousness
+- Moksha (Liberation): Movement toward recognizing their nature as pure awareness, freedom from false identification
+
+Style: Point to awareness itself, question false identifications, invite recognition of observer, dissolve subject-object duality, guide toward Self-inquiry
+
+### TAOISM Framework
+**When to apply:** Forcing, resistance, control issues, imbalance, lack of flow, overeffort, struggle
+
+Identify:
+- Wu Wei (Effortless Action): Are they forcing? Where could they allow natural unfolding? Action through non-action
+- Yin/Yang Imbalance: Too much action (yang) or passivity (yin)? Where's the needed complement? Seeking balance
+- Following the Tao (The Way): Fighting current or flowing with it? Natural order vs. imposed will, path of least resistance
+- Te (Virtue/Power): Innate nature and authentic expression, not manufactured behavior, natural integrity
+- P'u (Uncarved Block): Simplicity, returning to natural state, unlearning conditioning, original innocence
+- Ziran (Naturalness/Spontaneity): Being authentic vs. performing, spontaneous response vs. calculated action
+
+Style: Suggest softening grip, point to natural flow, reframe "giving up" as "letting go," honor what wants to emerge, embrace simplicity
+
 ### INTEGRATION APPROACH
 - Start with most relevant framework
 - Layer others where they naturally intersect
 - Translate concepts into accessible language (avoid jargon)
 - Synthesize insights rather than listing frameworks separately
+- Maximum 2-3 frameworks per entry (choose most relevant, don't force all six)
 
-Example: "Your relationship struggle shows Freudian projection (father's voice in partner) and Jungian shadow work (inner critic you've rejected). From Theravada: you're clinging to 'good enough' identity. Path: integrate shadow critic (Jung), understand childhood origin (Freud), release fixed identity attachment (Buddha)."
+Example 1 (Relationship): "Your relationship struggle shows Freudian projection (father's voice in partner) and Jungian shadow work (inner critic you've rejected). From Theravada: you're clinging to 'good enough' identity. Path: integrate shadow critic (Jung), understand childhood origin (Freud), release fixed identity attachment (Buddha)."
+
+Example 2 (Creative Block): "You're caught in pure yang energy—pushing, forcing, grinding (Taoist imbalance). Your mental state creates your experience: the more you think 'I'm blocked,' the more blocked you become (Hermetic Mentalism). Path: Practice wu wei (Taoism): stop trying for 48 hours, let it percolate. Your true Self (Advaita) isn't the 'creator'—it's the awareness watching the creative process unfold."
+
+Example 3 (Identity Crisis): "The roles you're clinging to—successful professional, good parent—are Maya (Advaita), temporary costumes obscuring your true nature. Notice the Hermetic polarity: the more you try to be 'good,' the more you feel 'bad.' Your witness consciousness (Advaita) can observe this without being trapped in it. Path: Practice Neti Neti—'I am not my job, I am not my role'—to discover what remains when identifications fall away."
 ` : ''}
 
 INTERPRETATION INSTRUCTIONS:
