@@ -23,9 +23,9 @@ serve(async (req) => {
 
     console.log("Generating practice suggestions for intention:", intention);
 
-    const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
-    if (!openaiApiKey) {
-      throw new Error("OPENAI_API_KEY not configured");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY not configured");
     }
 
     const prompt = `Based on this sacred intention and goal type, suggest 3 specific spiritual practices that would support this journey:
@@ -35,68 +35,101 @@ Goal Type: ${goalType}
 
 For each practice, provide:
 1. A clear, actionable title
-2. A detailed description of how to do the practice
-3. The practice type (meditation, journaling, ritual, movement, breathwork, or study)
+2. Detailed, step-by-step instructions
+3. Practice type (meditation, breathwork, visualization, journaling, movement, ritual, or study)
 4. Recommended frequency (daily, weekly, or monthly)
 
-The practices should be:
-- Directly aligned with the stated intention
-- Practical and achievable
-- Varied in type to support different aspects of the journey
-- Rooted in authentic spiritual traditions where applicable
+Provide thoughtful, personalized practices that align with the intention.`;
 
-Respond with ONLY a valid JSON array in this format:
-[
-  {
-    "title": "Practice Name",
-    "description": "Detailed instructions for the practice",
-    "type": "meditation",
-    "frequency": "daily"
-  }
-]`;
+    console.log("Calling Lovable AI Gateway...");
 
-    console.log("Calling OpenAI API...");
-
-    const aiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${openaiApiKey}`,
+        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: "You are a spiritual practice guide. Provide only valid JSON responses with no markdown or explanations." },
-          { role: "user", content: prompt }
+          {
+            role: "system",
+            content: "You are Yggi, a wise spiritual guide helping users discover meaningful practices for their sacred intentions. Provide thoughtful, personalized practice suggestions."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
         ],
-        temperature: 0.7,
-        max_tokens: 1500,
+        tools: [{
+          type: "function",
+          function: {
+            name: "suggest_practices",
+            description: "Return 3 spiritual practice suggestions based on the user's intention",
+            parameters: {
+              type: "object",
+              properties: {
+                practices: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      title: { type: "string" },
+                      description: { type: "string" },
+                      type: { 
+                        type: "string",
+                        enum: ["meditation", "breathwork", "visualization", "journaling", "movement", "ritual", "study"]
+                      },
+                      frequency: {
+                        type: "string",
+                        enum: ["daily", "weekly", "monthly"]
+                      }
+                    },
+                    required: ["title", "description", "type", "frequency"],
+                    additionalProperties: false
+                  }
+                }
+              },
+              required: ["practices"],
+              additionalProperties: false
+            }
+          }
+        }],
+        tool_choice: { type: "function", function: { name: "suggest_practices" } }
       }),
     });
 
     if (!aiResponse.ok) {
+      if (aiResponse.status === 429) {
+        return new Response(
+          JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (aiResponse.status === 402) {
+        return new Response(
+          JSON.stringify({ error: "Payment required. Please add funds to your Lovable AI workspace." }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       const errorText = await aiResponse.text();
-      console.error("OpenAI API error:", errorText);
-      throw new Error(`AI request failed: ${aiResponse.status} ${errorText}`);
+      console.error("Lovable AI Gateway error:", aiResponse.status, errorText);
+      throw new Error(`AI request failed: ${aiResponse.status}`);
     }
 
     const aiData = await aiResponse.json();
-    let practices = [];
+    console.log("Lovable AI response:", JSON.stringify(aiData));
 
-    if (aiData.choices && aiData.choices[0]?.message?.content) {
-      const content = aiData.choices[0].message.content.trim();
-      // Remove markdown code blocks if present
-      const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      
-      try {
-        practices = JSON.parse(cleanContent);
-      } catch (parseError) {
-        console.error("Failed to parse AI response:", cleanContent);
-        throw new Error("Failed to parse practice suggestions");
-      }
+    // Extract practices from tool call response
+    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+    if (!toolCall?.function?.arguments) {
+      throw new Error("No valid tool call in response");
     }
 
-    console.log("Generated practices:", practices);
+    const practicesData = JSON.parse(toolCall.function.arguments);
+    const practices = practicesData.practices || [];
+
+    console.log("Practice suggestions generated:", practices.length);
 
     return new Response(JSON.stringify({ practices }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
