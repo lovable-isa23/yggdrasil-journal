@@ -285,9 +285,9 @@ export const TimelineVisualization = () => {
   const topThemes = getTopThemes(timelineData);
 
   return (
-    <Card>
+    <Card className="w-full max-w-full overflow-hidden">
       <CardHeader>
-        <div className="flex items-center justify-between flex-wrap gap-4">
+        <div className="flex items-start md:items-center justify-between flex-col md:flex-row gap-4">
           <div>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
@@ -297,8 +297,8 @@ export const TimelineVisualization = () => {
               Track how your themes and emotions evolve over time
             </CardDescription>
           </div>
-          <div className="flex gap-2">
-            <Button onClick={exportTimelinePDF} variant="outline" size="sm" className="gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+            <Button onClick={exportTimelinePDF} variant="outline" size="sm" className="gap-2 w-full sm:w-auto">
               <Download className="h-4 w-4" />
               Export
             </Button>
@@ -306,14 +306,17 @@ export const TimelineVisualization = () => {
               variant={showAll ? "default" : "outline"} 
               onClick={() => setShowAll(!showAll)}
               size="sm"
+              className="w-full sm:w-auto"
             >
               {showAll ? "Filter by Date" : "Show All"}
             </Button>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="gap-2" disabled={showAll}>
+                <Button variant="outline" className="gap-2 w-full sm:w-auto" disabled={showAll}>
                   <CalendarIcon className="h-4 w-4" />
-                  {format(dateRange.from, "MMM d")} - {format(dateRange.to, "MMM d")}
+                  <span className="truncate">
+                    {format(dateRange.from, "MMM d")} - {format(dateRange.to, "MMM d")}
+                  </span>
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="end">
@@ -342,7 +345,7 @@ export const TimelineVisualization = () => {
         </div>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[600px] pr-4">
+        <ScrollArea className="h-[400px] md:h-[600px] pr-4">
           {timelineData.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               No entries found in this date range
