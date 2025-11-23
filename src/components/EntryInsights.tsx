@@ -225,41 +225,42 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
         {insights.interpretation && (
           <AccordionItem value="interpretation">
             <AccordionTrigger className="hover:no-underline">
-              <div className="flex items-center justify-between w-full pr-4">
-                <div className="flex items-center gap-2 font-semibold text-sm">
-                  <BookOpen className="h-4 w-4" />
-                  Interpretation & Insights
-                  {insights.depth_score && insights.depth_score >= 6 && (
-                    <Badge variant="secondary" className="text-xs ml-2">Deep Analysis</Badge>
-                  )}
-                </div>
-                {insights.frameworks_applied && insights.frameworks_applied.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {insights.frameworks_applied.includes('theravada') && (
-                      <Badge variant="outline" className="text-xs">☸️ Buddhist</Badge>
-                    )}
-                    {insights.frameworks_applied.includes('freudian') && (
-                      <Badge variant="outline" className="text-xs">🧠 Psychoanalytic</Badge>
-                    )}
-                    {insights.frameworks_applied.includes('jungian') && (
-                      <Badge variant="outline" className="text-xs">🌓 Jungian</Badge>
-                    )}
-                    {insights.frameworks_applied.includes('hermetic') && (
-                      <Badge variant="outline" className="text-xs">🔮 Hermetic</Badge>
-                    )}
-                    {insights.frameworks_applied.includes('advaita') && (
-                      <Badge variant="outline" className="text-xs">🕉️ Advaita</Badge>
-                    )}
-                    {insights.frameworks_applied.includes('taoist') && (
-                      <Badge variant="outline" className="text-xs">☯️ Taoist</Badge>
-                    )}
-                  </div>
-                )}
+              <div className="flex items-center gap-2 font-semibold text-sm">
+                <BookOpen className="h-4 w-4" />
+                Interpretation & Insights
               </div>
             </AccordionTrigger>
             <AccordionContent>
               <Card className="max-w-full">
                 <div className="p-4 space-y-4">
+                  {/* Badges section - only visible when accordion is open */}
+                  <div className="flex flex-wrap items-center gap-2 pb-3 border-b">
+                    {insights.depth_score && insights.depth_score >= 6 && (
+                      <Badge variant="secondary" className="text-xs">Deep Analysis</Badge>
+                    )}
+                    {insights.frameworks_applied && insights.frameworks_applied.length > 0 && (
+                      <>
+                        {insights.frameworks_applied.includes('theravada') && (
+                          <Badge variant="outline" className="text-xs">☸️ Buddhist</Badge>
+                        )}
+                        {insights.frameworks_applied.includes('freudian') && (
+                          <Badge variant="outline" className="text-xs">🧠 Psychoanalytic</Badge>
+                        )}
+                        {insights.frameworks_applied.includes('jungian') && (
+                          <Badge variant="outline" className="text-xs">🌓 Jungian</Badge>
+                        )}
+                        {insights.frameworks_applied.includes('hermetic') && (
+                          <Badge variant="outline" className="text-xs">🔮 Hermetic</Badge>
+                        )}
+                        {insights.frameworks_applied.includes('advaita') && (
+                          <Badge variant="outline" className="text-xs">🕉️ Advaita</Badge>
+                        )}
+                        {insights.frameworks_applied.includes('taoist') && (
+                          <Badge variant="outline" className="text-xs">☯️ Taoist</Badge>
+                        )}
+                      </>
+                    )}
+                  </div>
                   {/* Main Insight */}
                   <div className="prose prose-sm max-w-none">
                     <p className="text-sm leading-relaxed whitespace-pre-wrap">
