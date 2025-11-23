@@ -11,6 +11,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collap
 import { format } from "date-fns";
 import { useDataSufficiency } from "@/hooks/use-data-sufficiency";
 import { InsufficientDataPrompt } from "@/components/InsufficientDataPrompt";
+import { useLoading } from "@/contexts/LoadingContext";
 
 interface Pattern {
   id: string;
@@ -38,6 +39,7 @@ export const PatternInsights = () => {
     relevantQuote?: string;
   }>>([]);
   const { hasMinimumData, totalEntries, deepEntries, analyzedEntries, needsAnalysis } = useDataSufficiency();
+  const { startLoading, updateProgress, stopLoading } = useLoading();
 
   const togglePattern = (patternId: string) => {
     setOpenPatterns(prev => {
@@ -73,12 +75,17 @@ export const PatternInsights = () => {
 
   const analyzePatterns = async () => {
     setAnalyzing(true);
+    startLoading("analyze-patterns", "Analyzing entries...");
+    
     try {
+      updateProgress(40, "Finding patterns...");
       const { data, error } = await supabase.functions.invoke("analyze-patterns");
 
       if (error) throw error;
 
+      updateProgress(80, "Generating insights...");
       if (data.success) {
+        updateProgress(100, "Analysis complete!");
         toast.success(`Discovered ${data.patterns} patterns and ${data.relationships} relationships!`);
         await fetchPatterns();
       } else {
@@ -88,6 +95,7 @@ export const PatternInsights = () => {
       console.error("Error analyzing patterns:", error);
       toast.error("Failed to analyze patterns");
     } finally {
+      stopLoading();
       setAnalyzing(false);
     }
   };

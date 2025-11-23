@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { useLoading } from "@/contexts/LoadingContext";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Sparkles, Lightbulb, Heart, Tag, AlertTriangle, Phone, BookOpen, HelpCircle, CheckCircle, TrendingUp, AlertCircle } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -48,6 +49,7 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
   const [insights, setInsights] = useState<Insights | null>(null);
   const [loading, setLoading] = useState(false);
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
+  const { startLoading, updateProgress, stopLoading } = useLoading();
 
   useEffect(() => {
     checkExistingInsights();
@@ -86,29 +88,36 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
 
   const analyzeEntry = async (isReanalysis = false) => {
     setLoading(true);
+    startLoading("analyze-entry", "Analyzing entry...");
+    
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
         toast.error("You must be logged in");
+        stopLoading();
         return;
       }
 
+      updateProgress(30, "Detecting emotions and themes...");
       const { data, error } = await supabase.functions.invoke("analyze-entry", {
         body: { entryId, title, content },
       });
 
       if (error) throw error;
 
+      updateProgress(80, "Generating insights...");
       if (data?.insights) {
         setInsights(data.insights);
         setHasAnalyzed(true);
+        updateProgress(100, "Analysis complete!");
         toast.success(isReanalysis ? "Entry re-analyzed with updated settings!" : "Entry analyzed! Check out your insights below.");
       }
     } catch (error: any) {
       console.error("Analysis error:", error);
       toast.error(error.message || "Failed to analyze entry");
     } finally {
+      stopLoading();
       setLoading(false);
     }
   };

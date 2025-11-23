@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Mic, Square, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useLoading } from "@/contexts/LoadingContext";
 
 interface AudioRecorderProps {
   onTranscriptionComplete: (text: string, audioUrl?: string) => void;
@@ -14,6 +15,7 @@ export const AudioRecorder = ({ onTranscriptionComplete }: AudioRecorderProps) =
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const { toast } = useToast();
+  const { startLoading, updateProgress, stopLoading } = useLoading();
 
   const startRecording = async () => {
     try {
@@ -62,8 +64,10 @@ export const AudioRecorder = ({ onTranscriptionComplete }: AudioRecorderProps) =
 
   const processAudio = async (audioBlob: Blob) => {
     setIsProcessing(true);
+    startLoading("transcribe-audio", "Uploading audio...");
     
     try {
+      updateProgress(20, "Converting audio...");
       // Convert audio blob to base64
       const reader = new FileReader();
       const base64Promise = new Promise<string>((resolve) => {
@@ -76,6 +80,7 @@ export const AudioRecorder = ({ onTranscriptionComplete }: AudioRecorderProps) =
       reader.readAsDataURL(audioBlob);
       const audioBase64 = await base64Promise;
 
+      updateProgress(40, "Uploading to server...");
       // Upload audio to storage (optional but recommended)
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
@@ -96,6 +101,7 @@ export const AudioRecorder = ({ onTranscriptionComplete }: AudioRecorderProps) =
         supabase.storage.from('audio-recordings').getPublicUrl(fileName).data.publicUrl : 
         undefined;
 
+      updateProgress(60, "Transcribing audio...");
       // Transcribe audio
       const { data, error } = await supabase.functions.invoke('voice-to-text', {
         body: { audio: audioBase64 }
@@ -103,7 +109,9 @@ export const AudioRecorder = ({ onTranscriptionComplete }: AudioRecorderProps) =
 
       if (error) throw error;
 
+      updateProgress(90, "Finalizing...");
       if (data?.text) {
+        updateProgress(100, "Transcription complete!");
         toast({
           title: "Transcription complete",
           description: "Your audio has been transcribed successfully.",
@@ -120,6 +128,7 @@ export const AudioRecorder = ({ onTranscriptionComplete }: AudioRecorderProps) =
         variant: "destructive",
       });
     } finally {
+      stopLoading();
       setIsProcessing(false);
     }
   };
