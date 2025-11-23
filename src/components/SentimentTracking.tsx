@@ -2,8 +2,12 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { Loader2, Heart, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { Button } from "./ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { Calendar } from "./ui/calendar";
+import { Loader2, Heart, TrendingUp, TrendingDown, Minus, Calendar as CalendarIcon, X } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { format, isWithinInterval, subDays } from "date-fns";
 import { useDataSufficiency } from "@/hooks/use-data-sufficiency";
 import { InsufficientDataPrompt } from "@/components/InsufficientDataPrompt";
 
@@ -17,21 +21,29 @@ interface SentimentData {
 
 export const SentimentTracking = () => {
   const [sentimentData, setSentimentData] = useState<SentimentData[]>([]);
+  const [allSentimentData, setAllSentimentData] = useState<SentimentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedEmotion, setSelectedEmotion] = useState<string | null>(null);
+  const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 30));
+  const [endDate, setEndDate] = useState<Date | undefined>(new Date());
   const { hasMinimumData, totalEntries, deepEntries, analyzedEntries, needsAnalysis } = useDataSufficiency();
 
   useEffect(() => {
     fetchSentimentData();
   }, []);
 
+  useEffect(() => {
+    if (allSentimentData.length > 0) {
+      filterSentimentData(allSentimentData, startDate, endDate);
+    }
+  }, [startDate, endDate]);
+
   const fetchSentimentData = async () => {
     try {
       const { data: entries, error: entriesError } = await supabase
         .from("journal_entries")
         .select("id, entry_date")
-        .order("entry_date", { ascending: true })
-        .limit(30);
+        .order("entry_date", { ascending: true });
 
       if (entriesError) throw entriesError;
 
@@ -65,12 +77,27 @@ export const SentimentTracking = () => {
         }
       });
 
-      setSentimentData(Array.from(sentimentMap.values()));
+      const allData = Array.from(sentimentMap.values());
+      setAllSentimentData(allData);
+      filterSentimentData(allData, startDate, endDate);
     } catch (error) {
       console.error("Error fetching sentiment data:", error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const filterSentimentData = (data: SentimentData[], start?: Date, end?: Date) => {
+    let filtered = data;
+
+    if (start && end) {
+      filtered = data.filter(stat => {
+        const statDate = new Date(stat.date);
+        return isWithinInterval(statDate, { start, end });
+      });
+    }
+
+    setSentimentData(filtered);
   };
 
   const getEmotionCorrelations = () => {
@@ -164,8 +191,83 @@ export const SentimentTracking = () => {
           {getTrendIcon(sentimentData)}
         </CardTitle>
         <CardDescription>
-          Emotional patterns and correlations over time
+          {startDate && endDate
+            ? `${format(startDate, 'MMM d, yyyy')} - ${format(endDate, 'MMM d, yyyy')}`
+            : "Emotional patterns and correlations over time"}
         </CardDescription>
+        <div className="flex gap-2 flex-wrap mt-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <CalendarIcon className="h-4 w-4" />
+                Start Date
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={startDate}
+                onSelect={setStartDate}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <CalendarIcon className="h-4 w-4" />
+                End Date
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={endDate}
+                onSelect={setEndDate}
+              />
+            </PopoverContent>
+          </Popover>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setStartDate(subDays(new Date(), 30));
+              setEndDate(new Date());
+            }}
+          >
+            Last 30 days
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setStartDate(undefined);
+              setEndDate(undefined);
+              setSentimentData(allSentimentData);
+            }}
+          >
+            Show all
+          </Button>
+
+          {(startDate || endDate) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setStartDate(undefined);
+                setEndDate(undefined);
+                setSentimentData(allSentimentData);
+              }}
+              className="gap-2"
+            >
+              <X className="h-4 w-4" />
+              Clear
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="space-y-6">
         {sentimentData.length === 0 ? (

@@ -6,7 +6,7 @@ import { Calendar } from "./ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Badge } from "./ui/badge";
 import { Loader2, Calendar as CalendarIcon, TrendingUp, Download, FileText } from "lucide-react";
-import { format, subMonths } from "date-fns";
+import { format, subMonths, subDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import jsPDF from "jspdf";
 import { useToast } from "@/hooks/use-toast";
@@ -26,7 +26,7 @@ export const TimelineVisualization = () => {
   const [loading, setLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-    from: subMonths(new Date(), 3),
+    from: subDays(new Date(), 30),
     to: new Date(),
   });
   const { toast } = useToast();

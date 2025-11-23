@@ -2,7 +2,6 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { KnowledgeGraph } from "@/components/KnowledgeGraph";
 import { MoodTracker } from "@/components/MoodTracker";
 import { StatisticsDashboard } from "@/components/StatisticsDashboard";
-import { PatternInsights } from "@/components/PatternInsights";
 import { TimelineVisualization } from "@/components/TimelineVisualization";
 import { SentimentTracking } from "@/components/SentimentTracking";
 import { ReportExport } from "@/components/ReportExport";
@@ -191,15 +190,6 @@ const Insights = () => {
                   </div>
                 </CardContent>
               </Card>
-            </section>
-
-            {/* Patterns Section */}
-            <section>
-              <div className="flex items-center gap-2 mb-6">
-                <Target className="h-6 w-6 text-primary" />
-                <h3 className="text-2xl font-bold">Pattern Insights</h3>
-              </div>
-              <PatternInsights />
             </section>
 
           </div>
