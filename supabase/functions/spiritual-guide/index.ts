@@ -37,8 +37,8 @@ serve(async (req) => {
 
     const { guidanceType = "weekly_wisdom" } = await req.json();
 
-    // Gather user's spiritual journey context
-    const [goalsRes, entriesRes, patternsRes] = await Promise.all([
+    // Gather user's spiritual journey context including depth metrics
+    const [goalsRes, entriesRes, patternsRes, insightsRes] = await Promise.all([
       supabase
         .from("goals")
         .select("title, goal_type, intention, status, phase, created_at")
@@ -57,12 +57,41 @@ serve(async (req) => {
         .select("title, pattern_type, description, confidence_score")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
-        .limit(5)
+        .limit(5),
+      supabase
+        .from("entry_insights")
+        .select("depth_score, created_at, entry_id")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(30)
     ]);
 
     const goals = goalsRes.data || [];
     const recentEntries = entriesRes.data || [];
     const patterns = patternsRes.data || [];
+    const insights = insightsRes.data || [];
+
+    // Calculate depth metrics
+    const depthScores = insights.map(i => i.depth_score || 5).filter(d => d > 0);
+    const averageDepth = depthScores.length > 0 
+      ? (depthScores.reduce((sum, d) => sum + d, 0) / depthScores.length).toFixed(1)
+      : null;
+    
+    // Calculate depth trend (recent 10 vs previous 10)
+    const recentDepths = depthScores.slice(0, 10);
+    const olderDepths = depthScores.slice(10, 20);
+    let depthTrend = "stable";
+    if (recentDepths.length > 0 && olderDepths.length > 0) {
+      const recentAvg = recentDepths.reduce((sum, d) => sum + d, 0) / recentDepths.length;
+      const olderAvg = olderDepths.reduce((sum, d) => sum + d, 0) / olderDepths.length;
+      if (recentAvg > olderAvg + 1) depthTrend = "deepening";
+      else if (recentAvg < olderAvg - 1) depthTrend = "shallowing";
+    }
+
+    // Find deepest recent entry
+    const deepestRecent = insights.slice(0, 10).reduce((max, curr) => 
+      (curr.depth_score || 0) > (max?.depth_score || 0) ? curr : max
+    , insights[0]);
 
     // Build context for AI
     const context = {
@@ -79,7 +108,16 @@ serve(async (req) => {
         type: p.pattern_type,
         title: p.title,
         description: p.description
-      }))
+      })),
+      depthMetrics: {
+        average_depth: averageDepth,
+        depth_trend: depthTrend,
+        deepest_recent_score: deepestRecent?.depth_score || null,
+        total_deep_entries: depthScores.filter(d => d >= 7).length,
+        reflection_quality: averageDepth 
+          ? (parseFloat(averageDepth) >= 7 ? "profound" : parseFloat(averageDepth) >= 5 ? "moderate" : "surface-level")
+          : "unknown"
+      }
     };
 
     // Craft spiritual guidance prompt with enhanced Yggi persona
@@ -105,6 +143,11 @@ User's Current Journey Context:
 - Active Goals: ${JSON.stringify(context.activeGoals)}
 - Journal Practice: ${context.journalFrequency}
 - Discovered Patterns: ${JSON.stringify(context.patterns)}
+- Reflection Depth Metrics: ${JSON.stringify(context.depthMetrics)}
+  * Average depth: ${context.depthMetrics.average_depth}/10
+  * Trend: ${context.depthMetrics.depth_trend}
+  * Quality: ${context.depthMetrics.reflection_quality}
+  * Deep entries (≥7): ${context.depthMetrics.total_deep_entries}
 
 When Offering Guidance:
 
@@ -127,6 +170,13 @@ When Offering Guidance:
 - Celebrate individuation process
 - Note what they're no longer clinging to
 - Encourage integration of previously rejected parts
+
+**Depth-Aware Guidance:**
+- If depth trend is "deepening": Acknowledge their courage to go deeper, encourage continued exploration
+- If depth trend is "shallowing": Gently invite them back to deeper reflection without judgment
+- If average depth is high (≥7): Meet them at that profound level, use more sophisticated frameworks
+- If average depth is moderate (5-6): Balance depth with accessibility
+- If reflection quality is "surface-level": Encourage without pressuring; suggest gentle practices to deepen
 
 Practice Suggestions Should Include:
 - Mindfulness and meditation (Theravada)
