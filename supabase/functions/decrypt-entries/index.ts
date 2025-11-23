@@ -97,7 +97,10 @@ serve(async (req) => {
 
     const { data: entries, error: fetchError } = await supabaseAdmin
       .from('journal_entries')
-      .select('*')
+      .select(`
+        *,
+        entry_insights!left(depth_score)
+      `)
       .eq('user_id', user.id)
       .order('entry_date', { ascending: false });
 
@@ -114,10 +117,18 @@ serve(async (req) => {
       (entries || []).map(async (entry) => {
         const decryptedTitle = await decrypt(entry.title, encryptionKey);
         const decryptedContent = await decrypt(entry.content, encryptionKey);
+        
+        // Extract depth_score from joined entry_insights
+        const depth_score = entry.entry_insights?.depth_score ?? null;
+        
+        // Remove the nested entry_insights object and flatten depth_score
+        const { entry_insights, ...entryData } = entry;
+        
         return {
-          ...entry,
+          ...entryData,
           title: decryptedTitle,
           content: decryptedContent,
+          depth_score,
         };
       })
     );

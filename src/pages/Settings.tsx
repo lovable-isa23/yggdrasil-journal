@@ -6,9 +6,10 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Moon, Sun } from "lucide-react";
+import { ArrowLeft, Moon, Sun, Smartphone, Monitor } from "lucide-react";
 import { toast } from "sonner";
 import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -195,6 +196,87 @@ const Settings = () => {
                       disabled={saving}
                     />
                   </div>
+                </div>
+              </Card>
+
+              {/* Install App */}
+              <Card className="p-6">
+                <h2 className="text-xl font-bold mb-4">Install Yggdrasil as an App</h2>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Access Yggdrasil directly from your home screen for a native app experience with offline access and faster loading
+                </p>
+
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="iphone">
+                    <AccordionTrigger className="text-base font-medium">
+                      <div className="flex items-center gap-2">
+                        <Smartphone className="h-4 w-4" />
+                        iPhone (Safari Required)
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-3 text-sm">
+                      <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-3">
+                        <p className="text-amber-900 dark:text-amber-200 font-medium flex items-center gap-2">
+                          💡 Important: You must use Safari browser on iOS
+                        </p>
+                      </div>
+                      <ol className="space-y-2 list-decimal list-inside">
+                        <li>Open this page in <strong>Safari</strong> (not Chrome or other browsers)</li>
+                        <li>Tap the <strong>Share</strong> button <span className="inline-flex items-center justify-center w-5 h-5 text-xs bg-blue-100 dark:bg-blue-900/30 rounded">↑</span> at the bottom of your screen</li>
+                        <li>Scroll down and tap <strong>"Add to Home Screen"</strong></li>
+                        <li>Edit the name if desired, then tap <strong>"Add"</strong></li>
+                        <li>Find the Yggdrasil icon on your home screen!</li>
+                      </ol>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="android">
+                    <AccordionTrigger className="text-base font-medium">
+                      <div className="flex items-center gap-2">
+                        <Smartphone className="h-4 w-4" />
+                        Android (Chrome/Edge)
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-3 text-sm">
+                      <ol className="space-y-2 list-decimal list-inside">
+                        <li>Open this page in <strong>Chrome</strong> or <strong>Edge</strong></li>
+                        <li>Tap the menu (three dots) in the top right corner</li>
+                        <li>Tap <strong>"Add to Home screen"</strong> or <strong>"Install app"</strong></li>
+                        <li>Confirm the installation</li>
+                        <li>The Yggdrasil icon will appear on your home screen</li>
+                      </ol>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="desktop">
+                    <AccordionTrigger className="text-base font-medium">
+                      <div className="flex items-center gap-2">
+                        <Monitor className="h-4 w-4" />
+                        Desktop (Chrome/Edge/Brave)
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-3 text-sm">
+                      <ol className="space-y-2 list-decimal list-inside">
+                        <li><strong>Chrome/Edge:</strong> Look for the install icon <span className="inline-flex items-center justify-center w-5 h-5 text-xs bg-blue-100 dark:bg-blue-900/30 rounded">⊕</span> in the address bar</li>
+                        <li>Click the install button and follow the prompts</li>
+                        <li>The app will open in its own window and appear in your applications</li>
+                      </ol>
+                      <p className="text-muted-foreground">
+                        <strong>Note:</strong> Firefox doesn't currently support PWA installation on desktop
+                      </p>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+
+                <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+                  <h3 className="font-medium mb-2 text-sm">Benefits of Installing:</h3>
+                  <ul className="space-y-1 text-sm text-muted-foreground">
+                    <li>✓ Faster loading times</li>
+                    <li>✓ Works offline (view past entries)</li>
+                    <li>✓ Native app-like experience</li>
+                    <li>✓ No app store needed</li>
+                    <li>✓ Takes up minimal storage</li>
+                  </ul>
                 </div>
               </Card>
             </div>
