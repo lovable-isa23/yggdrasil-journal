@@ -125,23 +125,36 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
         return;
       }
 
+      // Smooth progress updates with artificial delays
+      updateProgress(10, "Preparing analysis...");
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
       updateProgress(30, "Detecting emotions and themes...");
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
       const { data, error } = await supabase.functions.invoke("analyze-entry", {
         body: { entryId, title, content },
       });
 
       if (error) throw error;
 
-      updateProgress(80, "Generating insights...");
+      updateProgress(70, "Generating insights...");
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      updateProgress(85, "Processing patterns...");
+      await new Promise(resolve => setTimeout(resolve, 200));
+
       if (data?.insights) {
         setInsights(data.insights);
         setHasAnalyzed(true);
         updateProgress(90, "Saving insights...");
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
         toast.success(isReanalysis ? "Entry re-analyzed with updated settings!" : "Entry analyzed! Check out your insights below.");
         
         // Refetch from database to ensure we display persisted data
         updateProgress(95, "Refreshing data...");
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, 200));
         await checkExistingInsights();
         updateProgress(100, "Complete!");
       }

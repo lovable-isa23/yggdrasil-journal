@@ -325,10 +325,16 @@ export const KnowledgeGraph = () => {
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
-    const width = 800;
-    const height = 600;
+    // Responsive dimensions
+    const container = svgRef.current.parentElement;
+    const width = Math.min(container?.clientWidth || 800, 800);
+    const height = Math.min(width * 0.75, 600); // Maintain aspect ratio
 
-    svg.attr("width", width).attr("height", height).attr("viewBox", [0, 0, width, height]);
+    svg
+      .attr("width", "100%")
+      .attr("height", "100%")
+      .attr("viewBox", [0, 0, width, height])
+      .attr("preserveAspectRatio", "xMidYMid meet");
 
     // Add zoom behavior
     const g = svg.append("g");
@@ -512,22 +518,40 @@ export const KnowledgeGraph = () => {
               <TabsTrigger value="keywords">Keywords</TabsTrigger>
             </TabsList>
             <TabsContent value={activeTab}>
-              <div className="relative w-full bg-background/50 rounded-lg border p-4">
-                <div className="flex justify-between items-center mb-4 gap-4 flex-wrap">
-                  <div className="flex-1 min-w-[200px]">
-                    <label className="text-sm font-medium mb-2 block">
-                      Filter by Connection Strength: {minStrength}
-                    </label>
+              <div className="relative w-full bg-background/50 rounded-lg border p-2 sm:p-4 overflow-hidden">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+                  <div className="w-full sm:flex-1 sm:min-w-[200px]">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm font-medium">
+                        Connection Strength: {minStrength}
+                      </label>
+                      {graphData.nodes.length === 0 && minStrength > 1 && (
+                        <Badge variant="outline" className="text-xs text-amber-600 dark:text-amber-400">
+                          No connections at this level
+                        </Badge>
+                      )}
+                    </div>
                     <Slider
                       value={[minStrength]}
-                      onValueChange={(value) => setMinStrength(value[0])}
+                      onValueChange={(value) => {
+                        const newValue = value[0];
+                        if (newValue >= 1 && newValue <= 10) {
+                          setMinStrength(newValue);
+                        }
+                      }}
                       min={1}
                       max={10}
                       step={1}
-                      className="w-full max-w-xs"
+                      className="w-full"
+                      aria-label="Filter connections by minimum strength"
                     />
+                    {graphData.nodes.length === 0 && minStrength > 1 && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Try lowering the filter to see more connections
+                      </p>
+                    )}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 w-full sm:w-auto">
                     <Button
                       variant="outline"
                       size="sm"
@@ -568,8 +592,8 @@ export const KnowledgeGraph = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex justify-center" ref={graphContainerRef}>
-                    <svg ref={svgRef} className="max-w-full" />
+                  <div className="flex justify-center overflow-x-auto" ref={graphContainerRef}>
+                    <svg ref={svgRef} className="w-full max-w-full h-auto" style={{ minHeight: "400px" }} />
                   </div>
                 )}
               </div>
