@@ -3,7 +3,7 @@ import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2, Calendar as CalendarIcon, ChevronDown, ChevronUp, Mic, Image as ImageIcon, Loader2, FileText } from "lucide-react";
+import { Trash2, Calendar as CalendarIcon, ChevronDown, ChevronUp, Mic, Image as ImageIcon, Loader2, FileText, Edit, Clock } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -23,6 +23,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface JournalEntry {
   id: string;
@@ -101,6 +107,10 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
   const [loading, setLoading] = useState(true);
   const [openEntries, setOpenEntries] = useState<Set<string>>(new Set());
   const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
+  const [entryToEdit, setEntryToEdit] = useState<JournalEntry | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
   const fetchEntries = async () => {
@@ -223,6 +233,47 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
     setEntries(prev => prev.map(entry => entry.id === entryId ? { ...entry, ...updates } : entry));
   };
 
+  const openEditDialog = (entry: JournalEntry) => {
+    setEntryToEdit(entry);
+    setEditTitle(entry.title);
+    setEditContent(entry.content);
+  };
+
+  const closeEditDialog = () => {
+    setEntryToEdit(null);
+    setEditTitle("");
+    setEditContent("");
+  };
+
+  const handleEdit = async () => {
+    if (!entryToEdit) return;
+    
+    try {
+      setIsSaving(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({ title: "Error", description: "You must be logged in", variant: "destructive" });
+        return;
+      }
+
+      const { error } = await supabase.functions.invoke("update-entry", {
+        body: { entryId: entryToEdit.id, title: editTitle, content: editContent },
+      });
+
+      if (error) throw error;
+
+      toast({ title: "Success", description: "Entry updated successfully" });
+      closeEditDialog();
+      fetchEntries();
+    } catch (error: any) {
+      console.error("Error updating entry:", error);
+      toast({ title: "Error", description: "Failed to update entry", variant: "destructive" });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -289,23 +340,54 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
                       })()}
                       {entry.tags?.map(tag => <Badge key={tag} variant="secondary">#{tag}</Badge>)}
                     </div>
-                   <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                     <span>{wordCount.toLocaleString()} words</span><span>•</span>
-                     <span>{getReadingTime(wordCount)}</span><span>•</span>
-                     <span>{format(new Date(entry.entry_date), "MMM d, yyyy")}</span>
-                   </div>
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      <span>{wordCount.toLocaleString()} words</span><span>•</span>
+                      <span>{getReadingTime(wordCount)}</span><span>•</span>
+                      <span>{format(new Date(entry.entry_date), "MMM d, yyyy")}</span>
+                    </div>
+                    <TooltipProvider>
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              Created {format(new Date(entry.created_at), "MMM d, yyyy 'at' h:mm a")}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Created: {format(new Date(entry.created_at), "PPpp")}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        {entry.created_at !== entry.updated_at && (
+                          <>
+                            <span>•</span>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="flex items-center gap-1">
+                                  Modified {format(new Date(entry.updated_at), "MMM d, yyyy 'at' h:mm a")}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Last modified: {format(new Date(entry.updated_at), "PPpp")}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </>
+                        )}
+                      </div>
+                    </TooltipProvider>
                    <EntryQuickActions entryId={entry.id} isFavorite={entry.is_favorite || false} moodType={entry.mood_type || 'general'} tags={entry.tags || []}
                      onFavoriteChange={(isFavorite) => handleEntryUpdate(entry.id, { is_favorite: isFavorite })}
                      onMoodChange={(mood_type) => handleEntryUpdate(entry.id, { mood_type })}
                      onTagsChange={(tags) => handleEntryUpdate(entry.id, { tags })} />
                  </div>
-                 <div className="flex gap-2">
-                   <Popover>
-                     <PopoverTrigger asChild><Button variant="outline" size="icon"><CalendarIcon className="h-4 w-4" /></Button></PopoverTrigger>
-                     <PopoverContent className="w-auto p-0" align="end"><Calendar mode="single" selected={new Date(entry.entry_date)} onSelect={(date) => date && handleDateUpdate(entry.id, date)} initialFocus /></PopoverContent>
-                   </Popover>
-                   <Button variant="outline" size="icon" onClick={() => setEntryToDelete(entry.id)}><Trash2 className="h-4 w-4" /></Button>
-                 </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="icon" onClick={() => openEditDialog(entry)}><Edit className="h-4 w-4" /></Button>
+                    <Popover>
+                      <PopoverTrigger asChild><Button variant="outline" size="icon"><CalendarIcon className="h-4 w-4" /></Button></PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="end"><Calendar mode="single" selected={new Date(entry.entry_date)} onSelect={(date) => date && handleDateUpdate(entry.id, date)} initialFocus /></PopoverContent>
+                    </Popover>
+                    <Button variant="outline" size="icon" onClick={() => setEntryToDelete(entry.id)}><Trash2 className="h-4 w-4" /></Button>
+                  </div>
                </div>
              </CardHeader>
              {isOpen && (<><CardContent className="pt-4 border-t"><div className="prose prose-sm max-w-none dark:prose-invert"><ReactMarkdown>{entry.content}</ReactMarkdown></div></CardContent>
@@ -333,6 +415,66 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={entryToEdit !== null} onOpenChange={(open) => !open && closeEditDialog()}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Journal Entry</DialogTitle>
+            <DialogDescription>
+              Make changes to your journal entry. Both title and content will be re-encrypted.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-title">Title</Label>
+              <Input
+                id="edit-title"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                placeholder="Entry title"
+                disabled={isSaving}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Content</Label>
+              <Tabs defaultValue="write" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="write">Write</TabsTrigger>
+                  <TabsTrigger value="preview">Preview</TabsTrigger>
+                </TabsList>
+                <TabsContent value="write" className="mt-2">
+                  <Textarea
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    placeholder="Write your entry here... (Markdown supported)"
+                    className="min-h-[400px] font-mono text-sm"
+                    disabled={isSaving}
+                  />
+                </TabsContent>
+                <TabsContent value="preview" className="mt-2">
+                  <div className="min-h-[400px] rounded-md border bg-muted/50 p-4">
+                    <div className="prose prose-sm max-w-none dark:prose-invert">
+                      <ReactMarkdown>{editContent || "*No content to preview*"}</ReactMarkdown>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={closeEditDialog} disabled={isSaving}>
+              Cancel
+            </Button>
+            <Button onClick={handleEdit} disabled={isSaving || !editTitle.trim() || !editContent.trim()}>
+              {isSaving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
