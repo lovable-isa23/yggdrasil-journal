@@ -12,7 +12,7 @@ const Index = () => {
       <UserJourney />
       <Features />
       <AppShowcase />
-      <Testimonials />
+      {/* <Testimonials /> */}
       <WaitlistCTA />
     </main>
   );
