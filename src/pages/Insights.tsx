@@ -202,38 +202,6 @@ const Insights = () => {
               <PatternInsights />
             </section>
 
-            {/* Export Options Section */}
-            <section>
-              <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-secondary/5">
-                <CardHeader>
-                  <CardTitle className="text-xl flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    Export Your Data
-                  </CardTitle>
-                  <CardDescription>
-                    Download your journal entries and comprehensive insights reports
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-semibold">Export All Entries</h4>
-                      <p className="text-xs text-muted-foreground mb-2">
-                        Download all your journal entries in JSON format
-                      </p>
-                      <DataExport />
-                    </div>
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-semibold">Export Reports</h4>
-                      <p className="text-xs text-muted-foreground mb-2">
-                        Generate comprehensive PDF reports with insights
-                      </p>
-                      <ReportExport />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </section>
           </div>
         </main>
       </div>

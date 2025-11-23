@@ -2,9 +2,13 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, CartesianAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { Flame, TrendingUp, Clock, FileText } from "lucide-react";
+import { Flame, TrendingUp, Clock, FileText, Calendar, X } from "lucide-react";
 import { useDataSufficiency } from "@/hooks/use-data-sufficiency";
 import { InsufficientDataPrompt } from "@/components/InsufficientDataPrompt";
+import { Button } from "./ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { Calendar as CalendarComponent } from "./ui/calendar";
+import { format, isWithinInterval, subDays } from "date-fns";
 
 interface DayStats {
   date: string;
@@ -21,8 +25,11 @@ export const StatisticsDashboard = () => {
   const [currentStreak, setCurrentStreak] = useState(0);
   const [longestStreak, setLongestStreak] = useState(0);
   const [wordCountData, setWordCountData] = useState<DayStats[]>([]);
+  const [allWordCountData, setAllWordCountData] = useState<DayStats[]>([]);
   const [hourlyData, setHourlyData] = useState<HourStats[]>([]);
   const [loading, setLoading] = useState(true);
+  const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 30));
+  const [endDate, setEndDate] = useState<Date | undefined>(new Date());
   const { hasMinimumData, totalEntries, deepEntries, analyzedEntries, needsAnalysis, isLoading: dataSufficiencyLoading } = useDataSufficiency();
 
   useEffect(() => {
@@ -108,10 +115,9 @@ export const StatisticsDashboard = () => {
   };
 
   const calculateWordCounts = (entries: any[]) => {
-    const last30Days = entries.slice(-30);
     const dayMap = new Map<string, DayStats>();
 
-    last30Days.forEach(entry => {
+    entries.forEach(entry => {
       const date = entry.entry_date;
       const wordCount = entry.content ? entry.content.split(/\s+/).filter((w: string) => w.length > 0).length : 0;
 
@@ -124,12 +130,31 @@ export const StatisticsDashboard = () => {
       stats.entryCount += 1;
     });
 
-    const data = Array.from(dayMap.values()).map(stat => ({
+    const allData = Array.from(dayMap.values()).map(stat => ({
+      ...stat,
+      date: stat.date // Keep as raw date for filtering
+    }));
+
+    setAllWordCountData(allData);
+    filterWordCountData(allData, startDate, endDate);
+  };
+
+  const filterWordCountData = (data: DayStats[], start?: Date, end?: Date) => {
+    let filtered = data;
+
+    if (start && end) {
+      filtered = data.filter(stat => {
+        const statDate = new Date(stat.date);
+        return isWithinInterval(statDate, { start, end });
+      });
+    }
+
+    const formatted = filtered.map(stat => ({
       ...stat,
       date: new Date(stat.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     }));
 
-    setWordCountData(data);
+    setWordCountData(formatted);
   };
 
   const calculateActiveHours = (entries: any[]) => {
@@ -236,7 +261,94 @@ export const StatisticsDashboard = () => {
                   <FileText className="h-5 w-5" />
                   Word Count Trend
                 </CardTitle>
-                <CardDescription>Last 30 days of writing activity</CardDescription>
+                <CardDescription>
+                  {!startDate || !endDate 
+                    ? "All time writing activity" 
+                    : startDate.getTime() === subDays(new Date(), 30).setHours(0,0,0,0) && endDate.getTime() === new Date().setHours(0,0,0,0)
+                    ? "Last 30 days of writing activity"
+                    : "Custom date range"}
+                </CardDescription>
+                <div className="flex flex-wrap gap-2 mt-4">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="gap-2">
+                        <Calendar className="h-4 w-4" />
+                        {startDate ? format(startDate, "MMM d, yyyy") : "Start date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={startDate}
+                        onSelect={(date) => {
+                          setStartDate(date);
+                          if (date && endDate) {
+                            filterWordCountData(allWordCountData, date, endDate);
+                          }
+                        }}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="gap-2">
+                        <Calendar className="h-4 w-4" />
+                        {endDate ? format(endDate, "MMM d, yyyy") : "End date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={endDate}
+                        onSelect={(date) => {
+                          setEndDate(date);
+                          if (startDate && date) {
+                            filterWordCountData(allWordCountData, startDate, date);
+                          }
+                        }}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      const thirtyDaysAgo = subDays(new Date(), 30);
+                      const today = new Date();
+                      setStartDate(thirtyDaysAgo);
+                      setEndDate(today);
+                      filterWordCountData(allWordCountData, thirtyDaysAgo, today);
+                    }}
+                  >
+                    Last 30 days
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setStartDate(undefined);
+                      setEndDate(undefined);
+                      filterWordCountData(allWordCountData, undefined, undefined);
+                    }}
+                  >
+                    Show all
+                  </Button>
+                  {(startDate || endDate) && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => {
+                        setStartDate(subDays(new Date(), 30));
+                        setEndDate(new Date());
+                        filterWordCountData(allWordCountData, subDays(new Date(), 30), new Date());
+                      }}
+                      className="gap-1"
+                    >
+                      <X className="h-4 w-4" />
+                      Clear
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>

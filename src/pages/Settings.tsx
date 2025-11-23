@@ -230,17 +230,17 @@ const Settings = () => {
                     <AccordionTrigger className="text-base font-medium">
                       <div className="flex items-center gap-2">
                         <Smartphone className="h-4 w-4" />
-                        iPhone (Safari Required)
+                        iPhone (Safari or Chrome)
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="space-y-3 text-sm">
-                      <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-3">
-                        <p className="text-amber-900 dark:text-amber-200 font-medium flex items-center gap-2">
-                          💡 Important: You must use Safari browser on iOS
+                      <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 mb-3">
+                        <p className="text-foreground font-medium flex items-center gap-2">
+                          💡 Works with both Safari and Chrome on iOS
                         </p>
                       </div>
                       <ol className="space-y-2 list-decimal list-inside">
-                        <li>Open this page in <strong>Safari</strong> (not Chrome or other browsers)</li>
+                        <li>Open this page in <strong>Safari or Chrome</strong></li>
                         <li>Tap the <strong>Share</strong> button <span className="inline-flex items-center justify-center w-5 h-5 text-xs bg-blue-100 dark:bg-blue-900/30 rounded">↑</span> at the bottom of your screen</li>
                         <li>Scroll down and tap <strong>"Add to Home Screen"</strong></li>
                         <li>Edit the name if desired, then tap <strong>"Add"</strong></li>
