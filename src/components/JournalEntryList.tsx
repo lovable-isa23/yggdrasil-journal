@@ -390,7 +390,7 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
                   </div>
                </div>
              </CardHeader>
-             {isOpen && (<><CardContent className="pt-4 border-t"><div className="prose prose-sm max-w-none dark:prose-invert"><ReactMarkdown>{entry.content}</ReactMarkdown></div></CardContent>
+             {isOpen && (<><CardContent className="pt-4 border-t"><div className="prose prose-sm max-w-none dark:prose-invert md:prose-ul:list-disc md:prose-ol:list-decimal prose-ul:list-none prose-ol:list-none prose-ul:pl-0 prose-ol:pl-0 prose-li:leading-tight md:prose-li:leading-relaxed prose-p:leading-snug md:prose-p:leading-relaxed"><ReactMarkdown>{entry.content}</ReactMarkdown></div></CardContent>
              <CardFooter><EntryInsights entryId={entry.id} title={entry.title} content={entry.content} /></CardFooter></>)}
            </Card>
          );
@@ -455,7 +455,7 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
                 </TabsContent>
                 <TabsContent value="preview" className="mt-2">
                   <div className="min-h-[400px] rounded-md border bg-muted/50 p-4">
-                    <div className="prose prose-sm max-w-none dark:prose-invert">
+                    <div className="prose prose-sm max-w-none dark:prose-invert md:prose-ul:list-disc md:prose-ol:list-decimal prose-ul:list-none prose-ol:list-none prose-ul:pl-0 prose-ol:pl-0 prose-li:leading-tight md:prose-li:leading-relaxed prose-p:leading-snug md:prose-p:leading-relaxed">
                       <ReactMarkdown>{editContent || "*No content to preview*"}</ReactMarkdown>
                     </div>
                   </div>
