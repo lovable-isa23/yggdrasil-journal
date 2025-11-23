@@ -262,75 +262,82 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
                     </p>
                   </div>
 
-                  {/* Patterns Identified */}
-                  {insights.interpretation.patterns_identified && 
-                   insights.interpretation.patterns_identified.length > 0 && (
-                    <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
-                      <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                        <AlertCircle className="h-4 w-4 text-orange-600" />
-                        Patterns to Notice
-                      </h5>
-                      <ul className="space-y-1 text-sm">
-                        {insights.interpretation.patterns_identified.map((pattern, idx) => (
-                          <li key={idx} className="flex items-start gap-2">
-                            <span className="text-orange-600 mt-1">•</span>
-                            <span>{pattern}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                  {/* Nested accordion for subsections */}
+                  <Accordion type="multiple" className="space-y-2">
+                    {/* Patterns Identified */}
+                    {insights.interpretation.patterns_identified && 
+                     insights.interpretation.patterns_identified.length > 0 && (
+                      <AccordionItem value="patterns" className="border rounded-lg px-4">
+                        <AccordionTrigger className="text-sm font-semibold py-3">
+                          🔍 Patterns to Notice
+                        </AccordionTrigger>
+                        <AccordionContent className="pt-2 pb-3">
+                          <ul className="space-y-1 text-sm">
+                            {insights.interpretation.patterns_identified.map((pattern, idx) => (
+                              <li key={idx} className="flex items-start gap-2">
+                                <span className="text-primary mt-1">•</span>
+                                <span>{pattern}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </AccordionContent>
+                      </AccordionItem>
+                    )}
 
-                  {/* Reflective Questions */}
-                  {insights.interpretation.questions && 
-                   insights.interpretation.questions.length > 0 && (
-                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                      <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                        <HelpCircle className="h-4 w-4 text-blue-600" />
-                        Questions for Reflection
-                      </h5>
-                      <ul className="space-y-2 text-sm">
-                        {insights.interpretation.questions.map((q, idx) => (
-                          <li key={idx} className="flex items-start gap-2">
-                            <span className="text-blue-600 font-medium">Q{idx + 1}:</span>
-                            <span className="italic">{q}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                    {/* Reflective Questions */}
+                    {insights.interpretation.questions && 
+                     insights.interpretation.questions.length > 0 && (
+                      <AccordionItem value="questions" className="border rounded-lg px-4">
+                        <AccordionTrigger className="text-sm font-semibold py-3">
+                          ❓ Questions for Reflection
+                        </AccordionTrigger>
+                        <AccordionContent className="pt-2 pb-3">
+                          <ul className="space-y-2 text-sm">
+                            {insights.interpretation.questions.map((q, idx) => (
+                              <li key={idx} className="flex items-start gap-2">
+                                <span className="text-primary font-medium">Q{idx + 1}:</span>
+                                <span className="italic">{q}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </AccordionContent>
+                      </AccordionItem>
+                    )}
 
-                  {/* Action Items */}
-                  {insights.interpretation.action_items && 
-                   insights.interpretation.action_items.length > 0 && (
-                    <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                      <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                        Action Steps
-                      </h5>
-                      <ul className="space-y-1 text-sm">
-                        {insights.interpretation.action_items.map((action, idx) => (
-                          <li key={idx} className="flex items-start gap-2">
-                            <span className="text-green-600">→</span>
-                            <span>{action}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                    {/* Action Items */}
+                    {insights.interpretation.action_items && 
+                     insights.interpretation.action_items.length > 0 && (
+                      <AccordionItem value="actions" className="border rounded-lg px-4">
+                        <AccordionTrigger className="text-sm font-semibold py-3">
+                          ✓ Action Steps
+                        </AccordionTrigger>
+                        <AccordionContent className="pt-2 pb-3">
+                          <ul className="space-y-1 text-sm">
+                            {insights.interpretation.action_items.map((action, idx) => (
+                              <li key={idx} className="flex items-start gap-2">
+                                <span className="text-primary">→</span>
+                                <span>{action}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </AccordionContent>
+                      </AccordionItem>
+                    )}
 
-                  {/* Growth Connection */}
-                  {insights.interpretation.growth_connection && (
-                    <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                      <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4 text-purple-600" />
-                        Your Growth Journey
-                      </h5>
-                      <p className="text-sm leading-relaxed">
-                        {insights.interpretation.growth_connection}
-                      </p>
-                    </div>
-                  )}
+                    {/* Growth Connection */}
+                    {insights.interpretation.growth_connection && (
+                      <AccordionItem value="growth" className="border rounded-lg px-4">
+                        <AccordionTrigger className="text-sm font-semibold py-3">
+                          📈 Your Growth Journey
+                        </AccordionTrigger>
+                        <AccordionContent className="pt-2 pb-3">
+                          <p className="text-sm leading-relaxed">
+                            {insights.interpretation.growth_connection}
+                          </p>
+                        </AccordionContent>
+                      </AccordionItem>
+                    )}
+                  </Accordion>
                 </div>
               </Card>
             </AccordionContent>
