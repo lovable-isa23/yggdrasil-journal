@@ -51,11 +51,34 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
   const [insights, setInsights] = useState<Insights | null>(null);
   const [loading, setLoading] = useState(false);
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
+  const [userPreferences, setUserPreferences] = useState<{
+    enable_sacred_geometry?: boolean;
+  } | null>(null);
   const { startLoading, updateProgress, stopLoading } = useLoading();
 
   useEffect(() => {
     checkExistingInsights();
+    fetchUserPreferences();
   }, [entryId]);
+
+  const fetchUserPreferences = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data } = await supabase
+        .from('user_preferences')
+        .select('enable_sacred_geometry')
+        .eq('user_id', user.id)
+        .single();
+
+      if (data) {
+        setUserPreferences(data);
+      }
+    } catch (error) {
+      console.error('Error fetching preferences:', error);
+    }
+  };
 
   const checkExistingInsights = async () => {
     try {
@@ -175,12 +198,14 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
         </Button>
       </div>
       
-      {/* Sacred Geometry Notice - only show if no sacred geometry data exists */}
-      {insights.sacred_geometry && insights.sacred_geometry.length === 0 && (
+      {/* Sacred Geometry Notice - only show if setting is enabled but no data */}
+      {userPreferences?.enable_sacred_geometry && 
+       insights.sacred_geometry && 
+       insights.sacred_geometry.length === 0 && (
         <Alert className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
           <Info className="h-4 w-4" />
           <AlertDescription className="text-xs">
-            Sacred geometry analysis is available but not yet generated for this entry. 
+            Sacred geometry analysis is enabled in your settings but not yet available for this entry. 
             Click <strong>Re-analyze Entry</strong> above to generate sacred geometry insights.
           </AlertDescription>
         </Alert>
