@@ -142,15 +142,16 @@ serve(async (req) => {
       throw new Error('Entry ID is required');
     }
 
-    // Fetch user preferences
+    // Fetch user preferences for chakra, tarot, and sacred geometry tags
     const { data: userPrefs } = await supabase
       .from('user_preferences')
-      .select('enable_chakra_tags, enable_tarot_tags')
+      .select('enable_chakra_tags, enable_tarot_tags, enable_sacred_geometry')
       .eq('user_id', user.id)
       .single();
 
     const enableChakraTags = userPrefs?.enable_chakra_tags || false;
     const enableTarotTags = userPrefs?.enable_tarot_tags || false;
+    const enableSacredGeometry = userPrefs?.enable_sacred_geometry || false;
 
     console.log('Analyzing entry:', entryId);
 
@@ -500,6 +501,10 @@ Respond with ONLY a valid JSON object in this exact format:
 
     if (enableTarotTags && analysis.tarot_tags) {
       insightData.tarot_tags = analysis.tarot_tags;
+    }
+
+    if (enableSacredGeometry && analysis.sacred_geometry) {
+      insightData.sacred_geometry = analysis.sacred_geometry;
     }
 
     const { error: insertError } = await supabase
