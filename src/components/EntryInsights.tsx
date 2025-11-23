@@ -115,6 +115,11 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
         setHasAnalyzed(true);
         updateProgress(100, "Analysis complete!");
         toast.success(isReanalysis ? "Entry re-analyzed with updated settings!" : "Entry analyzed! Check out your insights below.");
+        
+        // Refetch from database to ensure we display persisted data
+        setTimeout(() => {
+          checkExistingInsights();
+        }, 500);
       }
     } catch (error: any) {
       console.error("Analysis error:", error);
@@ -253,7 +258,7 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
               </div>
             </AccordionTrigger>
             <AccordionContent>
-              <Card>
+              <Card className="max-w-full">
                 <div className="p-4 space-y-4">
                   {/* Main Insight */}
                   <div className="prose prose-sm max-w-none">
@@ -263,11 +268,11 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
                   </div>
 
                   {/* Nested accordion for subsections */}
-                  <Accordion type="multiple" className="space-y-2">
+                  <Accordion type="multiple" className="space-y-2 max-w-full">
                     {/* Patterns Identified */}
                     {insights.interpretation.patterns_identified && 
                      insights.interpretation.patterns_identified.length > 0 && (
-                      <AccordionItem value="patterns" className="border rounded-lg px-4">
+                      <AccordionItem value="patterns" className="border rounded-lg px-4 max-w-full">
                         <AccordionTrigger className="text-sm font-semibold py-3">
                           🔍 Patterns to Notice
                         </AccordionTrigger>
@@ -287,7 +292,7 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
                     {/* Reflective Questions */}
                     {insights.interpretation.questions && 
                      insights.interpretation.questions.length > 0 && (
-                      <AccordionItem value="questions" className="border rounded-lg px-4">
+                      <AccordionItem value="questions" className="border rounded-lg px-4 max-w-full">
                         <AccordionTrigger className="text-sm font-semibold py-3">
                           ❓ Questions for Reflection
                         </AccordionTrigger>
@@ -307,7 +312,7 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
                     {/* Action Items */}
                     {insights.interpretation.action_items && 
                      insights.interpretation.action_items.length > 0 && (
-                      <AccordionItem value="actions" className="border rounded-lg px-4">
+                      <AccordionItem value="actions" className="border rounded-lg px-4 max-w-full">
                         <AccordionTrigger className="text-sm font-semibold py-3">
                           ✓ Action Steps
                         </AccordionTrigger>
@@ -326,7 +331,7 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
 
                     {/* Growth Connection */}
                     {insights.interpretation.growth_connection && (
-                      <AccordionItem value="growth" className="border rounded-lg px-4">
+                      <AccordionItem value="growth" className="border rounded-lg px-4 max-w-full">
                         <AccordionTrigger className="text-sm font-semibold py-3">
                           📈 Your Growth Journey
                         </AccordionTrigger>

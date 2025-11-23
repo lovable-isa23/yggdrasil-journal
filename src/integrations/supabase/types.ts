@@ -62,6 +62,7 @@ export type Database = {
           id: string
           interpretation: Json | null
           keywords: Json | null
+          sacred_geometry: Json | null
           safety_concerns: Json | null
           summary: string | null
           tarot_tags: Json | null
@@ -79,6 +80,7 @@ export type Database = {
           id?: string
           interpretation?: Json | null
           keywords?: Json | null
+          sacred_geometry?: Json | null
           safety_concerns?: Json | null
           summary?: string | null
           tarot_tags?: Json | null
@@ -96,6 +98,7 @@ export type Database = {
           id?: string
           interpretation?: Json | null
           keywords?: Json | null
+          sacred_geometry?: Json | null
           safety_concerns?: Json | null
           summary?: string | null
           tarot_tags?: Json | null
