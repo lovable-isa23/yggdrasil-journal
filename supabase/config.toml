@@ -1,5 +1,8 @@
 project_id = "zacdbqnjbcksdbfzhlqh"
 
+[functions.suggest-practices]
+verify_jwt = true
+
 [functions.analyze-entry]
 verify_jwt = true
 
