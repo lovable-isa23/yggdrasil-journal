@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useLoading } from "@/contexts/LoadingContext";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Sparkles, Lightbulb, Heart, Tag, AlertTriangle, Phone, BookOpen, HelpCircle, CheckCircle, TrendingUp, AlertCircle } from "lucide-react";
+import { Sparkles, Lightbulb, Heart, Tag, AlertTriangle, Phone, BookOpen, HelpCircle, CheckCircle, TrendingUp, AlertCircle, RefreshCw, Info } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -113,20 +113,24 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
       if (data?.insights) {
         setInsights(data.insights);
         setHasAnalyzed(true);
-        updateProgress(100, "Analysis complete!");
+        updateProgress(90, "Saving insights...");
         toast.success(isReanalysis ? "Entry re-analyzed with updated settings!" : "Entry analyzed! Check out your insights below.");
         
         // Refetch from database to ensure we display persisted data
-        setTimeout(() => {
-          checkExistingInsights();
-        }, 500);
+        updateProgress(95, "Refreshing data...");
+        await new Promise(resolve => setTimeout(resolve, 300));
+        await checkExistingInsights();
+        updateProgress(100, "Complete!");
       }
     } catch (error: any) {
       console.error("Analysis error:", error);
       toast.error(error.message || "Failed to analyze entry");
     } finally {
-      stopLoading();
-      setLoading(false);
+      // Delay stopLoading to let user see 100% completion
+      setTimeout(() => {
+        stopLoading();
+        setLoading(false);
+      }, 800);
     }
   };
 
@@ -166,10 +170,21 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
           disabled={loading}
           className="gap-2"
         >
-          <Sparkles className="h-4 w-4" />
-          {loading ? "Re-analyzing..." : "Re-analyze Entry"}
+          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+          {loading ? "Analyzing..." : "Re-analyze Entry"}
         </Button>
       </div>
+      
+      {/* Sacred Geometry Notice - only show if no sacred geometry data exists */}
+      {insights.sacred_geometry && insights.sacred_geometry.length === 0 && (
+        <Alert className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
+          <Info className="h-4 w-4" />
+          <AlertDescription className="text-xs">
+            Sacred geometry analysis is available but not yet generated for this entry. 
+            Click <strong>Re-analyze Entry</strong> above to generate sacred geometry insights.
+          </AlertDescription>
+        </Alert>
+      )}
       
       {insights.safety_concerns?.flag && (
         <Alert variant="destructive" className="border-2">
