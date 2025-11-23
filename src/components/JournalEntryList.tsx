@@ -13,6 +13,16 @@ import { EntryQuickActions } from "./EntryQuickActions";
 import { Badge } from "@/components/ui/badge";
 import { MOOD_OPTIONS } from "./MoodPicker";
 import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface JournalEntry {
   id: string;
@@ -90,6 +100,7 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [openEntries, setOpenEntries] = useState<Set<string>>(new Set());
+  const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchEntries = async () => {
@@ -183,6 +194,8 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
       fetchEntries();
     } catch (error: any) {
       toast({ title: "Error", description: "Failed to delete entry", variant: "destructive" });
+    } finally {
+      setEntryToDelete(null);
     }
   };
 
@@ -291,7 +304,7 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
                      <PopoverTrigger asChild><Button variant="outline" size="icon"><CalendarIcon className="h-4 w-4" /></Button></PopoverTrigger>
                      <PopoverContent className="w-auto p-0" align="end"><Calendar mode="single" selected={new Date(entry.entry_date)} onSelect={(date) => date && handleDateUpdate(entry.id, date)} initialFocus /></PopoverContent>
                    </Popover>
-                   <Button variant="outline" size="icon" onClick={() => handleDelete(entry.id)}><Trash2 className="h-4 w-4" /></Button>
+                   <Button variant="outline" size="icon" onClick={() => setEntryToDelete(entry.id)}><Trash2 className="h-4 w-4" /></Button>
                  </div>
                </div>
              </CardHeader>
@@ -300,6 +313,26 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
            </Card>
          );
        })}
+      
+      <AlertDialog open={entryToDelete !== null} onOpenChange={(open) => !open && setEntryToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Journal Entry?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your journal entry and all associated data including insights, audio, and images.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => entryToDelete && handleDelete(entryToDelete)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
