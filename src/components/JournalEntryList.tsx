@@ -28,6 +28,7 @@ interface JournalEntry {
   audio_url?: string;
   image_url?: string;
   transcription_source?: string;
+  depth_score?: number | null;
 }
 
 interface JournalEntryListProps {
@@ -39,6 +40,7 @@ interface JournalEntryListProps {
     hasMedia?: boolean;
   };
   sortOption?: 'date-desc' | 'date-asc' | 'word-count-desc' | 'word-count-asc' | 'favorites-first';
+  onEntriesLoaded?: (total: number, filtered: number) => void;
 }
 
 const getPreview = (content: string): string => {
@@ -70,7 +72,21 @@ const getMoodStyles = (moodType?: string) => {
   return moods[moodType as keyof typeof moods] || moods.general;
 };
 
-export function JournalEntryList({ refreshTrigger, filters, sortOption }: JournalEntryListProps) {
+const getDepthBadge = (depthScore?: number | null) => {
+  if (!depthScore) return null;
+  
+  if (depthScore >= 9) {
+    return { label: `Depth: ${depthScore}`, className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' };
+  } else if (depthScore >= 7) {
+    return { label: `Depth: ${depthScore}`, className: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' };
+  } else if (depthScore >= 5) {
+    return { label: `Depth: ${depthScore}`, className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' };
+  } else {
+    return { label: `Depth: ${depthScore}`, className: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' };
+  }
+};
+
+export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntriesLoaded }: JournalEntryListProps) {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [openEntries, setOpenEntries] = useState<Set<string>>(new Set());
@@ -151,6 +167,13 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption }: Journa
 
     return result;
   }, [entries, filters, sortOption]);
+
+  // Notify parent of entry counts
+  useEffect(() => {
+    if (onEntriesLoaded) {
+      onEntriesLoaded(entries.length, filteredAndSortedEntries.length);
+    }
+  }, [entries.length, filteredAndSortedEntries.length, onEntriesLoaded]);
 
   const handleDelete = async (id: string) => {
     try {
@@ -245,10 +268,14 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption }: Journa
                       </div>
                     )}
                    {!isOpen && <p className="text-sm text-muted-foreground line-clamp-2">{preview}</p>}
-                   <div className="flex flex-wrap items-center gap-2">
-                     {moodOption && <Badge variant="outline" className={`gap-1 ${moodStyles.textAccent}`}><span>{moodOption.icon}</span><span>{moodOption.label}</span></Badge>}
-                     {entry.tags?.map(tag => <Badge key={tag} variant="secondary">#{tag}</Badge>)}
-                   </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {moodOption && <Badge variant="outline" className={`gap-1 ${moodStyles.textAccent}`}><span>{moodOption.icon}</span><span>{moodOption.label}</span></Badge>}
+                      {(() => {
+                        const depthBadge = getDepthBadge(entry.depth_score);
+                        return depthBadge && <Badge variant="outline" className={depthBadge.className}>{depthBadge.label}</Badge>;
+                      })()}
+                      {entry.tags?.map(tag => <Badge key={tag} variant="secondary">#{tag}</Badge>)}
+                    </div>
                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                      <span>{wordCount.toLocaleString()} words</span><span>•</span>
                      <span>{getReadingTime(wordCount)}</span><span>•</span>

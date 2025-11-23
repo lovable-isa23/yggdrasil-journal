@@ -20,6 +20,7 @@ const Journal = () => {
     selectedTags: [],
   });
   const [sortOption, setSortOption] = useState<SortOption>('date-desc');
+  const [entryCounts, setEntryCounts] = useState({ total: 0, filtered: 0 });
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -29,6 +30,10 @@ const Journal = () => {
 
   const handleEntryCreated = () => {
     setRefreshTrigger(prev => prev + 1);
+  };
+
+  const handleEntriesLoaded = (total: number, filtered: number) => {
+    setEntryCounts({ total, filtered });
   };
 
   return (
@@ -138,14 +143,15 @@ const Journal = () => {
               <EntryFilters
                 onFilterChange={setFilters}
                 onSortChange={setSortOption}
-                totalEntries={0}
-                filteredCount={0}
+                totalEntries={entryCounts.total}
+                filteredCount={entryCounts.filtered}
               />
               
               <JournalEntryList 
                 refreshTrigger={refreshTrigger} 
                 filters={filters}
                 sortOption={sortOption}
+                onEntriesLoaded={handleEntriesLoaded}
               />
             </section>
           </div>
