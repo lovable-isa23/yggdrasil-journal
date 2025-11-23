@@ -16,6 +16,7 @@ const Settings = () => {
   const [preferences, setPreferences] = useState({
     enable_chakra_tags: false,
     enable_tarot_tags: false,
+    enable_sacred_geometry: false,
     dark_mode: false,
   });
   const [loading, setLoading] = useState(true);
@@ -54,6 +55,7 @@ const Settings = () => {
         setPreferences({
           enable_chakra_tags: data.enable_chakra_tags,
           enable_tarot_tags: data.enable_tarot_tags,
+          enable_sacred_geometry: data.enable_sacred_geometry,
           dark_mode: data.dark_mode,
         });
       }
@@ -180,7 +182,7 @@ const Settings = () => {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between py-3 border-b">
                     <div className="space-y-1">
                       <Label htmlFor="tarot-tags" className="text-base font-medium">
                         Tarot System
@@ -193,6 +195,23 @@ const Settings = () => {
                       id="tarot-tags"
                       checked={preferences.enable_tarot_tags}
                       onCheckedChange={() => handleToggle('enable_tarot_tags')}
+                      disabled={saving}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between py-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="sacred-geometry" className="text-base font-medium">
+                        Sacred Geometry
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Identify geometric patterns and divine proportions in your experiences
+                      </p>
+                    </div>
+                    <Switch
+                      id="sacred-geometry"
+                      checked={preferences.enable_sacred_geometry}
+                      onCheckedChange={() => handleToggle('enable_sacred_geometry')}
                       disabled={saving}
                     />
                   </div>

@@ -729,6 +729,7 @@ export type Database = {
           created_at: string
           dark_mode: boolean | null
           enable_chakra_tags: boolean | null
+          enable_sacred_geometry: boolean | null
           enable_tarot_tags: boolean | null
           id: string
           updated_at: string
@@ -738,6 +739,7 @@ export type Database = {
           created_at?: string
           dark_mode?: boolean | null
           enable_chakra_tags?: boolean | null
+          enable_sacred_geometry?: boolean | null
           enable_tarot_tags?: boolean | null
           id?: string
           updated_at?: string
@@ -747,6 +749,7 @@ export type Database = {
           created_at?: string
           dark_mode?: boolean | null
           enable_chakra_tags?: boolean | null
+          enable_sacred_geometry?: boolean | null
           enable_tarot_tags?: boolean | null
           id?: string
           updated_at?: string

@@ -7,6 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Sparkles, Lightbulb, Heart, Tag, AlertTriangle, Phone, BookOpen, HelpCircle, CheckCircle, TrendingUp, AlertCircle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 interface EntryInsightsProps {
   entryId: string;
@@ -41,6 +42,7 @@ interface Insights {
   interpretation?: Interpretation;
   chakra_tags?: Array<{ chakra: string; description: string }>;
   tarot_tags?: Array<{ card: string; description: string }>;
+  sacred_geometry?: Array<{ pattern: string; description: string }>;
   depth_score?: number;
   frameworks_applied?: string[];
 }
@@ -76,6 +78,7 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
           interpretation: data.interpretation ? (data.interpretation as unknown as Interpretation) : undefined,
           chakra_tags: (data.chakra_tags as Array<{ chakra: string; description: string }>) || [],
           tarot_tags: (data.tarot_tags as Array<{ card: string; description: string }>) || [],
+          sacred_geometry: (data as any).sacred_geometry as Array<{ pattern: string; description: string }> || [],
           depth_score: data.depth_score as number | undefined,
           frameworks_applied: (data.frameworks_applied as string[]) || [],
         });
@@ -162,6 +165,7 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
           {loading ? "Re-analyzing..." : "Re-analyze Entry"}
         </Button>
       </div>
+      
       {insights.safety_concerns?.flag && (
         <Alert variant="destructive" className="border-2">
           <AlertTriangle className="h-5 w-5" />
@@ -192,225 +196,307 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
         </Alert>
       )}
       
-      {insights.summary && (
-        <Card className="p-6 bg-card border-border">
-          <div className="flex items-start gap-3">
-            <Lightbulb className="h-5 w-5 text-primary flex-shrink-0 mt-1" />
-            <div>
-              <h4 className="font-semibold mb-2">Summary</h4>
-              <p className="text-sm text-muted-foreground">{insights.summary}</p>
-            </div>
-          </div>
-        </Card>
-      )}
+      <Accordion type="multiple" className="space-y-2">
+        {/* Summary Section */}
+        {insights.summary && (
+          <AccordionItem value="summary">
+            <AccordionTrigger className="hover:no-underline">
+              <div className="flex items-center gap-2 font-semibold text-sm">
+                <Lightbulb className="h-4 w-4" />
+                Summary
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <Card className="bg-muted/50">
+                <div className="p-4">
+                  <p className="text-sm text-muted-foreground">{insights.summary}</p>
+                </div>
+              </Card>
+            </AccordionContent>
+          </AccordionItem>
+        )}
 
-      {insights.interpretation && (
-        <Card className="p-6 bg-gradient-to-br from-primary/10 to-secondary/10 border-primary/30">
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <BookOpen className="h-5 w-5 text-primary flex-shrink-0 mt-1" />
-              <div className="flex-grow">
-                <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-                  <h4 className="font-semibold text-lg flex items-center gap-2">
-                    Interpretation & Insights
-                    {insights.depth_score && insights.depth_score >= 6 && (
-                      <Badge variant="secondary" className="text-xs">
-                        Deep Analysis
-                      </Badge>
+        {/* Interpretation Section */}
+        {insights.interpretation && (
+          <AccordionItem value="interpretation">
+            <AccordionTrigger className="hover:no-underline">
+              <div className="flex items-center justify-between w-full pr-4">
+                <div className="flex items-center gap-2 font-semibold text-sm">
+                  <BookOpen className="h-4 w-4" />
+                  Interpretation & Insights
+                  {insights.depth_score && insights.depth_score >= 6 && (
+                    <Badge variant="secondary" className="text-xs ml-2">Deep Analysis</Badge>
+                  )}
+                </div>
+                {insights.frameworks_applied && insights.frameworks_applied.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {insights.frameworks_applied.includes('theravada') && (
+                      <Badge variant="outline" className="text-xs">☸️ Buddhist</Badge>
                     )}
-                  </h4>
-                  {insights.frameworks_applied && insights.frameworks_applied.length > 0 && (
-                    <div className="flex gap-1.5 flex-wrap">
-                      {insights.frameworks_applied.includes('theravada') && (
-                        <Badge variant="outline" className="text-xs">☸️ Buddhist</Badge>
-                      )}
-                      {insights.frameworks_applied.includes('freudian') && (
-                        <Badge variant="outline" className="text-xs">🧠 Psychoanalytic</Badge>
-                      )}
-                      {insights.frameworks_applied.includes('jungian') && (
-                        <Badge variant="outline" className="text-xs">🌓 Jungian</Badge>
-                      )}
+                    {insights.frameworks_applied.includes('freudian') && (
+                      <Badge variant="outline" className="text-xs">🧠 Psychoanalytic</Badge>
+                    )}
+                    {insights.frameworks_applied.includes('jungian') && (
+                      <Badge variant="outline" className="text-xs">🌓 Jungian</Badge>
+                    )}
+                    {insights.frameworks_applied.includes('hermetic') && (
+                      <Badge variant="outline" className="text-xs">🔮 Hermetic</Badge>
+                    )}
+                    {insights.frameworks_applied.includes('advaita') && (
+                      <Badge variant="outline" className="text-xs">🕉️ Advaita</Badge>
+                    )}
+                    {insights.frameworks_applied.includes('taoist') && (
+                      <Badge variant="outline" className="text-xs">☯️ Taoist</Badge>
+                    )}
+                  </div>
+                )}
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <Card>
+                <div className="p-4 space-y-4">
+                  {/* Main Insight */}
+                  <div className="prose prose-sm max-w-none">
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                      {insights.interpretation.main_insight}
+                    </p>
+                  </div>
+
+                  {/* Patterns Identified */}
+                  {insights.interpretation.patterns_identified && 
+                   insights.interpretation.patterns_identified.length > 0 && (
+                    <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                      <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 text-orange-600" />
+                        Patterns to Notice
+                      </h5>
+                      <ul className="space-y-1 text-sm">
+                        {insights.interpretation.patterns_identified.map((pattern, idx) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <span className="text-orange-600 mt-1">•</span>
+                            <span>{pattern}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Reflective Questions */}
+                  {insights.interpretation.questions && 
+                   insights.interpretation.questions.length > 0 && (
+                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                        <HelpCircle className="h-4 w-4 text-blue-600" />
+                        Questions for Reflection
+                      </h5>
+                      <ul className="space-y-2 text-sm">
+                        {insights.interpretation.questions.map((q, idx) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <span className="text-blue-600 font-medium">Q{idx + 1}:</span>
+                            <span className="italic">{q}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Action Items */}
+                  {insights.interpretation.action_items && 
+                   insights.interpretation.action_items.length > 0 && (
+                    <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                      <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        Action Steps
+                      </h5>
+                      <ul className="space-y-1 text-sm">
+                        {insights.interpretation.action_items.map((action, idx) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <span className="text-green-600">→</span>
+                            <span>{action}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Growth Connection */}
+                  {insights.interpretation.growth_connection && (
+                    <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                      <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4 text-purple-600" />
+                        Your Growth Journey
+                      </h5>
+                      <p className="text-sm leading-relaxed">
+                        {insights.interpretation.growth_connection}
+                      </p>
                     </div>
                   )}
                 </div>
-                
-                {/* Main Insight */}
-                <div className="prose prose-sm max-w-none mb-4">
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                    {insights.interpretation.main_insight}
-                  </p>
-                </div>
+              </Card>
+            </AccordionContent>
+          </AccordionItem>
+        )}
 
-                {/* Patterns Identified */}
-                {insights.interpretation.patterns_identified && 
-                 insights.interpretation.patterns_identified.length > 0 && (
-                  <div className="mb-4 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
-                    <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4 text-orange-600" />
-                      Patterns to Notice
-                    </h5>
-                    <ul className="space-y-1 text-sm">
-                      {insights.interpretation.patterns_identified.map((pattern, idx) => (
-                        <li key={idx} className="flex items-start gap-2">
-                          <span className="text-orange-600 mt-1">•</span>
-                          <span>{pattern}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Reflective Questions */}
-                {insights.interpretation.questions && 
-                 insights.interpretation.questions.length > 0 && (
-                  <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                      <HelpCircle className="h-4 w-4 text-blue-600" />
-                      Questions for Reflection
-                    </h5>
-                    <ul className="space-y-2 text-sm">
-                      {insights.interpretation.questions.map((q, idx) => (
-                        <li key={idx} className="flex items-start gap-2">
-                          <span className="text-blue-600 font-medium">Q{idx + 1}:</span>
-                          <span className="italic">{q}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Action Items */}
-                {insights.interpretation.action_items && 
-                 insights.interpretation.action_items.length > 0 && (
-                  <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                    <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      Action Steps
-                    </h5>
-                    <ul className="space-y-1 text-sm">
-                      {insights.interpretation.action_items.map((action, idx) => (
-                        <li key={idx} className="flex items-start gap-2">
-                          <span className="text-green-600">→</span>
-                          <span>{action}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Growth Connection */}
-                {insights.interpretation.growth_connection && (
-                  <div className="mt-4 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                    <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-purple-600" />
-                      Your Growth Journey
-                    </h5>
-                    <p className="text-sm leading-relaxed">
-                      {insights.interpretation.growth_connection}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Themes */}
         {insights.themes.length > 0 && (
-          <Card className="p-4 bg-card border-border">
-            <div className="flex items-center gap-2 mb-3">
-              <Tag className="h-4 w-4 text-secondary" />
-              <h4 className="font-semibold text-sm">Themes</h4>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {insights.themes.map((theme, idx) => (
-                <span
-                  key={idx}
-                  className="px-3 py-1 rounded-full bg-secondary/20 text-secondary text-xs font-medium"
-                >
-                  {theme}
-                </span>
-              ))}
-            </div>
-          </Card>
-        )}
-
-        {insights.emotions.length > 0 && (
-          <Card className="p-4 bg-card border-border">
-            <div className="flex items-center gap-2 mb-3">
-              <Heart className="h-4 w-4 text-destructive" />
-              <h4 className="font-semibold text-sm">Emotions</h4>
-            </div>
-            <div className="space-y-2">
-              {insights.emotions.slice(0, 5).map((emotion, idx) => (
-                <div key={idx} className="flex items-center gap-2">
-                  <span className="text-xs flex-grow capitalize">{emotion.emotion}</span>
-                  <div className="flex-grow bg-muted rounded-full h-2 max-w-[100px]">
-                    <div
-                      className="bg-gradient-to-r from-primary to-destructive h-full rounded-full"
-                      style={{ width: `${emotion.intensity * 10}%` }}
-                    />
+          <AccordionItem value="themes">
+            <AccordionTrigger className="hover:no-underline">
+              <div className="flex items-center gap-2 font-semibold text-sm">
+                <Tag className="h-4 w-4" />
+                Themes ({insights.themes.length})
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <Card>
+                <div className="p-4">
+                  <div className="flex flex-wrap gap-2">
+                    {insights.themes.map((theme, idx) => (
+                      <span
+                        key={idx}
+                        className="px-3 py-1 rounded-full bg-secondary/20 text-secondary text-xs font-medium"
+                      >
+                        {theme}
+                      </span>
+                    ))}
                   </div>
-                  <span className="text-xs text-muted-foreground w-8 text-right">
-                    {emotion.intensity}/10
-                  </span>
                 </div>
-              ))}
-            </div>
-          </Card>
+              </Card>
+            </AccordionContent>
+          </AccordionItem>
         )}
-      </div>
 
-      {insights.keywords.length > 0 && (
-        <Card className="p-4 bg-card border-border">
-          <h4 className="font-semibold text-sm mb-3">Keywords</h4>
-          <div className="flex flex-wrap gap-2">
-            {insights.keywords.map((keyword, idx) => (
-              <span
-                key={idx}
-                className="px-2 py-1 rounded bg-muted text-foreground text-xs"
-              >
-                {keyword}
-              </span>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      {insights.chakra_tags && insights.chakra_tags.length > 0 && (
-        <Card className="p-4 bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/20">
-          <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
-            <span className="text-lg">🧘</span>
-            Chakra Resonance
-          </h4>
-          <div className="space-y-2">
-            {insights.chakra_tags.map((tag, idx) => (
-              <div key={idx} className="flex gap-3 p-2 rounded bg-background/50">
-                <span className="font-medium text-xs text-primary">{tag.chakra}:</span>
-                <span className="text-xs text-muted-foreground">{tag.description}</span>
+        {/* Emotions */}
+        {insights.emotions.length > 0 && (
+          <AccordionItem value="emotions">
+            <AccordionTrigger className="hover:no-underline">
+              <div className="flex items-center gap-2 font-semibold text-sm">
+                <Heart className="h-4 w-4" />
+                Emotions ({insights.emotions.length})
               </div>
-            ))}
-          </div>
-        </Card>
-      )}
+            </AccordionTrigger>
+            <AccordionContent>
+              <Card>
+                <div className="p-4 space-y-2">
+                  {insights.emotions.slice(0, 5).map((emotion, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <span className="text-xs flex-grow capitalize">{emotion.emotion}</span>
+                      <div className="flex-grow bg-muted rounded-full h-2 max-w-[100px]">
+                        <div
+                          className="bg-gradient-to-r from-primary to-destructive h-full rounded-full"
+                          style={{ width: `${emotion.intensity * 10}%` }}
+                        />
+                      </div>
+                      <span className="text-xs text-muted-foreground w-8 text-right">
+                        {emotion.intensity}/10
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </AccordionContent>
+          </AccordionItem>
+        )}
 
-      {insights.tarot_tags && insights.tarot_tags.length > 0 && (
-        <Card className="p-4 bg-gradient-to-br from-accent/5 to-primary/5 border-accent/20">
-          <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
-            <span className="text-lg">🔮</span>
-            Tarot Archetypes
-          </h4>
-          <div className="space-y-2">
-            {insights.tarot_tags.map((tag, idx) => (
-              <div key={idx} className="flex gap-3 p-2 rounded bg-background/50">
-                <span className="font-medium text-xs text-accent">{tag.card}:</span>
-                <span className="text-xs text-muted-foreground">{tag.description}</span>
+        {/* Keywords */}
+        {insights.keywords.length > 0 && (
+          <AccordionItem value="keywords">
+            <AccordionTrigger className="hover:no-underline">
+              <div className="flex items-center gap-2 font-semibold text-sm">
+                <span className="text-lg">🔑</span>
+                Keywords ({insights.keywords.length})
               </div>
-            ))}
-          </div>
-        </Card>
-      )}
+            </AccordionTrigger>
+            <AccordionContent>
+              <Card>
+                <div className="p-4">
+                  <div className="flex flex-wrap gap-2">
+                    {insights.keywords.map((keyword, idx) => (
+                      <span
+                        key={idx}
+                        className="px-2 py-1 rounded bg-muted text-foreground text-xs"
+                      >
+                        {keyword}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </Card>
+            </AccordionContent>
+          </AccordionItem>
+        )}
+
+        {/* Chakra Tags */}
+        {insights.chakra_tags && insights.chakra_tags.length > 0 && (
+          <AccordionItem value="chakras">
+            <AccordionTrigger className="hover:no-underline">
+              <div className="flex items-center gap-2 font-semibold text-sm">
+                <span className="text-lg">🧘</span>
+                Chakra Resonance ({insights.chakra_tags.length})
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-200 dark:border-purple-800">
+                <div className="p-4 space-y-2">
+                  {insights.chakra_tags.map((tag, idx) => (
+                    <div key={idx} className="flex gap-3 p-2 rounded bg-background/50">
+                      <span className="font-medium text-xs text-primary">{tag.chakra}:</span>
+                      <span className="text-xs text-muted-foreground">{tag.description}</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </AccordionContent>
+          </AccordionItem>
+        )}
+
+        {/* Tarot Tags */}
+        {insights.tarot_tags && insights.tarot_tags.length > 0 && (
+          <AccordionItem value="tarot">
+            <AccordionTrigger className="hover:no-underline">
+              <div className="flex items-center gap-2 font-semibold text-sm">
+                <span className="text-lg">🔮</span>
+                Tarot Archetypes ({insights.tarot_tags.length})
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <Card className="bg-gradient-to-br from-indigo-50 to-violet-50 dark:from-indigo-950/20 dark:to-violet-950/20 border-indigo-200 dark:border-indigo-800">
+                <div className="p-4 space-y-2">
+                  {insights.tarot_tags.map((tag, idx) => (
+                    <div key={idx} className="flex gap-3 p-2 rounded bg-background/50">
+                      <span className="font-medium text-xs text-accent">{tag.card}:</span>
+                      <span className="text-xs text-muted-foreground">{tag.description}</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </AccordionContent>
+          </AccordionItem>
+        )}
+
+        {/* Sacred Geometry */}
+        {insights.sacred_geometry && insights.sacred_geometry.length > 0 && (
+          <AccordionItem value="sacred-geometry">
+            <AccordionTrigger className="hover:no-underline">
+              <div className="flex items-center gap-2 font-semibold text-sm">
+                <span className="text-lg">🔺</span>
+                Sacred Geometry ({insights.sacred_geometry.length})
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-200 dark:border-amber-800">
+                <div className="p-4 space-y-2">
+                  {insights.sacred_geometry.map((geo, idx) => (
+                    <div key={idx} className="flex gap-3 p-2 rounded bg-background/50">
+                      <span className="font-medium text-xs text-amber-700 dark:text-amber-400">{geo.pattern}:</span>
+                      <span className="text-xs text-muted-foreground">{geo.description}</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </AccordionContent>
+          </AccordionItem>
+        )}
+      </Accordion>
     </div>
   );
 };
