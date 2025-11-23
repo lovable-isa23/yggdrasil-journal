@@ -13,6 +13,8 @@ import { toPng } from "html-to-image";
 import jsPDF from "jspdf";
 import { useToast } from "@/hooks/use-toast";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
+import { useDataSufficiency } from "@/hooks/use-data-sufficiency";
+import { InsufficientDataPrompt } from "@/components/InsufficientDataPrompt";
 
 interface GraphNode extends d3.SimulationNodeDatum {
   id: string;
@@ -48,6 +50,7 @@ export const KnowledgeGraph = () => {
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const zoomRef = useRef<any>(null);
+  const { hasMinimumData, totalEntries, deepEntries, analyzedEntries, needsAnalysis } = useDataSufficiency();
   const [minStrength, setMinStrength] = useState(1);
   const graphContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -443,6 +446,28 @@ export const KnowledgeGraph = () => {
       <Card className="w-full">
         <CardContent className="flex items-center justify-center p-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!hasMinimumData) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Network className="h-5 w-5" />
+            Knowledge Graph
+          </CardTitle>
+          <CardDescription>Visualize connections in your journal</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <InsufficientDataPrompt
+            currentEntries={totalEntries}
+            deepEntries={deepEntries}
+            analyzedEntries={analyzedEntries}
+            needsAnalysis={needsAnalysis}
+          />
         </CardContent>
       </Card>
     );

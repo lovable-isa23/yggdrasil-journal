@@ -227,7 +227,7 @@ Respond with ONLY a JSON object: {"depth_score": X, "reasoning": "brief explanat
     }
 
     // Phase 2: Apply frameworks conditionally based on depth
-    const applyFrameworks = depthScore >= 6;
+    const applyFrameworks = depthScore >= 5;
 
     // Call Lovable AI for semantic analysis
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {

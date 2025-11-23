@@ -9,6 +9,8 @@ import { Progress } from "./ui/progress";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
 import { format } from "date-fns";
+import { useDataSufficiency } from "@/hooks/use-data-sufficiency";
+import { InsufficientDataPrompt } from "@/components/InsufficientDataPrompt";
 
 interface Pattern {
   id: string;
@@ -35,6 +37,7 @@ export const PatternInsights = () => {
     content: string;
     relevantQuote?: string;
   }>>([]);
+  const { hasMinimumData, totalEntries, deepEntries, analyzedEntries, needsAnalysis } = useDataSufficiency();
 
   const togglePattern = (patternId: string) => {
     setOpenPatterns(prev => {
@@ -214,7 +217,14 @@ export const PatternInsights = () => {
         </div>
       </CardHeader>
       <CardContent>
-        {patterns.length === 0 ? (
+        {!hasMinimumData ? (
+          <InsufficientDataPrompt
+            currentEntries={totalEntries}
+            deepEntries={deepEntries}
+            analyzedEntries={analyzedEntries}
+            needsAnalysis={needsAnalysis}
+          />
+        ) : patterns.length === 0 ? (
           <div className="text-center py-12">
             <TrendingUp className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <p className="text-muted-foreground mb-4">

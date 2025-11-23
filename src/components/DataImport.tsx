@@ -267,15 +267,28 @@ export const DataImport = ({ onImportComplete }: { onImportComplete: () => void 
         disabled={isImporting}
         multiple
       />
-      <Button
-        onClick={() => fileInputRef.current?.click()}
-        disabled={isImporting}
-        variant="outline"
-        className="gap-2"
-      >
-        <Upload className="h-4 w-4" />
-        {isImporting ? "Importing..." : "Import Files"}
-      </Button>
+      <div className="space-y-2">
+        <Button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isImporting}
+          variant="outline"
+          className="w-full gap-2"
+        >
+          <Upload className="h-4 w-4" />
+          {isImporting ? "Importing..." : "Select Files to Import"}
+        </Button>
+        {!isImporting && (
+          <div className="text-xs text-muted-foreground space-y-1">
+            <p>
+              <span className="font-medium">Supports:</span> .txt, .md, .json, .pdf
+            </p>
+            <p className="flex items-center gap-1">
+              <span className="font-medium">Multiple files allowed</span> - 
+              Hold Ctrl/Cmd when selecting
+            </p>
+          </div>
+        )}
+      </div>
       {isImporting && (
         <div className="space-y-2">
           <Progress value={progress} className="h-2" />

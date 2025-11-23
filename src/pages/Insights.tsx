@@ -7,14 +7,16 @@ import { TimelineVisualization } from "@/components/TimelineVisualization";
 import { SentimentTracking } from "@/components/SentimentTracking";
 import { ReportExport } from "@/components/ReportExport";
 import { DataExport } from "@/components/DataExport";
+import { DataImport } from "@/components/DataImport";
 import { NPSTooltip } from "@/components/NPSTooltip";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { LogOut, BookOpen, Settings as SettingsIcon, BarChart3, Brain, TrendingUp, Target, FileText, Sparkles } from "lucide-react";
+import { LogOut, BookOpen, Settings as SettingsIcon, BarChart3, Brain, TrendingUp, Target, FileText, Sparkles, Upload } from "lucide-react";
 import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
+import { toast } from "sonner";
 
 const Insights = () => {
   const navigate = useNavigate();
@@ -22,6 +24,13 @@ const Insights = () => {
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     navigate("/");
+  };
+
+  const handleImportComplete = () => {
+    toast("Import Complete", {
+      description: "Your entries have been imported. Refreshing insights...",
+    });
+    setTimeout(() => window.location.reload(), 1500);
   };
 
   return (
@@ -134,6 +143,54 @@ const Insights = () => {
                 <TimelineVisualization />
                 <KnowledgeGraph />
               </div>
+            </section>
+
+            {/* Manage Your Data Section */}
+            <section>
+              <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-secondary/5">
+                <CardHeader>
+                  <CardTitle className="text-xl flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Manage Your Data
+                  </CardTitle>
+                  <CardDescription>
+                    Import old journals or export your insights
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid gap-6 sm:grid-cols-2">
+                    {/* Import Section */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Upload className="h-4 w-4 text-primary" />
+                        <h4 className="text-sm font-semibold">Import Old Journals</h4>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Upload multiple files at once (.txt, .md, .json, .pdf)
+                      </p>
+                      <DataImport onImportComplete={handleImportComplete} />
+                      <p className="text-xs text-muted-foreground italic">
+                        💡 Tip: Hold Ctrl/Cmd to select multiple files
+                      </p>
+                    </div>
+
+                    {/* Export Section */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-primary" />
+                        <h4 className="text-sm font-semibold">Export Your Data</h4>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Download entries and comprehensive insights reports
+                      </p>
+                      <div className="space-y-2">
+                        <DataExport />
+                        <ReportExport />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </section>
 
             {/* Patterns Section */}

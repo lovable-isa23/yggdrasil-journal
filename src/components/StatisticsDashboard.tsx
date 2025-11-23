@@ -3,6 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, CartesianAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Flame, TrendingUp, Clock, FileText } from "lucide-react";
+import { useDataSufficiency } from "@/hooks/use-data-sufficiency";
+import { InsufficientDataPrompt } from "@/components/InsufficientDataPrompt";
 
 interface DayStats {
   date: string;
@@ -21,6 +23,7 @@ export const StatisticsDashboard = () => {
   const [wordCountData, setWordCountData] = useState<DayStats[]>([]);
   const [hourlyData, setHourlyData] = useState<HourStats[]>([]);
   const [loading, setLoading] = useState(true);
+  const { hasMinimumData, totalEntries, deepEntries, analyzedEntries, needsAnalysis, isLoading: dataSufficiencyLoading } = useDataSufficiency();
 
   useEffect(() => {
     fetchStatistics();
@@ -144,7 +147,7 @@ export const StatisticsDashboard = () => {
     setHourlyData(data);
   };
 
-  if (loading) {
+  if (dataSufficiencyLoading || loading) {
     return (
       <div className="grid gap-6 md:grid-cols-3">
         <Card>
@@ -163,6 +166,19 @@ export const StatisticsDashboard = () => {
           </CardContent>
         </Card>
       </div>
+    );
+  }
+
+  if (!hasMinimumData) {
+    return (
+      <InsufficientDataPrompt
+        currentEntries={totalEntries}
+        deepEntries={deepEntries}
+        analyzedEntries={analyzedEntries}
+        needsAnalysis={needsAnalysis}
+        showInlineImport={true}
+        onImportComplete={() => window.location.reload()}
+      />
     );
   }
 

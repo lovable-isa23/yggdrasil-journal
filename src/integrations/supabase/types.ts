@@ -818,7 +818,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_entry_depth_counts: {
+        Args: { p_min_deep_score?: number; p_user_id: string }
+        Returns: {
+          analyzed_entries: number
+          deep_entries: number
+          total_entries: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

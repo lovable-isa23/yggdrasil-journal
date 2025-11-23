@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/
 import { Badge } from "./ui/badge";
 import { Loader2, Heart, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { useDataSufficiency } from "@/hooks/use-data-sufficiency";
+import { InsufficientDataPrompt } from "@/components/InsufficientDataPrompt";
 
 interface SentimentData {
   date: string;
@@ -17,6 +19,7 @@ export const SentimentTracking = () => {
   const [sentimentData, setSentimentData] = useState<SentimentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedEmotion, setSelectedEmotion] = useState<string | null>(null);
+  const { hasMinimumData, totalEntries, deepEntries, analyzedEntries, needsAnalysis } = useDataSufficiency();
 
   useEffect(() => {
     fetchSentimentData();
@@ -108,6 +111,29 @@ export const SentimentTracking = () => {
       <Card>
         <CardContent className="flex items-center justify-center p-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!hasMinimumData) {
+    return (
+      <InsufficientDataPrompt
+        currentEntries={totalEntries}
+        deepEntries={deepEntries}
+        analyzedEntries={analyzedEntries}
+        needsAnalysis={needsAnalysis}
+      />
+    );
+  }
+
+  if (sentimentData.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center">
+          <p className="text-muted-foreground">
+            No sentiment data available yet. Write more journal entries with emotions to see trends.
+          </p>
         </CardContent>
       </Card>
     );
