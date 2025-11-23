@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Calendar } from "./ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
@@ -9,6 +8,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import { cn } from "@/lib/utils";
+import { useLoading } from "@/contexts/LoadingContext";
+import {
+  addCoverPage,
+  addSection,
+  wrapText,
+  colors,
+  setColor,
+  addPageFooter,
+  checkPageBreak,
+  addDivider,
+} from "@/lib/pdf-helpers";
 
 export const ReportExport = () => {
   const [dateRange, setDateRange] = useState<{
@@ -19,6 +29,7 @@ export const ReportExport = () => {
     to: new Date(),
   });
   const [isGenerating, setIsGenerating] = useState(false);
+  const { startLoading, updateProgress, stopLoading } = useLoading();
 
   const setAllTimeRange = () => {
     setDateRange({
@@ -34,12 +45,13 @@ export const ReportExport = () => {
     }
 
     setIsGenerating(true);
+    startLoading("generate-report", "Fetching data...");
+    
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Fetch data for the date range
-      // Fetch and decrypt entries
+      updateProgress(15, "Decrypting entries...");
       const { data: { session } } = await supabase.auth.getSession();
       const { data: decryptedData } = await supabase.functions.invoke('decrypt-entries', {
         headers: {
@@ -53,6 +65,7 @@ export const ReportExport = () => {
         return entryDate >= dateRange.from && entryDate <= dateRange.to;
       });
 
+      updateProgress(30, "Loading insights...");
       const [patternsRes, goalsRes, insightsRes] = await Promise.all([
         supabase
           .from("pattern_insights")
@@ -76,120 +89,119 @@ export const ReportExport = () => {
       const goals = goalsRes.data || [];
       const insights = insightsRes.data || [];
 
-      // Generate PDF
+      updateProgress(50, "Generating comprehensive report...");
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
       const margin = 20;
-      let yPos = 20;
+      let yPos = margin;
+      let pageNumber = 1;
 
-      // Title
-      doc.setFontSize(20);
-      doc.setFont("helvetica", "bold");
-      doc.text("Yggdrasil Insights Report", margin, yPos);
-      yPos += 12;
-
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
-      doc.text(
-        `${format(dateRange.from, "MMM dd, yyyy")} - ${format(dateRange.to, "MMM dd, yyyy")}`,
-        margin,
-        yPos
+      // Cover Page
+      addCoverPage(
+        doc,
+        "Yggdrasil Insights Report",
+        `Complete Analysis & Patterns`,
+        `${format(dateRange.from, "MMM dd, yyyy")} - ${format(dateRange.to, "MMM dd, yyyy")}`
       );
-      yPos += 15;
 
-      // Summary Stats
-      doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
-      doc.text("Summary", margin, yPos);
-      yPos += 8;
+      updateProgress(60, "Building executive summary...");
+      doc.addPage();
+      yPos = margin;
+
+      // Executive Summary
+      yPos = addSection(doc, "Executive Summary", yPos, margin);
+      
+      const deepEntries = insights.filter(i => i.depth_score && i.depth_score >= 5).length;
+      const avgDepth = insights.length > 0 
+        ? (insights.reduce((sum, i) => sum + (i.depth_score || 0), 0) / insights.length).toFixed(1)
+        : 0;
 
       doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
-      doc.text(`Total Entries: ${entries.length}`, margin + 5, yPos);
+      setColor(doc, colors.text);
+      doc.text(`Total Entries: ${entries.length}`, margin, yPos);
       yPos += 6;
-      doc.text(`Patterns Discovered: ${patterns.length}`, margin + 5, yPos);
+      doc.text(`Deep Entries (≥5): ${deepEntries}`, margin, yPos);
       yPos += 6;
-      doc.text(`Active Goals: ${goals.filter((g: any) => g.status === "active").length}`, margin + 5, yPos);
+      doc.text(`Average Depth Score: ${avgDepth}/10`, margin, yPos);
       yPos += 6;
-      doc.text(`Completed Goals: ${goals.filter((g: any) => g.status === "completed").length}`, margin + 5, yPos);
+      doc.text(`Patterns Discovered: ${patterns.length}`, margin, yPos);
+      yPos += 6;
+      doc.text(`Active Goals: ${goals.filter((g: any) => g.status === "active").length}`, margin, yPos);
+      yPos += 6;
+      doc.text(`Completed Goals: ${goals.filter((g: any) => g.status === "completed").length}`, margin, yPos);
       yPos += 12;
 
+      updateProgress(70, "Adding pattern insights...");
       // Top Patterns
       if (patterns.length > 0) {
-        doc.setFontSize(14);
-        doc.setFont("helvetica", "bold");
-        doc.text("Top Patterns", margin, yPos);
-        yPos += 8;
+        yPos = addSection(doc, "Pattern Insights", yPos, margin);
 
-        patterns.slice(0, 5).forEach((pattern: any) => {
-          if (yPos > 270) {
-            doc.addPage();
-            yPos = margin;
-          }
+        patterns.slice(0, 5).forEach((pattern: any, idx: number) => {
+          yPos = checkPageBreak(doc, yPos, 25, margin);
 
           doc.setFontSize(11);
           doc.setFont("helvetica", "bold");
-          doc.text(`${pattern.title} (${Math.round(pattern.confidence_score * 100)}%)`, margin + 5, yPos);
+          setColor(doc, colors.primary);
+          doc.text(`${idx + 1}. ${pattern.title}`, margin, yPos);
           yPos += 6;
 
           doc.setFontSize(9);
+          doc.setFont("helvetica", "italic");
+          setColor(doc, colors.textLight);
+          doc.text(`Confidence: ${Math.round(pattern.confidence_score * 100)}% | Type: ${pattern.pattern_type}`, margin + 5, yPos);
+          yPos += 5;
+
           doc.setFont("helvetica", "normal");
-          const descLines = doc.splitTextToSize(pattern.description, pageWidth - margin * 2 - 10);
-          doc.text(descLines, margin + 10, yPos);
-          yPos += descLines.length * 5 + 4;
+          setColor(doc, colors.text);
+          yPos = wrapText(doc, pattern.description, pageWidth - margin * 2 - 5, margin + 5, yPos, 5);
+          yPos += 3;
 
           if (pattern.actionable_insight) {
             doc.setFontSize(9);
-            doc.setTextColor(80, 80, 200);
-            const insightLines = doc.splitTextToSize(`Insight: ${pattern.actionable_insight}`, pageWidth - margin * 2 - 10);
-            doc.text(insightLines, margin + 10, yPos);
-            doc.setTextColor(0, 0, 0);
-            yPos += insightLines.length * 5 + 6;
-          }
-        });
-      }
-
-      // Goals Section
-      if (goals.length > 0) {
-        if (yPos > 240) {
-          doc.addPage();
-          yPos = margin;
-        }
-
-        doc.setFontSize(14);
-        doc.setFont("helvetica", "bold");
-        doc.text("Goals", margin, yPos);
-        yPos += 8;
-
-        goals.forEach((goal: any) => {
-          if (yPos > 270) {
-            doc.addPage();
-            yPos = margin;
+            setColor(doc, colors.secondary);
+            doc.text("💡 Insight:", margin + 5, yPos);
+            yPos += 4;
+            setColor(doc, colors.text);
+            yPos = wrapText(doc, pattern.actionable_insight, pageWidth - margin * 2 - 10, margin + 10, yPos, 4);
+            yPos += 2;
           }
 
-          doc.setFontSize(11);
-          doc.setFont("helvetica", "bold");
-          doc.text(`${goal.title} [${goal.status.toUpperCase()}]`, margin + 5, yPos);
           yPos += 6;
-
-          if (goal.description) {
-            doc.setFontSize(9);
-            doc.setFont("helvetica", "normal");
-            const descLines = doc.splitTextToSize(goal.description, pageWidth - margin * 2 - 10);
-            doc.text(descLines, margin + 10, yPos);
-            yPos += descLines.length * 5 + 2;
-          }
-
-          if (goal.target_date) {
-            doc.setFontSize(9);
-            doc.text(`Target: ${format(new Date(goal.target_date), "MMM dd, yyyy")}`, margin + 10, yPos);
-            yPos += 6;
-          }
-
-          yPos += 4;
         });
       }
 
+      updateProgress(80, "Adding emotional analysis...");
+      // Emotional Analysis
+      const emotionCounts = new Map<string, number>();
+      insights.forEach((insight) => {
+        if (insight.emotions && Array.isArray(insight.emotions)) {
+          insight.emotions.forEach((e: any) => {
+            const count = emotionCounts.get(e.emotion) || 0;
+            emotionCounts.set(e.emotion, count + e.intensity);
+          });
+        }
+      });
+
+      if (emotionCounts.size > 0) {
+        yPos = checkPageBreak(doc, yPos, 30, margin);
+        yPos = addSection(doc, "Emotional Journey", yPos, margin);
+
+        const topEmotions = Array.from(emotionCounts.entries())
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 10);
+
+        doc.setFontSize(9);
+        setColor(doc, colors.text);
+        topEmotions.forEach(([emotion, total]) => {
+          yPos = checkPageBreak(doc, yPos, 5, margin);
+          doc.text(`${emotion}: ${Math.round(total)} total intensity`, margin + 5, yPos);
+          yPos += 5;
+        });
+        yPos += 6;
+      }
+
+      updateProgress(85, "Adding themes and keywords...");
       // Themes & Keywords
       const allThemes = new Set<string>();
       const allKeywords = new Set<string>();
@@ -204,44 +216,151 @@ export const ReportExport = () => {
       });
 
       if (allThemes.size > 0 || allKeywords.size > 0) {
-        if (yPos > 240) {
-          doc.addPage();
-          yPos = margin;
-        }
-
-        doc.setFontSize(14);
-        doc.setFont("helvetica", "bold");
-        doc.text("Common Themes & Keywords", margin, yPos);
-        yPos += 8;
+        yPos = checkPageBreak(doc, yPos, 30, margin);
+        yPos = addSection(doc, "Recurring Themes & Concepts", yPos, margin);
 
         if (allThemes.size > 0) {
           doc.setFontSize(10);
           doc.setFont("helvetica", "bold");
-          doc.text("Themes:", margin + 5, yPos);
+          setColor(doc, colors.secondary);
+          doc.text("Most Common Themes:", margin, yPos);
           yPos += 6;
+          
           doc.setFontSize(9);
           doc.setFont("helvetica", "normal");
-          const themesText = Array.from(allThemes).slice(0, 15).join(", ");
-          const themeLines = doc.splitTextToSize(themesText, pageWidth - margin * 2 - 10);
-          doc.text(themeLines, margin + 10, yPos);
-          yPos += themeLines.length * 5 + 6;
+          setColor(doc, colors.text);
+          const themesText = Array.from(allThemes).slice(0, 20).join(", ");
+          yPos = wrapText(doc, themesText, pageWidth - margin * 2, margin + 5, yPos, 5);
+          yPos += 6;
         }
 
         if (allKeywords.size > 0) {
+          yPos = checkPageBreak(doc, yPos, 15, margin);
           doc.setFontSize(10);
           doc.setFont("helvetica", "bold");
-          doc.text("Keywords:", margin + 5, yPos);
+          setColor(doc, colors.secondary);
+          doc.text("Key Concepts:", margin, yPos);
           yPos += 6;
+          
           doc.setFontSize(9);
           doc.setFont("helvetica", "normal");
-          const keywordsText = Array.from(allKeywords).slice(0, 15).join(", ");
-          const keywordLines = doc.splitTextToSize(keywordsText, pageWidth - margin * 2 - 10);
-          doc.text(keywordLines, margin + 10, yPos);
-          yPos += keywordLines.length * 5;
+          setColor(doc, colors.text);
+          const keywordsText = Array.from(allKeywords).slice(0, 30).join(", ");
+          yPos = wrapText(doc, keywordsText, pageWidth - margin * 2, margin + 5, yPos, 5);
+          yPos += 6;
         }
       }
 
-      // Save PDF
+      updateProgress(90, "Adding goals progress...");
+      // Goals Section
+      if (goals.length > 0) {
+        yPos = checkPageBreak(doc, yPos, 30, margin);
+        yPos = addSection(doc, "Goals Progress", yPos, margin);
+
+        goals.forEach((goal: any) => {
+          yPos = checkPageBreak(doc, yPos, 20, margin);
+
+          doc.setFontSize(11);
+          doc.setFont("helvetica", "bold");
+          setColor(doc, colors.primary);
+          doc.text(`${goal.title}`, margin, yPos);
+          yPos += 6;
+
+          doc.setFontSize(9);
+          doc.setFont("helvetica", "normal");
+          setColor(doc, colors.textLight);
+          doc.text(`Status: ${goal.status.toUpperCase()}`, margin + 5, yPos);
+          
+          if (goal.target_date) {
+            doc.text(`Target: ${format(new Date(goal.target_date), "MMM dd, yyyy")}`, margin + 50, yPos);
+          }
+          yPos += 5;
+
+          if (goal.description) {
+            setColor(doc, colors.text);
+            yPos = wrapText(doc, goal.description, pageWidth - margin * 2 - 5, margin + 5, yPos, 4);
+          }
+
+          yPos += 6;
+        });
+      }
+
+      updateProgress(95, "Finalizing report...");
+      // Spiritual Insights Summary
+      const chakraMentions = new Map<string, number>();
+      const tarotMentions = new Map<string, number>();
+
+      insights.forEach((insight) => {
+        if (insight.chakra_tags && Array.isArray(insight.chakra_tags)) {
+          insight.chakra_tags.forEach((tag: any) => {
+            const count = chakraMentions.get(tag.chakra) || 0;
+            chakraMentions.set(tag.chakra, count + 1);
+          });
+        }
+        if (insight.tarot_tags && Array.isArray(insight.tarot_tags)) {
+          insight.tarot_tags.forEach((tag: any) => {
+            const count = tarotMentions.get(tag.card) || 0;
+            tarotMentions.set(tag.card, count + 1);
+          });
+        }
+      });
+
+      if (chakraMentions.size > 0 || tarotMentions.size > 0) {
+        yPos = checkPageBreak(doc, yPos, 30, margin);
+        yPos = addSection(doc, "Spiritual Analysis", yPos, margin);
+
+        if (chakraMentions.size > 0) {
+          doc.setFontSize(10);
+          doc.setFont("helvetica", "bold");
+          setColor(doc, colors.primary);
+          doc.text("🧘 Chakra Resonance:", margin, yPos);
+          yPos += 6;
+
+          doc.setFontSize(9);
+          doc.setFont("helvetica", "normal");
+          setColor(doc, colors.text);
+          Array.from(chakraMentions.entries())
+            .sort((a, b) => b[1] - a[1])
+            .forEach(([chakra, count]) => {
+              yPos = checkPageBreak(doc, yPos, 5, margin);
+              doc.text(`${chakra}: ${count} mentions`, margin + 5, yPos);
+              yPos += 5;
+            });
+          yPos += 6;
+        }
+
+        if (tarotMentions.size > 0) {
+          yPos = checkPageBreak(doc, yPos, 15, margin);
+          doc.setFontSize(10);
+          doc.setFont("helvetica", "bold");
+          setColor(doc, colors.primary);
+          doc.text("🔮 Tarot Archetypes:", margin, yPos);
+          yPos += 6;
+
+          doc.setFontSize(9);
+          doc.setFont("helvetica", "normal");
+          setColor(doc, colors.text);
+          Array.from(tarotMentions.entries())
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .forEach(([card, count]) => {
+              yPos = checkPageBreak(doc, yPos, 5, margin);
+              doc.text(`${card}: ${count} mentions`, margin + 5, yPos);
+              yPos += 5;
+            });
+        }
+      }
+
+      // Add page numbers to all pages
+      const totalPages = doc.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        if (i > 1) { // Skip cover page
+          addPageFooter(doc, i - 1);
+        }
+      }
+
+      updateProgress(100, "Report complete!");
       const fileName = `yggdrasil-report-${format(dateRange.from, "yyyy-MM-dd")}-to-${format(dateRange.to, "yyyy-MM-dd")}.pdf`;
       doc.save(fileName);
       toast.success("Report generated successfully!");
@@ -249,6 +368,7 @@ export const ReportExport = () => {
       console.error("Error generating report:", error);
       toast.error("Failed to generate report");
     } finally {
+      stopLoading();
       setIsGenerating(false);
     }
   };

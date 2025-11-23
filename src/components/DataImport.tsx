@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
+import { useLoading } from "@/contexts/LoadingContext";
 
 interface ParsedEntry {
   title: string;
@@ -17,6 +18,7 @@ export const DataImport = ({ onImportComplete }: { onImportComplete: () => void 
   const [currentFile, setCurrentFile] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { startLoading, updateProgress, stopLoading } = useLoading();
 
   const formatLocalDate = (date: Date): string => {
     const year = date.getFullYear();
@@ -126,6 +128,8 @@ export const DataImport = ({ onImportComplete }: { onImportComplete: () => void 
 
     setIsImporting(true);
     setProgress(0);
+    startLoading("import-files", "Starting import...");
+    
     const totalFiles = files.length;
     let processedFiles = 0;
     let totalEntriesCreated = 0;
@@ -140,9 +144,11 @@ export const DataImport = ({ onImportComplete }: { onImportComplete: () => void 
           description: "Please sign in to import entries",
           variant: "destructive",
         });
+        stopLoading();
         return;
       }
 
+      updateProgress(5, "Creating import batch...");
       // Create batch record
       const { data: batchRecord, error: batchError } = await supabase
         .from("import_batches")
@@ -158,6 +164,8 @@ export const DataImport = ({ onImportComplete }: { onImportComplete: () => void 
 
       // Process each file
       for (const file of Array.from(files)) {
+        const fileProgress = (processedFiles / totalFiles) * 90;
+        updateProgress(10 + fileProgress, `Processing ${file.name}...`);
         setCurrentFile(file.name);
         fileNames.push(file.name);
         
@@ -250,6 +258,7 @@ export const DataImport = ({ onImportComplete }: { onImportComplete: () => void 
         variant: "destructive",
       });
     } finally {
+      stopLoading();
       setIsImporting(false);
       setProgress(0);
       setCurrentFile("");
