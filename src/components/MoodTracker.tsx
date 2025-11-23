@@ -8,6 +8,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, RefreshCw, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useDataSufficiency } from "@/hooks/use-data-sufficiency";
+import { InsufficientDataPrompt } from "@/components/InsufficientDataPrompt";
 
 type EmotionData = {
   emotion: string;
@@ -36,6 +38,7 @@ export const MoodTracker = () => {
   const [loading, setLoading] = useState(true);
   const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 30));
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
+  const { hasMinimumData, totalEntries, deepEntries, analyzedEntries, needsAnalysis } = useDataSufficiency();
 
   useEffect(() => {
     fetchMoodData();
@@ -142,6 +145,17 @@ export const MoodTracker = () => {
           <div className="h-64 bg-muted rounded"></div>
         </div>
       </Card>
+    );
+  }
+
+  if (!hasMinimumData) {
+    return (
+      <InsufficientDataPrompt
+        currentEntries={totalEntries}
+        deepEntries={deepEntries}
+        analyzedEntries={analyzedEntries}
+        needsAnalysis={needsAnalysis}
+      />
     );
   }
 
