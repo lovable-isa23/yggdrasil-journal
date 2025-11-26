@@ -444,7 +444,7 @@ Respond with ONLY a valid JSON object in this exact format:
     "action_items": ["Specific action 1", "Action 2", "Action 3"],
     "patterns_identified": ["Pattern 1", "Maladaptive behavior 2", "Cognitive distortion 3"],
     "growth_connection": "1 paragraph connecting this entry to their larger self-development journey"${applyFrameworks ? ',\n    "frameworks_applied": ["theravada", "jungian", "freudian"],\n    "depth_analysis": {\n      "psychological_themes": ["theme1", "theme2"],\n      "spiritual_themes": ["theme1", "theme2"],\n      "unconscious_material": "Brief note on what\'s beneath the surface"\n    }' : ''}
-  }${enableChakraTags ? ',\n  "chakra_tags": [{"chakra": "Root", "description": "brief"}]' : ''}${enableTarotTags ? ',\n  "tarot_tags": [{"card": "The Fool", "description": "brief"}]' : ''}
+  }${enableChakraTags ? ',\n  "chakra_tags": [{"chakra": "Root", "description": "brief"}]' : ''}${enableTarotTags ? ',\n  "tarot_tags": [{"card": "The Fool", "description": "brief"}]' : ''}${enableSacredGeometry ? ',\n  "sacred_geometry": [{"pattern": "Flower of Life", "description": "brief"}]' : ''}
 }`
           },
           {
@@ -521,6 +521,9 @@ Respond with ONLY a valid JSON object in this exact format:
       }
       if (enableTarotTags) {
         analysis.tarot_tags = [];
+      }
+      if (enableSacredGeometry) {
+        analysis.sacred_geometry = [];
       }
       
       console.log('Using fallback analysis:', analysis);
