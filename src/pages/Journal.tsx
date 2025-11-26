@@ -106,7 +106,7 @@ const Journal = () => {
         </header>
 
         {/* Main Content */}
-        <main className="container mx-auto px-6 sm:px-8 lg:px-12 py-8 sm:py-12 max-w-4xl">
+        <main className="container mx-auto px-6 sm:px-8 lg:px-12 py-8 sm:py-12 max-w-4xl overflow-hidden">
           <div className="space-y-8 sm:space-y-12">
             {/* Welcome Section */}
             <div className="text-center space-y-2">

@@ -152,4 +152,16 @@ All colors MUST be HSL.
   .prose hr {
     @apply border-border my-6;
   }
+  
+  /* Force text wrapping and prevent horizontal overflow */
+  .break-anywhere {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  /* Prevent any element from exceeding parent width */
+  .contain-width {
+    max-width: 100%;
+    overflow: hidden;
+  }
 }
