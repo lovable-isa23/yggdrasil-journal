@@ -14,7 +14,7 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Send, X } from "lucide-react";
+import { Loader2, Send, X, Plus } from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import type { User } from "@supabase/supabase-js";
@@ -32,25 +32,104 @@ export function YggiChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Check authentication status
+  // Check authentication status and load conversation
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setUser(session?.user ?? null);
+        if (session?.user) {
+          loadOrCreateConversation(session.user.id);
+        }
       }
     );
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
+      if (session?.user) {
+        loadOrCreateConversation(session.user.id);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Load or create conversation
+  const loadOrCreateConversation = async (userId: string) => {
+    try {
+      // Try to get the most recent conversation
+      const { data: conversations, error: fetchError } = await supabase
+        .from("yggi_conversations")
+        .select("*")
+        .eq("user_id", userId)
+        .order("updated_at", { ascending: false })
+        .limit(1);
+
+      if (fetchError) throw fetchError;
+
+      if (conversations && conversations.length > 0) {
+        // Load existing conversation
+        const conv = conversations[0];
+        setConversationId(conv.id);
+        const loadedMessages = Array.isArray(conv.messages) ? conv.messages as Message[] : [];
+        setMessages(loadedMessages);
+      } else {
+        // Create new conversation
+        const { data: newConv, error: createError } = await supabase
+          .from("yggi_conversations")
+          .insert({ user_id: userId, messages: [] })
+          .select()
+          .single();
+
+        if (createError) throw createError;
+        setConversationId(newConv.id);
+        setMessages([]);
+      }
+    } catch (error) {
+      console.error("Error loading conversation:", error);
+    }
+  };
+
+  // Save conversation to database
+  const saveConversation = async (updatedMessages: Message[]) => {
+    if (!conversationId || !user) return;
+
+    try {
+      await supabase
+        .from("yggi_conversations")
+        .update({ messages: updatedMessages })
+        .eq("id", conversationId);
+    } catch (error) {
+      console.error("Error saving conversation:", error);
+    }
+  };
+
+  // Start a new conversation
+  const startNewConversation = async () => {
+    if (!user) return;
+
+    try {
+      const { data: newConv, error } = await supabase
+        .from("yggi_conversations")
+        .insert({ user_id: user.id, messages: [] })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setConversationId(newConv.id);
+      setMessages([]);
+      toast.success("Started new conversation");
+    } catch (error) {
+      console.error("Error creating conversation:", error);
+      toast.error("Failed to start new conversation");
+    }
+  };
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -191,6 +270,10 @@ export function YggiChat() {
           }
         }
       }
+
+      // Save conversation after successful response
+      const updatedMessages = [...messages, userMessage, { id: assistantId, role: "assistant" as const, content: assistantContent }];
+      await saveConversation(updatedMessages);
     } catch (error) {
       console.error("Error chatting with Yggi:", error);
       toast.error("Failed to connect to Yggi. Please try again.");
@@ -231,11 +314,22 @@ export function YggiChat() {
                   Your spiritual guide with full knowledge of your journey
                 </DrawerDescription>
               </div>
-              <DrawerClose asChild>
-                <Button variant="ghost" size="icon">
-                  <X className="h-4 w-4" />
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={startNewConversation}
+                  disabled={isLoading || messages.length === 0}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  New
                 </Button>
-              </DrawerClose>
+                <DrawerClose asChild>
+                  <Button variant="ghost" size="icon">
+                    <X className="h-4 w-4" />
+                  </Button>
+                </DrawerClose>
+              </div>
             </div>
           </DrawerHeader>
 
