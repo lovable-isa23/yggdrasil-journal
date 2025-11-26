@@ -124,6 +124,8 @@ export const AppShowcase = () => {
                           src={screenshot.src}
                           alt={screenshot.alt}
                           className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                          loading="lazy"
+                          decoding="async"
                         />
                       </div>
                     </div>
