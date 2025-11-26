@@ -535,12 +535,12 @@ export const KnowledgeGraph = () => {
                       value={[minStrength]}
                       onValueChange={(value) => {
                         const newValue = value[0];
-                        if (newValue >= 1 && newValue <= 10) {
+                        if (newValue >= 1 && newValue <= 3) {
                           setMinStrength(newValue);
                         }
                       }}
                       min={1}
-                      max={10}
+                      max={3}
                       step={1}
                       className="w-full"
                       aria-label="Filter connections by minimum strength"

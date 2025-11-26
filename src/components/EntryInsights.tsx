@@ -302,13 +302,13 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
                         {insights.frameworks_applied.includes('jungian') && (
                           <Badge variant="outline" className="text-xs">🌓 Jungian</Badge>
                         )}
-                        {insights.frameworks_applied.includes('hermetic') && (
+                        {(insights.frameworks_applied.includes('hermetic') || insights.frameworks_applied.includes('hermeticism')) && (
                           <Badge variant="outline" className="text-xs">🔮 Hermetic</Badge>
                         )}
-                        {insights.frameworks_applied.includes('advaita') && (
+                        {(insights.frameworks_applied.includes('advaita') || insights.frameworks_applied.includes('advaita_vedanta')) && (
                           <Badge variant="outline" className="text-xs">🕉️ Advaita</Badge>
                         )}
-                        {insights.frameworks_applied.includes('taoist') && (
+                        {(insights.frameworks_applied.includes('taoist') || insights.frameworks_applied.includes('taoism')) && (
                           <Badge variant="outline" className="text-xs">☯️ Taoist</Badge>
                         )}
                       </>
