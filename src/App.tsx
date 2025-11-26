@@ -5,19 +5,22 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { GlobalLoadingBar } from "@/components/GlobalLoadingBar";
 import { YggiChat } from "@/components/YggiChat";
-import Index from "./pages/Index";
-import Waitlist from "./pages/Waitlist";
-import BetaWelcome from "./pages/BetaWelcome";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import ResetPassword from "./pages/ResetPassword";
-import UpdatePassword from "./pages/UpdatePassword";
-import Journal from "./pages/Journal";
-import Insights from "./pages/Insights";
-import ImportHistory from "./pages/ImportHistory";
-import Settings from "./pages/Settings";
-import Goals from "./pages/Goals";
-import NotFound from "./pages/NotFound";
+import { lazy, Suspense } from "react";
+
+// Lazy load all routes for code splitting
+const Index = lazy(() => import("./pages/Index"));
+const Waitlist = lazy(() => import("./pages/Waitlist"));
+const BetaWelcome = lazy(() => import("./pages/BetaWelcome"));
+const Login = lazy(() => import("./pages/Login"));
+const Signup = lazy(() => import("./pages/Signup"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const UpdatePassword = lazy(() => import("./pages/UpdatePassword"));
+const Journal = lazy(() => import("./pages/Journal"));
+const Insights = lazy(() => import("./pages/Insights"));
+const ImportHistory = lazy(() => import("./pages/ImportHistory"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Goals = lazy(() => import("./pages/Goals"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
@@ -28,22 +31,24 @@ const App = () => (
       <Sonner />
       <GlobalLoadingBar />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/waitlist" element={<Waitlist />} />
-          <Route path="/beta-welcome" element={<BetaWelcome />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/update-password" element={<UpdatePassword />} />
-          <Route path="/journal" element={<Journal />} />
-          <Route path="/insights" element={<Insights />} />
-          <Route path="/import-history" element={<ImportHistory />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/goals" element={<Goals />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/waitlist" element={<Waitlist />} />
+            <Route path="/beta-welcome" element={<BetaWelcome />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/update-password" element={<UpdatePassword />} />
+            <Route path="/journal" element={<Journal />} />
+            <Route path="/insights" element={<Insights />} />
+            <Route path="/import-history" element={<ImportHistory />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/goals" element={<Goals />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
         <YggiChat />
       </BrowserRouter>
     </TooltipProvider>
