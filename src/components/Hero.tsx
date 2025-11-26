@@ -33,6 +33,9 @@ export const Hero = () => {
               src={yggdrasilLogo} 
               alt="Yggdrasil" 
               className="h-32 w-32 object-contain"
+              width="128"
+              height="128"
+              decoding="async"
             />
           </div>
 
