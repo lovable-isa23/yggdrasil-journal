@@ -307,7 +307,7 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full max-w-full overflow-hidden">
       {filteredAndSortedEntries.map((entry) => {
          const isOpen = openEntries.has(entry.id);
          const moodStyles = getMoodStyles(entry.mood_type);
@@ -316,10 +316,10 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
          const moodOption = MOOD_OPTIONS.find(m => m.value === (entry.mood_type || 'general'));
 
          return (
-           <Card key={entry.id} className={`overflow-hidden border-l-4 ${moodStyles.border} bg-gradient-to-br ${moodStyles.bg} transition-all duration-200 hover:-translate-y-1 hover:shadow-lg`}>
+           <Card key={entry.id} className={`overflow-hidden w-full max-w-full border-l-4 ${moodStyles.border} bg-gradient-to-br ${moodStyles.bg} transition-all duration-200 hover:-translate-y-1 hover:shadow-lg`}>
              <CardHeader className="pb-3">
                <div className="flex items-start justify-between gap-4">
-                 <div className="flex-1 space-y-2">
+                 <div className="flex-1 space-y-2 min-w-0">
                    <button onClick={() => toggleOpen(entry.id)} className="flex items-center gap-2 w-full text-left hover:opacity-70 transition-opacity">
                      <CardTitle className="text-lg">{entry.title}</CardTitle>
                      {isOpen ? <ChevronUp className="h-5 w-5 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 text-muted-foreground" />}
@@ -390,8 +390,8 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
                   </div>
                </div>
              </CardHeader>
-             {isOpen && (<><CardContent className="pt-4 border-t"><div className="prose prose-sm max-w-none dark:prose-invert md:prose-ul:list-disc md:prose-ol:list-decimal prose-ul:list-none prose-ol:list-none prose-ul:pl-0 prose-ol:pl-0 prose-li:leading-tight md:prose-li:leading-relaxed prose-p:leading-snug md:prose-p:leading-relaxed"><ReactMarkdown>{entry.content}</ReactMarkdown></div></CardContent>
-             <CardFooter><EntryInsights entryId={entry.id} title={entry.title} content={entry.content} /></CardFooter></>)}
+             {isOpen && (<><CardContent className="pt-4 border-t"><div className="prose prose-sm max-w-full dark:prose-invert break-words overflow-hidden md:prose-ul:list-disc md:prose-ol:list-decimal prose-ul:list-none prose-ol:list-none prose-ul:pl-0 prose-ol:pl-0 prose-li:leading-tight md:prose-li:leading-relaxed prose-p:leading-snug md:prose-p:leading-relaxed"><ReactMarkdown>{entry.content}</ReactMarkdown></div></CardContent>
+             <CardFooter className="w-full max-w-full overflow-hidden"><EntryInsights entryId={entry.id} title={entry.title} content={entry.content} /></CardFooter></>)}
            </Card>
          );
        })}
@@ -455,7 +455,7 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
                 </TabsContent>
                 <TabsContent value="preview" className="mt-2">
                   <div className="min-h-[400px] rounded-md border bg-muted/50 p-4">
-                    <div className="prose prose-sm max-w-none dark:prose-invert md:prose-ul:list-disc md:prose-ol:list-decimal prose-ul:list-none prose-ol:list-none prose-ul:pl-0 prose-ol:pl-0 prose-li:leading-tight md:prose-li:leading-relaxed prose-p:leading-snug md:prose-p:leading-relaxed">
+                    <div className="prose prose-sm max-w-full dark:prose-invert break-words overflow-hidden md:prose-ul:list-disc md:prose-ol:list-decimal prose-ul:list-none prose-ol:list-none prose-ul:pl-0 prose-ol:pl-0 prose-li:leading-tight md:prose-li:leading-relaxed prose-p:leading-snug md:prose-p:leading-relaxed">
                       <ReactMarkdown>{editContent || "*No content to preview*"}</ReactMarkdown>
                     </div>
                   </div>

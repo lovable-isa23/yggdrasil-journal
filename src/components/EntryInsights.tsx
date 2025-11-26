@@ -196,7 +196,7 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
   if (!insights) return null;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full max-w-full overflow-hidden">
       {/* Re-analyze button */}
       <div className="flex justify-end">
         <Button
@@ -254,7 +254,7 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
         </Alert>
       )}
       
-      <Accordion type="multiple" className="space-y-2">
+      <Accordion type="multiple" className="space-y-2 w-full max-w-full">
         {/* Summary Section */}
         {insights.summary && (
           <AccordionItem value="summary">
@@ -265,8 +265,8 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
               </div>
             </AccordionTrigger>
             <AccordionContent>
-              <Card className="bg-muted/50">
-                <div className="p-4">
+              <Card className="bg-muted/50 w-full max-w-full overflow-hidden">
+                <div className="p-4 break-words">
                   <p className="text-sm text-muted-foreground">{insights.summary}</p>
                 </div>
               </Card>
@@ -284,8 +284,8 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
               </div>
             </AccordionTrigger>
             <AccordionContent>
-              <Card className="max-w-full">
-                <div className="p-4 space-y-4">
+              <Card className="w-full max-w-full overflow-hidden">
+                <div className="p-4 space-y-4 break-words">
                   {/* Badges section - only visible when accordion is open */}
                   <div className="flex flex-wrap items-center gap-2 pb-3 border-b">
                     {insights.depth_score && insights.depth_score >= 6 && (
@@ -322,11 +322,11 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
                   </div>
 
                   {/* Nested accordion for subsections */}
-                  <Accordion type="multiple" className="space-y-2 max-w-full">
+                  <Accordion type="multiple" className="space-y-2 w-full max-w-full overflow-hidden">
                     {/* Patterns Identified */}
                     {insights.interpretation.patterns_identified && 
                      insights.interpretation.patterns_identified.length > 0 && (
-                      <AccordionItem value="patterns" className="border rounded-lg px-4 max-w-full">
+                      <AccordionItem value="patterns" className="border rounded-lg px-4 w-full max-w-full overflow-hidden">
                         <AccordionTrigger className="text-sm font-semibold py-3">
                           🔍 Patterns to Notice
                         </AccordionTrigger>
@@ -346,7 +346,7 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
                     {/* Reflective Questions */}
                     {insights.interpretation.questions && 
                      insights.interpretation.questions.length > 0 && (
-                      <AccordionItem value="questions" className="border rounded-lg px-4 max-w-full">
+                      <AccordionItem value="questions" className="border rounded-lg px-4 w-full max-w-full overflow-hidden">
                         <AccordionTrigger className="text-sm font-semibold py-3">
                           ❓ Questions for Reflection
                         </AccordionTrigger>
@@ -366,7 +366,7 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
                     {/* Action Items */}
                     {insights.interpretation.action_items && 
                      insights.interpretation.action_items.length > 0 && (
-                      <AccordionItem value="actions" className="border rounded-lg px-4 max-w-full">
+                      <AccordionItem value="actions" className="border rounded-lg px-4 w-full max-w-full overflow-hidden">
                         <AccordionTrigger className="text-sm font-semibold py-3">
                           ✓ Action Steps
                         </AccordionTrigger>
@@ -385,7 +385,7 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
 
                     {/* Growth Connection */}
                     {insights.interpretation.growth_connection && (
-                      <AccordionItem value="growth" className="border rounded-lg px-4 max-w-full">
+                      <AccordionItem value="growth" className="border rounded-lg px-4 w-full max-w-full overflow-hidden">
                         <AccordionTrigger className="text-sm font-semibold py-3">
                           📈 Your Growth Journey
                         </AccordionTrigger>
@@ -413,8 +413,8 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
               </div>
             </AccordionTrigger>
             <AccordionContent>
-              <Card>
-                <div className="p-4">
+              <Card className="w-full max-w-full overflow-hidden">
+                <div className="p-4 break-words">
                   <div className="flex flex-wrap gap-2">
                     {insights.themes.map((theme, idx) => (
                       <span
@@ -441,8 +441,8 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
               </div>
             </AccordionTrigger>
             <AccordionContent>
-              <Card>
-                <div className="p-4 space-y-2">
+              <Card className="w-full max-w-full overflow-hidden">
+                <div className="p-4 space-y-2 break-words">
                   {insights.emotions.slice(0, 5).map((emotion, idx) => (
                     <div key={idx} className="flex items-center gap-2">
                       <span className="text-xs flex-grow capitalize">{emotion.emotion}</span>
@@ -473,8 +473,8 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
               </div>
             </AccordionTrigger>
             <AccordionContent>
-              <Card>
-                <div className="p-4">
+              <Card className="w-full max-w-full overflow-hidden">
+                <div className="p-4 break-words">
                   <div className="flex flex-wrap gap-2">
                     {insights.keywords.map((keyword, idx) => (
                       <span
@@ -501,8 +501,8 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
               </div>
             </AccordionTrigger>
             <AccordionContent>
-              <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-200 dark:border-purple-800">
-                <div className="p-4 space-y-2">
+              <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-200 dark:border-purple-800 w-full max-w-full overflow-hidden">
+                <div className="p-4 space-y-2 break-words">
                   {insights.chakra_tags.map((tag, idx) => (
                     <div key={idx} className="flex gap-3 p-2 rounded bg-background/50">
                       <span className="font-medium text-xs text-primary">{tag.chakra}:</span>
@@ -525,8 +525,8 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
               </div>
             </AccordionTrigger>
             <AccordionContent>
-              <Card className="bg-gradient-to-br from-indigo-50 to-violet-50 dark:from-indigo-950/20 dark:to-violet-950/20 border-indigo-200 dark:border-indigo-800">
-                <div className="p-4 space-y-2">
+              <Card className="bg-gradient-to-br from-indigo-50 to-violet-50 dark:from-indigo-950/20 dark:to-violet-950/20 border-indigo-200 dark:border-indigo-800 w-full max-w-full overflow-hidden">
+                <div className="p-4 space-y-2 break-words">
                   {insights.tarot_tags.map((tag, idx) => (
                     <div key={idx} className="flex gap-3 p-2 rounded bg-background/50">
                       <span className="font-medium text-xs text-accent">{tag.card}:</span>
@@ -549,8 +549,8 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
               </div>
             </AccordionTrigger>
             <AccordionContent>
-              <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-200 dark:border-amber-800">
-                <div className="p-4 space-y-2">
+              <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-200 dark:border-amber-800 w-full max-w-full overflow-hidden">
+                <div className="p-4 space-y-2 break-words">
                   {insights.sacred_geometry.map((geo, idx) => (
                     <div key={idx} className="flex gap-3 p-2 rounded bg-background/50">
                       <span className="font-medium text-xs text-amber-700 dark:text-amber-400">{geo.pattern}:</span>
