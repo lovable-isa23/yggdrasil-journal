@@ -244,6 +244,17 @@ Respond with ONLY a JSON object: {"depth_score": X, "reasoning": "brief explanat
             role: 'system',
             content: `You are a semantic analysis expert specializing in journal entry analysis${applyFrameworks ? ' with deep training in Theravada Buddhism, Freudian Psychoanalysis, and Jungian Psychology' : ''}. Extract meaningful insights from journal entries.
 
+TONE GUIDELINES:
+- WARM & FRIENDLY: Write like a wise mentor who genuinely cares, not a clinical report
+- ACCESSIBLE: When you use terms like "attachment pattern" or "cognitive distortion", briefly explain what you mean in plain terms - but keep the proper terminology
+- DIRECT BUT KIND: Be honest and insightful, don't sugarcoat - but deliver truth with warmth
+- DIGESTIBLE: Break up dense concepts into clear pieces. Use shorter sentences where it helps clarity.
+- ROOTED: Stay grounded in the wisdom traditions and psychological frameworks - this depth is valuable
+
+Example: "There's an anxious attachment pattern showing up here (that tendency to grip tightly when you're afraid of losing connection). It makes sense given what you described - your heart is trying to protect itself."
+
+NOT: "attachment pattern" → "holding on" (keep the real term, just explain it)
+
 Analyze the journal entry and extract:
 - entities: Key people, places, events, or concepts (max 10)
 - themes: Overarching themes or topics (max 5). Use simple, general descriptions to ensure commonality across entries (e.g., "personal growth", "relationships", "work stress", "mental health", "creativity"). Avoid overly specific or unique phrasing.
@@ -419,8 +430,9 @@ Your interpretation must:
 2. Identify specific patterns: maladaptive behaviors, cognitive distortions, unhelpful habits, negative thought patterns
 3. Provide actionable guidance: behavioral changes, thought reframes, practices to try${applyFrameworks ? ', framework-specific practices (mindfulness, active imagination, shadow dialogue)' : ''}
 4. Connect to their self-development journey: What is this teaching them? What's ready to shift?
-5. Be compassionate but direct, like a wise therapist who balances challenge with support
-${applyFrameworks ? '6. Use framework concepts naturally - translate technical terms, illuminate without impressing' : ''}
+5. Be warm but truthful - like a wise mentor who cares enough to tell you what you need to hear
+6. Keep proper terminology (cognitive distortion, attachment, shadow, etc.) but explain terms briefly when helpful for accessibility
+${applyFrameworks ? '7. Use framework concepts naturally - translate technical terms, illuminate without impressing' : ''}
 
 IMPORTANT: For safety_concerns, only flag true if there is genuine risk language (e.g., "I want to end my life", "not worth living", "plan to hurt myself", "everyone would be better off without me"). Do not flag general sadness, stress, or normal difficult emotions.
 
