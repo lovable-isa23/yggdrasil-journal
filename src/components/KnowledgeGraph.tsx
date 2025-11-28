@@ -119,6 +119,7 @@ export const KnowledgeGraph = () => {
     const itemFreq = new Map<string, number>();
     const itemEntries = new Map<string, Set<string>>();
     const connections = new Map<string, { entryIds: Set<string>; strength: number }>();
+    const itemDisplayNames = new Map<string, string>(); // Track original display names
 
     // Extract only the items for the current tab type
     insights.forEach((insight) => {
@@ -132,30 +133,45 @@ export const KnowledgeGraph = () => {
         items = (insight.keywords as string[]) || [];
       }
 
-      // Count frequency and track entry IDs
+      // Count frequency and track entry IDs (case-insensitive matching)
+      // Track original display names for each normalized key
+      const displayNames = new Map<string, string>();
+      
       items.forEach((item) => {
-        itemFreq.set(item, (itemFreq.get(item) || 0) + 1);
-        if (!itemEntries.has(item)) {
-          itemEntries.set(item, new Set());
+        const normalizedItem = item.toLowerCase();
+        // Keep the first occurrence's display name
+        if (!displayNames.has(normalizedItem)) {
+          displayNames.set(normalizedItem, item);
         }
-        itemEntries.get(item)?.add(insight.entry_id);
+        itemFreq.set(normalizedItem, (itemFreq.get(normalizedItem) || 0) + 1);
+        if (!itemEntries.has(normalizedItem)) {
+          itemEntries.set(normalizedItem, new Set());
+        }
+        itemEntries.get(normalizedItem)?.add(insight.entry_id);
       });
 
-      // Build connections only between items of the same type in the same entry
+      // Build connections only between items of the same type in the same entry (case-insensitive)
       items.forEach((item1, i) => {
         items.slice(i + 1).forEach((item2) => {
-          const key = [item1, item2].sort().join("||");
+          const key = [item1.toLowerCase(), item2.toLowerCase()].sort().join("||");
           if (!connections.has(key)) {
             connections.set(key, { entryIds: new Set(), strength: 1 });
           }
           connections.get(key)!.entryIds.add(insight.entry_id);
         });
       });
+      
+      // Store displayNames in outer scope for use later
+      displayNames.forEach((display, normalized) => {
+        if (!itemDisplayNames.has(normalized)) {
+          itemDisplayNames.set(normalized, display);
+        }
+      });
     });
 
-    // Enhance connections with AI-discovered relationship strengths
+    // Enhance connections with AI-discovered relationship strengths (case-insensitive)
     relationships.forEach((rel) => {
-      const key = [rel.source_item, rel.target_item].sort().join("||");
+      const key = [rel.source_item.toLowerCase(), rel.target_item.toLowerCase()].sort().join("||");
       if (connections.has(key)) {
         const conn = connections.get(key)!;
         conn.strength = rel.strength; // Use AI-determined strength
@@ -185,11 +201,12 @@ export const KnowledgeGraph = () => {
       keywords: "keyword" as const,
     };
 
-    itemFreq.forEach((count, name) => {
-      const entryIds = Array.from(itemEntries.get(name) || []);
+    itemFreq.forEach((count, normalizedName) => {
+      const entryIds = Array.from(itemEntries.get(normalizedName) || []);
+      const displayName = itemDisplayNames.get(normalizedName) || normalizedName;
       nodes.push({
-        id: name,
-        name,
+        id: normalizedName,
+        name: displayName,
         value: Math.max(count * 8, 15),
         type: typeMap[activeTab],
         color: getColor(),
