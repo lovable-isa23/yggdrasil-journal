@@ -1,5 +1,5 @@
 import { useIntersectionObserver } from "@/hooks/use-intersection-observer";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,6 +10,7 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
+  type CarouselApi,
 } from "@/components/ui/carousel";
 import insightsImage1 from "@/assets/screenshot-insights-1.png";
 import analyticsImage from "@/assets/screenshot-analytics.png";
@@ -101,14 +102,65 @@ const screenshots: Screenshot[] = [
   },
   {
     src: patternsImage,
-    alt: "Pattern insights showing behavioral trends",
+    alt: "Yggdrasil automatically identifies recurring patterns in your thoughts, emotions, and behaviors across all your entries. Discover deep-seated beliefs, emotional cycles, and cognitive patterns—complete with confidence scores, trend indicators, related keywords, and personalized growth suggestions.",
     title: "Pattern Recognition"
   }
 ];
 
+// Carousel dots component
+interface CarouselDotsProps {
+  count: number;
+  api: CarouselApi | undefined;
+}
+
+const CarouselDots = ({ count, api }: CarouselDotsProps) => {
+  const [current, setCurrent] = useState(0);
+
+  useEffect(() => {
+    if (!api) return;
+
+    const onSelect = () => {
+      setCurrent(api.selectedScrollSnap());
+    };
+
+    api.on("select", onSelect);
+    onSelect();
+
+    return () => {
+      api.off("select", onSelect);
+    };
+  }, [api]);
+
+  const handleDotClick = useCallback((index: number) => {
+    api?.scrollTo(index);
+  }, [api]);
+
+  return (
+    <div className="flex justify-center gap-2 mt-4">
+      {Array.from({ length: count }).map((_, index) => (
+        <button
+          key={index}
+          onClick={() => handleDotClick(index)}
+          className={`w-2 h-2 rounded-full transition-all duration-300 ${
+            index === current
+              ? "bg-primary w-4"
+              : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
+          }`}
+          aria-label={`Go to slide ${index + 1}`}
+        />
+      ))}
+    </div>
+  );
+};
+
 export const AppShowcase = () => {
   const { elementRef, isVisible } = useIntersectionObserver();
   const [selectedImage, setSelectedImage] = useState<{ src: string; alt: string; title: string } | null>(null);
+  const [carouselApis, setCarouselApis] = useState<Record<number, CarouselApi>>({});
+
+  const setCarouselApi = useCallback((index: number, api: CarouselApi) => {
+    setCarouselApis(prev => ({ ...prev, [index]: api }));
+  }, []);
 
   return (
     <>
@@ -169,35 +221,41 @@ export const AppShowcase = () => {
                     {/* Image or Carousel */}
                     <div className={`${isEven ? '' : 'lg:col-start-2'}`}>
                       {hasCarousel ? (
-                        <Carousel className="w-full">
-                          <CarouselContent>
-                            {screenshot.images!.map((image, imgIndex) => (
-                              <CarouselItem key={imgIndex}>
-                                <div 
-                                  className="group relative overflow-hidden rounded-2xl border border-border bg-card shadow-soft hover:shadow-medium transition-all duration-300 cursor-pointer"
-                                  onClick={() => setSelectedImage({ src: image.src, alt: image.alt, title: image.caption })}
-                                >
-                                  <div className="aspect-[16/10] overflow-hidden">
-                                    <img
-                                      src={image.src}
-                                      alt={image.alt}
-                                      className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
-                                      loading="lazy"
-                                      decoding="async"
-                                    />
+                        <div>
+                          <Carousel 
+                            className="w-full" 
+                            setApi={(api) => setCarouselApi(index, api)}
+                          >
+                            <CarouselContent>
+                              {screenshot.images!.map((image, imgIndex) => (
+                                <CarouselItem key={imgIndex}>
+                                  <div 
+                                    className="group relative overflow-hidden rounded-2xl border border-border bg-card shadow-soft hover:shadow-medium transition-all duration-300 cursor-pointer"
+                                    onClick={() => setSelectedImage({ src: image.src, alt: image.alt, title: image.caption })}
+                                  >
+                                    <div className="aspect-[16/10] overflow-hidden">
+                                      <img
+                                        src={image.src}
+                                        alt={image.alt}
+                                        className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                                        loading="lazy"
+                                        decoding="async"
+                                      />
+                                    </div>
+                                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background/90 to-transparent p-4">
+                                      <p className="text-sm text-foreground font-medium">
+                                        {image.caption}
+                                      </p>
+                                    </div>
                                   </div>
-                                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background/90 to-transparent p-4">
-                                    <p className="text-sm text-foreground font-medium">
-                                      {image.caption}
-                                    </p>
-                                  </div>
-                                </div>
-                              </CarouselItem>
-                            ))}
-                          </CarouselContent>
-                          <CarouselPrevious className="left-2" />
-                          <CarouselNext className="right-2" />
-                        </Carousel>
+                                </CarouselItem>
+                              ))}
+                            </CarouselContent>
+                            <CarouselPrevious className="left-2" />
+                            <CarouselNext className="right-2" />
+                          </Carousel>
+                          <CarouselDots count={screenshot.images!.length} api={carouselApis[index]} />
+                        </div>
                       ) : (
                         <div 
                           className="group relative overflow-hidden rounded-2xl border border-border bg-card shadow-soft hover:shadow-medium transition-all duration-300 cursor-pointer"
