@@ -68,7 +68,7 @@ serve(async (req) => {
       });
     }
 
-    const { entryId, title, content } = await req.json();
+    const { entryId, title, content, entry_date, linked_goals } = await req.json();
     
     if (!entryId || !title || !content) {
       return new Response(JSON.stringify({ error: 'Entry ID, title and content are required' }), {
@@ -116,12 +116,24 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // Build update object
+    const updateData: Record<string, any> = {
+      title: encryptedTitle,
+      content: encryptedContent,
+    };
+
+    // Add optional fields if provided
+    if (entry_date !== undefined) {
+      updateData.entry_date = entry_date;
+    }
+
+    if (linked_goals !== undefined) {
+      updateData.linked_goals = linked_goals;
+    }
+
     const { data: entry, error: updateError } = await supabaseAdmin
       .from('journal_entries')
-      .update({
-        title: encryptedTitle,
-        content: encryptedContent,
-      })
+      .update(updateData)
       .eq('id', entryId)
       .eq('user_id', user.id)
       .select()

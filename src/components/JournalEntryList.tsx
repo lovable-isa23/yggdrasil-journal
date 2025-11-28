@@ -3,7 +3,7 @@ import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2, Calendar as CalendarIcon, ChevronDown, ChevronUp, Mic, Image as ImageIcon, Loader2, FileText, Edit, Clock } from "lucide-react";
+import { Trash2, Calendar as CalendarIcon, ChevronDown, ChevronUp, Mic, Image as ImageIcon, Loader2, FileText, Edit, Clock, X, Target } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -29,6 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 interface JournalEntry {
   id: string;
@@ -48,6 +49,13 @@ interface JournalEntry {
   source_type?: string;
   source_practice_id?: string;
   source_milestone_id?: string;
+  linked_goals?: string[];
+}
+
+interface Goal {
+  id: string;
+  title: string;
+  status: string;
 }
 
 interface JournalEntryListProps {
@@ -80,7 +88,6 @@ const getReadingTime = (wordCount: number): string => {
 };
 
 const getMoodStyles = (moodType?: string, sourceType?: string) => {
-  // Sourced entries (sacred practice / reflection) get teal/cyan styling
   if (sourceType && sourceType !== 'manual') {
     return {
       bg: 'from-teal-100 to-cyan-50 dark:from-teal-950/30 dark:to-cyan-900/20',
@@ -133,6 +140,9 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
   const [entryToEdit, setEntryToEdit] = useState<JournalEntry | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
+  const [editDate, setEditDate] = useState<Date>(new Date());
+  const [editLinkedGoals, setEditLinkedGoals] = useState<string[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
@@ -152,13 +162,33 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
     }
   };
 
-  useEffect(() => { fetchEntries(); }, [refreshTrigger]);
+  const fetchGoals = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("goals")
+        .select("id, title, status")
+        .eq("status", "active")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setGoals(data || []);
+    } catch (error) {
+      console.error("Error fetching goals:", error);
+    }
+  };
+
+  useEffect(() => { 
+    fetchEntries(); 
+    fetchGoals();
+  }, [refreshTrigger]);
 
   // Apply filters and sorting
   const filteredAndSortedEntries = React.useMemo(() => {
     let result = [...entries];
 
-    // Apply filters
     if (filters) {
       if (filters.showFavoritesOnly) {
         result = result.filter(entry => entry.is_favorite);
@@ -184,7 +214,6 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
       }
     }
 
-    // Apply sorting with secondary sort by created_at for stability
     const stableSort = (a: JournalEntry, b: JournalEntry, primaryCompare: number) => {
       if (primaryCompare !== 0) return primaryCompare;
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
@@ -225,7 +254,6 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
           break;
       }
     } else {
-      // Default sort: newest first by entry_date, then created_at
       result.sort((a, b) => stableSort(a, b, 
         new Date(b.entry_date).getTime() - new Date(a.entry_date).getTime()
       ));
@@ -234,7 +262,6 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
     return result;
   }, [entries, filters, sortOption]);
 
-  // Notify parent of entry counts
   useEffect(() => {
     if (onEntriesLoaded) {
       onEntriesLoaded(entries.length, filteredAndSortedEntries.length);
@@ -262,18 +289,6 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
     });
   };
 
-  const handleDateUpdate = async (entryId: string, newDate: Date) => {
-    try {
-      const localDate = `${newDate.getFullYear()}-${String(newDate.getMonth() + 1).padStart(2, '0')}-${String(newDate.getDate()).padStart(2, '0')}`;
-      const { error } = await supabase.from("journal_entries").update({ entry_date: localDate }).eq("id", entryId);
-      if (error) throw error;
-      toast({ title: "Success", description: "Entry date updated" });
-      fetchEntries();
-    } catch (error: any) {
-      toast({ title: "Error", description: "Failed to update entry date", variant: "destructive" });
-    }
-  };
-
   const handleEntryUpdate = (entryId: string, updates: Partial<JournalEntry>) => {
     setEntries(prev => prev.map(entry => entry.id === entryId ? { ...entry, ...updates } : entry));
   };
@@ -282,12 +297,24 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
     setEntryToEdit(entry);
     setEditTitle(entry.title);
     setEditContent(entry.content);
+    setEditDate(new Date(entry.entry_date));
+    setEditLinkedGoals(entry.linked_goals || []);
   };
 
   const closeEditDialog = () => {
     setEntryToEdit(null);
     setEditTitle("");
     setEditContent("");
+    setEditDate(new Date());
+    setEditLinkedGoals([]);
+  };
+
+  const toggleGoal = (goalId: string) => {
+    setEditLinkedGoals(prev => 
+      prev.includes(goalId) 
+        ? prev.filter(id => id !== goalId)
+        : [...prev, goalId]
+    );
   };
 
   const handleEdit = async () => {
@@ -302,8 +329,17 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
         return;
       }
 
+      // Format date as YYYY-MM-DD
+      const formattedDate = `${editDate.getFullYear()}-${String(editDate.getMonth() + 1).padStart(2, '0')}-${String(editDate.getDate()).padStart(2, '0')}`;
+
       const { error } = await supabase.functions.invoke("update-entry", {
-        body: { entryId: entryToEdit.id, title: editTitle, content: editContent },
+        body: { 
+          entryId: entryToEdit.id, 
+          title: editTitle, 
+          content: editContent,
+          entry_date: formattedDate,
+          linked_goals: editLinkedGoals,
+        },
       });
 
       if (error) throw error;
@@ -386,6 +422,12 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
                         return depthBadge && <Badge variant="outline" className={depthBadge.className}>{depthBadge.label}</Badge>;
                       })()}
                       {entry.tags?.map(tag => <Badge key={tag} variant="secondary">#{tag}</Badge>)}
+                      {entry.linked_goals && entry.linked_goals.length > 0 && (
+                        <Badge variant="outline" className="gap-1 text-primary">
+                          <Target className="h-3 w-3" />
+                          {entry.linked_goals.length} goal{entry.linked_goals.length > 1 ? 's' : ''}
+                        </Badge>
+                      )}
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                       <span>{wordCount.toLocaleString()} words</span><span>•</span>
@@ -429,10 +471,6 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
                  </div>
                   <div className="flex gap-2">
                     <Button variant="outline" size="icon" onClick={() => openEditDialog(entry)}><Edit className="h-4 w-4" /></Button>
-                    <Popover>
-                      <PopoverTrigger asChild><Button variant="outline" size="icon"><CalendarIcon className="h-4 w-4" /></Button></PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="end"><Calendar mode="single" selected={new Date(entry.entry_date)} onSelect={(date) => date && handleDateUpdate(entry.id, date)} initialFocus /></PopoverContent>
-                    </Popover>
                     <Button variant="outline" size="icon" onClick={() => setEntryToDelete(entry.id)}><Trash2 className="h-4 w-4" /></Button>
                   </div>
                </div>
@@ -468,11 +506,11 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
           <DialogHeader>
             <DialogTitle>Edit Journal Entry</DialogTitle>
             <DialogDescription>
-              Make changes to your journal entry. Both title and content will be re-encrypted.
+              Update your journal entry details. Title and content will be re-encrypted.
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
+          <div className="space-y-6 py-4">
             <div className="space-y-2">
               <Label htmlFor="edit-title">Title</Label>
               <Input
@@ -483,6 +521,70 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
                 disabled={isSaving}
               />
             </div>
+
+            <div className="space-y-2">
+              <Label>Entry Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !editDate && "text-muted-foreground"
+                    )}
+                    disabled={isSaving}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {editDate ? format(editDate, "PPP") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={editDate}
+                    onSelect={(date) => date && setEditDate(date)}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {goals.length > 0 && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Target className="h-4 w-4" />
+                  Link to Active Journeys
+                </Label>
+                <div className="flex flex-wrap gap-2">
+                  {goals.map((goal) => {
+                    const isSelected = editLinkedGoals.includes(goal.id);
+                    return (
+                      <button
+                        key={goal.id}
+                        type="button"
+                        onClick={() => toggleGoal(goal.id)}
+                        disabled={isSaving}
+                        className={cn(
+                          "inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm transition-all",
+                          isSelected
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                        )}
+                      >
+                        {goal.title}
+                        {isSelected && <X className="h-3 w-3" />}
+                      </button>
+                    );
+                  })}
+                </div>
+                {editLinkedGoals.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {editLinkedGoals.length} goal{editLinkedGoals.length > 1 ? 's' : ''} linked
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label>Content</Label>
@@ -496,12 +598,12 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
                     value={editContent}
                     onChange={(e) => setEditContent(e.target.value)}
                     placeholder="Write your entry here... (Markdown supported)"
-                    className="min-h-[400px] font-mono text-sm"
+                    className="min-h-[300px] font-mono text-sm"
                     disabled={isSaving}
                   />
                 </TabsContent>
                 <TabsContent value="preview" className="mt-2">
-                  <div className="min-h-[400px] rounded-md border bg-muted/50 p-4">
+                  <div className="min-h-[300px] rounded-md border bg-muted/50 p-4">
                     <div className="prose prose-sm max-w-full dark:prose-invert break-words overflow-hidden md:prose-ul:list-disc md:prose-ol:list-decimal prose-ul:list-none prose-ol:list-none prose-ul:pl-0 prose-ol:pl-0 prose-li:leading-tight md:prose-li:leading-relaxed prose-p:leading-snug md:prose-p:leading-relaxed">
                       <ReactMarkdown>{editContent || "*No content to preview*"}</ReactMarkdown>
                     </div>

@@ -12,12 +12,15 @@ import { useLoading } from "@/contexts/LoadingContext";
 import {
   addCoverPage,
   addSection,
+  addStyledSection,
   wrapText,
   colors,
   setColor,
   addPageFooter,
   checkPageBreak,
   addDivider,
+  getFrameworkIcon,
+  getFrameworkName,
 } from "@/lib/pdf-helpers";
 
 export const ReportExport = () => {
@@ -92,10 +95,8 @@ export const ReportExport = () => {
       updateProgress(50, "Generating comprehensive report...");
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-      const margin = 20;
+      const margin = 25;
       let yPos = margin;
-      let pageNumber = 1;
 
       // Cover Page
       addCoverPage(
@@ -109,179 +110,231 @@ export const ReportExport = () => {
       doc.addPage();
       yPos = margin;
 
-      // Executive Summary
-      yPos = addSection(doc, "Executive Summary", yPos, margin);
+      // Executive Summary with styled section
+      yPos = addStyledSection(doc, "Executive Summary", "📊", yPos, margin);
       
       const deepEntries = insights.filter(i => i.depth_score && i.depth_score >= 5).length;
       const avgDepth = insights.length > 0 
         ? (insights.reduce((sum, i) => sum + (i.depth_score || 0), 0) / insights.length).toFixed(1)
         : 0;
 
-      doc.setFontSize(10);
+      doc.setFontSize(11);
       setColor(doc, colors.text);
-      doc.text(`Total Entries: ${entries.length}`, margin, yPos);
-      yPos += 6;
-      doc.text(`Deep Entries (≥5): ${deepEntries}`, margin, yPos);
-      yPos += 6;
-      doc.text(`Average Depth Score: ${avgDepth}/10`, margin, yPos);
-      yPos += 6;
-      doc.text(`Patterns Discovered: ${patterns.length}`, margin, yPos);
-      yPos += 6;
-      doc.text(`Active Goals: ${goals.filter((g: any) => g.status === "active").length}`, margin, yPos);
-      yPos += 6;
-      doc.text(`Completed Goals: ${goals.filter((g: any) => g.status === "completed").length}`, margin, yPos);
-      yPos += 12;
+      
+      const summaryItems = [
+        `Total Entries: ${entries.length}`,
+        `Deep Entries (≥5): ${deepEntries}`,
+        `Average Depth Score: ${avgDepth}/10`,
+        `Patterns Discovered: ${patterns.length}`,
+        `Active Goals: ${goals.filter((g: any) => g.status === "active").length}`,
+        `Completed Goals: ${goals.filter((g: any) => g.status === "completed").length}`,
+      ];
+
+      summaryItems.forEach((item) => {
+        doc.text(`• ${item}`, margin + 5, yPos);
+        yPos += 7;
+      });
+      yPos += 8;
 
       updateProgress(70, "Adding pattern insights...");
       // Top Patterns
       if (patterns.length > 0) {
-        yPos = addSection(doc, "Pattern Insights", yPos, margin);
+        yPos = checkPageBreak(doc, yPos, 30, margin);
+        yPos = addStyledSection(doc, "Pattern Insights", "🔍", yPos, margin);
 
         patterns.slice(0, 5).forEach((pattern: any, idx: number) => {
-          yPos = checkPageBreak(doc, yPos, 25, margin);
+          yPos = checkPageBreak(doc, yPos, 30, margin);
 
-          doc.setFontSize(11);
+          doc.setFontSize(12);
           doc.setFont("helvetica", "bold");
           setColor(doc, colors.primary);
           doc.text(`${idx + 1}. ${pattern.title}`, margin, yPos);
-          yPos += 6;
+          yPos += 7;
 
           doc.setFontSize(9);
-          doc.setFont("helvetica", "italic");
+          doc.setFont("helvetica", "normal");
           setColor(doc, colors.textLight);
-          doc.text(`Confidence: ${Math.round(pattern.confidence_score * 100)}% | Type: ${pattern.pattern_type}`, margin + 5, yPos);
-          yPos += 5;
+          const confidence = Math.round(pattern.confidence_score * 100);
+          const confidenceBar = "█".repeat(Math.round(confidence / 20)) + "░".repeat(5 - Math.round(confidence / 20));
+          doc.text(`Confidence: ${confidenceBar} ${confidence}%  |  Type: ${pattern.pattern_type}`, margin + 5, yPos);
+          yPos += 6;
 
+          doc.setFontSize(10);
           doc.setFont("helvetica", "normal");
           setColor(doc, colors.text);
           yPos = wrapText(doc, pattern.description, pageWidth - margin * 2 - 5, margin + 5, yPos, 5);
-          yPos += 3;
+          yPos += 4;
 
           if (pattern.actionable_insight) {
-            doc.setFontSize(9);
+            yPos = checkPageBreak(doc, yPos, 15, margin);
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
             setColor(doc, colors.secondary);
-            doc.text("💡 Insight:", margin + 5, yPos);
-            yPos += 4;
+            doc.text("💡 Actionable Insight:", margin + 5, yPos);
+            yPos += 5;
+            doc.setFont("helvetica", "normal");
             setColor(doc, colors.text);
-            yPos = wrapText(doc, pattern.actionable_insight, pageWidth - margin * 2 - 10, margin + 10, yPos, 4);
-            yPos += 2;
+            yPos = wrapText(doc, pattern.actionable_insight, pageWidth - margin * 2 - 15, margin + 10, yPos, 5);
+            yPos += 4;
           }
 
-          yPos += 6;
+          yPos += 8;
         });
       }
 
       updateProgress(80, "Adding emotional analysis...");
       // Emotional Analysis
-      const emotionCounts = new Map<string, number>();
+      const emotionCounts = new Map<string, { total: number, count: number }>();
       insights.forEach((insight) => {
         if (insight.emotions && Array.isArray(insight.emotions)) {
           insight.emotions.forEach((e: any) => {
-            const count = emotionCounts.get(e.emotion) || 0;
-            emotionCounts.set(e.emotion, count + e.intensity);
+            const existing = emotionCounts.get(e.emotion) || { total: 0, count: 0 };
+            emotionCounts.set(e.emotion, { 
+              total: existing.total + e.intensity,
+              count: existing.count + 1
+            });
           });
         }
       });
 
       if (emotionCounts.size > 0) {
-        yPos = checkPageBreak(doc, yPos, 30, margin);
-        yPos = addSection(doc, "Emotional Journey", yPos, margin);
+        yPos = checkPageBreak(doc, yPos, 40, margin);
+        yPos = addStyledSection(doc, "Emotional Journey", "❤️", yPos, margin);
 
         const topEmotions = Array.from(emotionCounts.entries())
-          .sort((a, b) => b[1] - a[1])
+          .map(([emotion, data]) => ({
+            emotion,
+            total: data.total,
+            avg: data.total / data.count,
+            count: data.count
+          }))
+          .sort((a, b) => b.total - a.total)
           .slice(0, 10);
 
-        doc.setFontSize(9);
-        setColor(doc, colors.text);
-        topEmotions.forEach(([emotion, total]) => {
-          yPos = checkPageBreak(doc, yPos, 5, margin);
-          doc.text(`${emotion}: ${Math.round(total)} total intensity`, margin + 5, yPos);
-          yPos += 5;
+        doc.setFontSize(10);
+        topEmotions.forEach(({ emotion, total, avg, count }) => {
+          yPos = checkPageBreak(doc, yPos, 6, margin);
+          setColor(doc, colors.text);
+          const bar = "█".repeat(Math.min(10, Math.round(total / 10))) + "░".repeat(Math.max(0, 10 - Math.round(total / 10)));
+          doc.text(`${emotion}: ${bar}  (${count} occurrences, avg intensity: ${avg.toFixed(1)})`, margin + 5, yPos);
+          yPos += 6;
         });
-        yPos += 6;
+        yPos += 8;
       }
 
       updateProgress(85, "Adding themes and keywords...");
       // Themes & Keywords
-      const allThemes = new Set<string>();
-      const allKeywords = new Set<string>();
+      const themeCounts = new Map<string, number>();
+      const keywordCounts = new Map<string, number>();
       
       insights.forEach((insight) => {
         if (insight.themes && Array.isArray(insight.themes)) {
-          insight.themes.forEach((theme: string) => allThemes.add(theme));
+          insight.themes.forEach((theme: string) => {
+            themeCounts.set(theme, (themeCounts.get(theme) || 0) + 1);
+          });
         }
         if (insight.keywords && Array.isArray(insight.keywords)) {
-          insight.keywords.forEach((kw: string) => allKeywords.add(kw));
+          insight.keywords.forEach((kw: string) => {
+            keywordCounts.set(kw, (keywordCounts.get(kw) || 0) + 1);
+          });
         }
       });
 
-      if (allThemes.size > 0 || allKeywords.size > 0) {
-        yPos = checkPageBreak(doc, yPos, 30, margin);
-        yPos = addSection(doc, "Recurring Themes & Concepts", yPos, margin);
+      if (themeCounts.size > 0 || keywordCounts.size > 0) {
+        yPos = checkPageBreak(doc, yPos, 40, margin);
+        yPos = addStyledSection(doc, "Recurring Themes & Concepts", "🌿", yPos, margin);
 
-        if (allThemes.size > 0) {
-          doc.setFontSize(10);
+        if (themeCounts.size > 0) {
+          doc.setFontSize(11);
           doc.setFont("helvetica", "bold");
           setColor(doc, colors.secondary);
           doc.text("Most Common Themes:", margin, yPos);
-          yPos += 6;
+          yPos += 7;
           
-          doc.setFontSize(9);
+          const sortedThemes = Array.from(themeCounts.entries())
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 15);
+
+          doc.setFontSize(10);
           doc.setFont("helvetica", "normal");
           setColor(doc, colors.text);
-          const themesText = Array.from(allThemes).slice(0, 20).join(", ");
-          yPos = wrapText(doc, themesText, pageWidth - margin * 2, margin + 5, yPos, 5);
+          
+          sortedThemes.forEach(([theme, count]) => {
+            yPos = checkPageBreak(doc, yPos, 6, margin);
+            doc.text(`• ${theme} (${count}x)`, margin + 5, yPos);
+            yPos += 5;
+          });
           yPos += 6;
         }
 
-        if (allKeywords.size > 0) {
-          yPos = checkPageBreak(doc, yPos, 15, margin);
-          doc.setFontSize(10);
+        if (keywordCounts.size > 0) {
+          yPos = checkPageBreak(doc, yPos, 20, margin);
+          doc.setFontSize(11);
           doc.setFont("helvetica", "bold");
           setColor(doc, colors.secondary);
           doc.text("Key Concepts:", margin, yPos);
-          yPos += 6;
+          yPos += 7;
           
-          doc.setFontSize(9);
+          const sortedKeywords = Array.from(keywordCounts.entries())
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 20);
+
+          doc.setFontSize(10);
           doc.setFont("helvetica", "normal");
           setColor(doc, colors.text);
-          const keywordsText = Array.from(allKeywords).slice(0, 30).join(", ");
+          const keywordsText = sortedKeywords.map(([kw, count]) => `${kw} (${count})`).join("  •  ");
           yPos = wrapText(doc, keywordsText, pageWidth - margin * 2, margin + 5, yPos, 5);
-          yPos += 6;
+          yPos += 8;
         }
       }
 
       updateProgress(90, "Adding goals progress...");
       // Goals Section
       if (goals.length > 0) {
-        yPos = checkPageBreak(doc, yPos, 30, margin);
-        yPos = addSection(doc, "Goals Progress", yPos, margin);
+        yPos = checkPageBreak(doc, yPos, 40, margin);
+        yPos = addStyledSection(doc, "Goals Progress", "🎯", yPos, margin);
 
         goals.forEach((goal: any) => {
-          yPos = checkPageBreak(doc, yPos, 20, margin);
+          yPos = checkPageBreak(doc, yPos, 25, margin);
 
-          doc.setFontSize(11);
+          doc.setFontSize(12);
           doc.setFont("helvetica", "bold");
           setColor(doc, colors.primary);
-          doc.text(`${goal.title}`, margin, yPos);
-          yPos += 6;
+          doc.text(goal.title, margin, yPos);
+          yPos += 7;
 
-          doc.setFontSize(9);
+          doc.setFontSize(10);
           doc.setFont("helvetica", "normal");
-          setColor(doc, colors.textLight);
+          
+          // Status badge color
+          if (goal.status === 'completed') {
+            setColor(doc, colors.success);
+          } else if (goal.status === 'active') {
+            setColor(doc, colors.secondary);
+          } else {
+            setColor(doc, colors.textLight);
+          }
           doc.text(`Status: ${goal.status.toUpperCase()}`, margin + 5, yPos);
           
           if (goal.target_date) {
-            doc.text(`Target: ${format(new Date(goal.target_date), "MMM dd, yyyy")}`, margin + 50, yPos);
+            setColor(doc, colors.textLight);
+            doc.text(`  |  Target: ${format(new Date(goal.target_date), "MMM dd, yyyy")}`, margin + 60, yPos);
           }
-          yPos += 5;
+          yPos += 6;
 
           if (goal.description) {
             setColor(doc, colors.text);
-            yPos = wrapText(doc, goal.description, pageWidth - margin * 2 - 5, margin + 5, yPos, 4);
+            yPos = wrapText(doc, goal.description, pageWidth - margin * 2 - 5, margin + 5, yPos, 5);
           }
 
-          yPos += 6;
+          if (goal.intention) {
+            yPos = checkPageBreak(doc, yPos, 10, margin);
+            doc.setFont("helvetica", "italic");
+            setColor(doc, colors.textLight);
+            yPos = wrapText(doc, `Intention: ${goal.intention}`, pageWidth - margin * 2 - 5, margin + 5, yPos, 5);
+          }
+
+          yPos += 10;
         });
       }
 
@@ -289,6 +342,7 @@ export const ReportExport = () => {
       // Spiritual Insights Summary
       const chakraMentions = new Map<string, number>();
       const tarotMentions = new Map<string, number>();
+      const frameworkMentions = new Map<string, number>();
 
       insights.forEach((insight) => {
         if (insight.chakra_tags && Array.isArray(insight.chakra_tags)) {
@@ -303,61 +357,87 @@ export const ReportExport = () => {
             tarotMentions.set(tag.card, count + 1);
           });
         }
+        if (insight.frameworks_applied && Array.isArray(insight.frameworks_applied)) {
+          insight.frameworks_applied.forEach((fw: string) => {
+            const count = frameworkMentions.get(fw) || 0;
+            frameworkMentions.set(fw, count + 1);
+          });
+        }
       });
 
-      if (chakraMentions.size > 0 || tarotMentions.size > 0) {
-        yPos = checkPageBreak(doc, yPos, 30, margin);
-        yPos = addSection(doc, "Spiritual Analysis", yPos, margin);
+      if (chakraMentions.size > 0 || tarotMentions.size > 0 || frameworkMentions.size > 0) {
+        yPos = checkPageBreak(doc, yPos, 50, margin);
+        yPos = addStyledSection(doc, "Spiritual Analysis", "✨", yPos, margin);
 
-        if (chakraMentions.size > 0) {
-          doc.setFontSize(10);
+        // Frameworks Used
+        if (frameworkMentions.size > 0) {
+          doc.setFontSize(11);
           doc.setFont("helvetica", "bold");
           setColor(doc, colors.primary);
-          doc.text("🧘 Chakra Resonance:", margin, yPos);
-          yPos += 6;
+          doc.text("📚 Wisdom Traditions Applied:", margin, yPos);
+          yPos += 7;
 
-          doc.setFontSize(9);
+          doc.setFontSize(10);
+          doc.setFont("helvetica", "normal");
+          setColor(doc, colors.text);
+          Array.from(frameworkMentions.entries())
+            .sort((a, b) => b[1] - a[1])
+            .forEach(([fw, count]) => {
+              yPos = checkPageBreak(doc, yPos, 6, margin);
+              doc.text(`${getFrameworkIcon(fw)} ${getFrameworkName(fw)}: ${count} applications`, margin + 5, yPos);
+              yPos += 6;
+            });
+          yPos += 6;
+        }
+
+        if (chakraMentions.size > 0) {
+          yPos = checkPageBreak(doc, yPos, 20, margin);
+          doc.setFontSize(11);
+          doc.setFont("helvetica", "bold");
+          setColor(doc, colors.spiritual);
+          doc.text("🧘 Chakra Resonance:", margin, yPos);
+          yPos += 7;
+
+          doc.setFontSize(10);
           doc.setFont("helvetica", "normal");
           setColor(doc, colors.text);
           Array.from(chakraMentions.entries())
             .sort((a, b) => b[1] - a[1])
             .forEach(([chakra, count]) => {
-              yPos = checkPageBreak(doc, yPos, 5, margin);
+              yPos = checkPageBreak(doc, yPos, 6, margin);
               doc.text(`${chakra}: ${count} mentions`, margin + 5, yPos);
-              yPos += 5;
+              yPos += 6;
             });
           yPos += 6;
         }
 
         if (tarotMentions.size > 0) {
-          yPos = checkPageBreak(doc, yPos, 15, margin);
-          doc.setFontSize(10);
+          yPos = checkPageBreak(doc, yPos, 20, margin);
+          doc.setFontSize(11);
           doc.setFont("helvetica", "bold");
-          setColor(doc, colors.primary);
+          setColor(doc, colors.spiritual);
           doc.text("🔮 Tarot Archetypes:", margin, yPos);
-          yPos += 6;
+          yPos += 7;
 
-          doc.setFontSize(9);
+          doc.setFontSize(10);
           doc.setFont("helvetica", "normal");
           setColor(doc, colors.text);
           Array.from(tarotMentions.entries())
             .sort((a, b) => b[1] - a[1])
-            .slice(0, 5)
+            .slice(0, 8)
             .forEach(([card, count]) => {
-              yPos = checkPageBreak(doc, yPos, 5, margin);
+              yPos = checkPageBreak(doc, yPos, 6, margin);
               doc.text(`${card}: ${count} mentions`, margin + 5, yPos);
-              yPos += 5;
+              yPos += 6;
             });
         }
       }
 
       // Add page numbers to all pages
       const totalPages = doc.getNumberOfPages();
-      for (let i = 1; i <= totalPages; i++) {
+      for (let i = 2; i <= totalPages; i++) {
         doc.setPage(i);
-        if (i > 1) { // Skip cover page
-          addPageFooter(doc, i - 1);
-        }
+        addPageFooter(doc, i - 1);
       }
 
       updateProgress(100, "Report complete!");
@@ -397,6 +477,7 @@ export const ReportExport = () => {
                 selected={dateRange.from}
                 onSelect={(date) => setDateRange({ ...dateRange, from: date })}
                 initialFocus
+                className="pointer-events-auto"
               />
             </PopoverContent>
           </Popover>
@@ -423,6 +504,7 @@ export const ReportExport = () => {
                 selected={dateRange.to}
                 onSelect={(date) => setDateRange({ ...dateRange, to: date })}
                 initialFocus
+                className="pointer-events-auto"
               />
             </PopoverContent>
           </Popover>

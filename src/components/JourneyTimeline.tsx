@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { Loader2, Calendar, BookOpen, Target, Sparkles, Heart } from "lucide-react";
+import { Button } from "./ui/button";
+import { Loader2, Calendar, BookOpen, Target, Sparkles, Heart, ChevronDown, ChevronUp } from "lucide-react";
 import { format } from "date-fns";
 import { ReflectionViewDialog } from "./ReflectionViewDialog";
 import { cn } from "@/lib/utils";
+import { ScrollArea } from "./ui/scroll-area";
 
 interface TimelineEvent {
   id: string;
@@ -22,11 +24,14 @@ interface JourneyTimelineProps {
   refreshTrigger?: number;
 }
 
+const MAX_VISIBLE_EVENTS = 5;
+
 export const JourneyTimeline = ({ goalId, refreshTrigger }: JourneyTimelineProps) => {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedReflection, setSelectedReflection] = useState<any>(null);
   const [isReflectionDialogOpen, setIsReflectionDialogOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     fetchTimelineData();
@@ -119,8 +124,8 @@ export const JourneyTimeline = ({ goalId, refreshTrigger }: JourneyTimelineProps
         });
       });
 
-      // Sort by date
-      timelineEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      // Sort by date (newest first for display)
+      timelineEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
       setEvents(timelineEvents);
     } catch (error) {
@@ -174,55 +179,100 @@ export const JourneyTimeline = ({ goalId, refreshTrigger }: JourneyTimelineProps
     }
   };
 
+  const hasMore = events.length > MAX_VISIBLE_EVENTS;
+  const visibleEvents = isExpanded ? events : events.slice(0, MAX_VISIBLE_EVENTS);
+
+  const renderTimelineContent = () => (
+    <div className="relative space-y-4 pl-8 border-l-2 border-border">
+      {visibleEvents.map((event) => {
+        const Icon = getEventIcon(event.type);
+        const iconColor = getEventColor(event.type);
+        
+        return (
+          <div key={event.id} className="relative">
+            <div className={`absolute -left-[37px] p-2 rounded-full bg-background border-2 border-border ${iconColor}`}>
+              <Icon className="h-4 w-4" />
+            </div>
+            
+            <Card 
+              className={cn(
+                "w-full max-w-full overflow-hidden p-4 hover:shadow-md transition-shadow",
+                event.type === "reflection" && "cursor-pointer"
+              )}
+              onClick={() => event.type === "reflection" && handleReflectionClick(event)}
+            >
+              <div className="space-y-2">
+                <div className="flex items-start justify-between gap-2 flex-wrap">
+                  <h5 className="font-medium break-words min-w-0 flex-1">{event.title}</h5>
+                  <Badge variant="outline" className="text-xs flex-shrink-0">
+                    {format(new Date(event.date), "MMM d, yyyy")}
+                  </Badge>
+                </div>
+                
+                {event.description && (
+                  <p className="text-sm text-muted-foreground break-words line-clamp-2">{event.description}</p>
+                )}
+                
+                {event.type === "milestone" && event.completed && (
+                  <Badge variant="secondary" className="text-xs bg-green-500/10 text-green-700 dark:text-green-400">
+                    Completed
+                  </Badge>
+                )}
+              </div>
+            </Card>
+          </div>
+        );
+      })}
+    </div>
+  );
+
   return (
     <>
       <div className="space-y-4 w-full max-w-full overflow-hidden">
-        <div className="flex items-center gap-2">
-          <Calendar className="h-5 w-5 text-primary" />
-          <h4 className="font-semibold">Journey Timeline</h4>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-primary" />
+            <h4 className="font-semibold">Journey Timeline</h4>
+            <Badge variant="secondary" className="text-xs">
+              {events.length} events
+            </Badge>
+          </div>
+          
+          {hasMore && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="gap-1 text-xs"
+            >
+              {isExpanded ? (
+                <>
+                  <ChevronUp className="h-4 w-4" />
+                  Show less
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4" />
+                  Show all {events.length}
+                </>
+              )}
+            </Button>
+          )}
         </div>
         
-        <div className="relative space-y-4 pl-8 border-l-2 border-border">
-          {events.map((event, index) => {
-            const Icon = getEventIcon(event.type);
-            const iconColor = getEventColor(event.type);
-            
-            return (
-              <div key={event.id} className="relative">
-                <div className={`absolute -left-[37px] p-2 rounded-full bg-background border-2 border-border ${iconColor}`}>
-                  <Icon className="h-4 w-4" />
-                </div>
-                
-                <Card 
-                  className={cn(
-                    "w-full max-w-full overflow-hidden p-4 hover:shadow-md transition-shadow",
-                    event.type === "reflection" && "cursor-pointer"
-                  )}
-                  onClick={() => event.type === "reflection" && handleReflectionClick(event)}
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-start justify-between gap-2 flex-wrap">
-                      <h5 className="font-medium break-words min-w-0 flex-1">{event.title}</h5>
-                      <Badge variant="outline" className="text-xs flex-shrink-0">
-                        {format(new Date(event.date), "MMM d, yyyy")}
-                      </Badge>
-                    </div>
-                    
-                    {event.description && (
-                      <p className="text-sm text-muted-foreground break-words">{event.description}</p>
-                    )}
-                    
-                    {event.type === "milestone" && event.completed && (
-                      <Badge variant="secondary" className="text-xs bg-green-500/10 text-green-700 dark:text-green-400">
-                        Completed
-                      </Badge>
-                    )}
-                  </div>
-                </Card>
-              </div>
-            );
-          })}
-        </div>
+        {isExpanded && hasMore ? (
+          <ScrollArea className="h-[400px] pr-4">
+            {renderTimelineContent()}
+          </ScrollArea>
+        ) : (
+          renderTimelineContent()
+        )}
+
+        {!isExpanded && hasMore && (
+          <p className="text-sm text-muted-foreground text-center">
+            +{events.length - MAX_VISIBLE_EVENTS} more events
+          </p>
+        )}
       </div>
 
       <ReflectionViewDialog

@@ -1,13 +1,17 @@
 import jsPDF from "jspdf";
 
-// Yggdrasil brand colors (RGB for jsPDF)
+// Enhanced Yggdrasil brand colors (RGB for jsPDF)
 export const colors = {
-  primary: { r: 109, g: 155, b: 109 }, // #6D9B6D sage green
-  secondary: { r: 200, g: 138, b: 91 }, // #C88A5B muted orange
-  accent: { r: 107, g: 79, b: 64 }, // #6B4F40 earth brown
-  background: { r: 254, g: 243, b: 229 }, // #FEF3E5 soft cream
-  text: { r: 73, g: 52, b: 38 }, // #493426 deep brown
-  textLight: { r: 120, g: 120, b: 120 }, // gray for muted text
+  primary: { r: 75, g: 108, b: 75 },      // Deeper forest green
+  secondary: { r: 166, g: 124, b: 82 },   // Warmer amber
+  accent: { r: 107, g: 79, b: 64 },       // Earth brown
+  background: { r: 250, g: 247, b: 242 }, // Warmer cream
+  text: { r: 55, g: 42, b: 32 },          // Richer brown
+  textLight: { r: 100, g: 90, b: 80 },    // Warmer gray
+  highlight: { r: 232, g: 211, b: 185 },  // Section highlight
+  spiritual: { r: 128, g: 90, b: 140 },   // Purple for spiritual sections
+  success: { r: 72, g: 128, b: 72 },      // Green for completed/positive
+  warning: { r: 180, g: 130, b: 70 },     // Orange for warnings
 };
 
 export const setColor = (doc: jsPDF, color: { r: number; g: number; b: number }) => {
@@ -22,7 +26,7 @@ export const addSection = (
   doc: jsPDF,
   title: string,
   yPos: number,
-  margin: number = 20
+  margin: number = 25
 ): number => {
   const pageHeight = doc.internal.pageSize.getHeight();
   
@@ -37,7 +41,37 @@ export const addSection = (
   doc.text(title, margin, yPos);
   
   setColor(doc, colors.text);
-  return yPos + 8;
+  return yPos + 10;
+};
+
+// Enhanced section with decorative header and background
+export const addStyledSection = (
+  doc: jsPDF,
+  title: string,
+  icon: string,
+  yPos: number,
+  margin: number = 25
+): number => {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  
+  if (yPos > pageHeight - 40) {
+    doc.addPage();
+    yPos = margin;
+  }
+
+  // Add subtle background bar
+  setFillColor(doc, colors.highlight);
+  doc.rect(margin - 5, yPos - 6, pageWidth - margin * 2 + 10, 14, "F");
+  
+  // Section title with icon
+  doc.setFontSize(13);
+  doc.setFont("helvetica", "bold");
+  setColor(doc, colors.primary);
+  doc.text(`${icon}  ${title}`, margin, yPos + 3);
+  
+  setColor(doc, colors.text);
+  return yPos + 16;
 };
 
 export const addBadge = (
@@ -58,10 +92,10 @@ export const addBadge = (
   doc.text(text, x + padding, y);
 };
 
-export const addDivider = (doc: jsPDF, y: number, margin: number = 20) => {
+export const addDivider = (doc: jsPDF, y: number, margin: number = 25) => {
   const pageWidth = doc.internal.pageSize.getWidth();
-  doc.setDrawColor(colors.primary.r, colors.primary.g, colors.primary.b);
-  doc.setLineWidth(0.5);
+  doc.setDrawColor(colors.highlight.r, colors.highlight.g, colors.highlight.b);
+  doc.setLineWidth(0.8);
   doc.line(margin, y, pageWidth - margin, y);
 };
 
@@ -69,7 +103,7 @@ export const checkPageBreak = (
   doc: jsPDF,
   currentY: number,
   requiredSpace: number,
-  margin: number = 20
+  margin: number = 25
 ): number => {
   const pageHeight = doc.internal.pageSize.getHeight();
   if (currentY + requiredSpace > pageHeight - margin) {
@@ -89,47 +123,60 @@ export const addCoverPage = (
   const pageHeight = doc.internal.pageSize.getHeight();
   const centerX = pageWidth / 2;
 
-  // Background gradient effect with rectangles
+  // Background
   setFillColor(doc, colors.background);
   doc.rect(0, 0, pageWidth, pageHeight, "F");
 
+  // Decorative top accent
+  setFillColor(doc, colors.primary);
+  doc.rect(0, 0, pageWidth, 8, "F");
+
   // Title
-  doc.setFontSize(28);
+  doc.setFontSize(32);
   doc.setFont("helvetica", "bold");
   setColor(doc, colors.primary);
-  doc.text(title, centerX, pageHeight / 2 - 20, { align: "center" });
+  doc.text(title, centerX, pageHeight / 2 - 25, { align: "center" });
 
   // Subtitle
-  doc.setFontSize(14);
+  doc.setFontSize(16);
   doc.setFont("helvetica", "normal");
   setColor(doc, colors.secondary);
   doc.text(subtitle, centerX, pageHeight / 2 + 5, { align: "center" });
 
   // Date
-  doc.setFontSize(11);
+  doc.setFontSize(12);
   setColor(doc, colors.textLight);
-  doc.text(date, centerX, pageHeight / 2 + 20, { align: "center" });
+  doc.text(date, centerX, pageHeight / 2 + 25, { align: "center" });
 
-  // Decorative elements
+  // Decorative lines
   setColor(doc, colors.accent);
-  doc.setLineWidth(1);
-  doc.line(centerX - 40, pageHeight / 2 - 30, centerX + 40, pageHeight / 2 - 30);
-  doc.line(centerX - 40, pageHeight / 2 + 30, centerX + 40, pageHeight / 2 + 30);
+  doc.setLineWidth(1.5);
+  doc.line(centerX - 50, pageHeight / 2 - 35, centerX + 50, pageHeight / 2 - 35);
+  doc.line(centerX - 50, pageHeight / 2 + 40, centerX + 50, pageHeight / 2 + 40);
 
   // Footer
-  doc.setFontSize(9);
+  doc.setFontSize(10);
   setColor(doc, colors.textLight);
-  doc.text("Generated by Yggdrasil", centerX, pageHeight - 20, { align: "center" });
+  doc.text("Generated by Yggdrasil", centerX, pageHeight - 25, { align: "center" });
+  
+  // Decorative bottom accent
+  setFillColor(doc, colors.secondary);
+  doc.rect(0, pageHeight - 8, pageWidth, 8, "F");
 };
 
 export const addPageFooter = (doc: jsPDF, pageNum: number) => {
   const pageHeight = doc.internal.pageSize.getHeight();
   const pageWidth = doc.internal.pageSize.getWidth();
   
-  doc.setFontSize(8);
+  // Subtle footer line
+  doc.setDrawColor(colors.highlight.r, colors.highlight.g, colors.highlight.b);
+  doc.setLineWidth(0.5);
+  doc.line(25, pageHeight - 15, pageWidth - 25, pageHeight - 15);
+  
+  doc.setFontSize(9);
   setColor(doc, colors.textLight);
-  doc.text(`Page ${pageNum}`, pageWidth - 20, pageHeight - 10, { align: "right" });
-  doc.text("Yggdrasil", 20, pageHeight - 10);
+  doc.text(`Page ${pageNum}`, pageWidth - 25, pageHeight - 8, { align: "right" });
+  doc.text("Yggdrasil", 25, pageHeight - 8);
 };
 
 export const wrapText = (
@@ -150,4 +197,55 @@ export const wrapText = (
   });
   
   return currentY;
+};
+
+// Helper to add a labeled section with bullet points
+export const addBulletList = (
+  doc: jsPDF,
+  items: string[],
+  x: number,
+  y: number,
+  maxWidth: number,
+  bullet: string = "•"
+): number => {
+  let currentY = y;
+  
+  items.forEach((item) => {
+    currentY = checkPageBreak(doc, currentY, 6);
+    doc.text(`${bullet} `, x, currentY);
+    currentY = wrapText(doc, item, maxWidth - 10, x + 8, currentY, 5);
+  });
+  
+  return currentY;
+};
+
+// Helper for framework icons
+export const getFrameworkIcon = (framework: string): string => {
+  const icons: Record<string, string> = {
+    'theravada': '☸️',
+    'freudian': '🧠',
+    'jungian': '🌓',
+    'hermetic': '⚗️',
+    'hermeticism': '⚗️',
+    'advaita': '🕉️',
+    'advaita_vedanta': '🕉️',
+    'taoist': '☯️',
+    'taoism': '☯️',
+  };
+  return icons[framework.toLowerCase()] || '📖';
+};
+
+export const getFrameworkName = (framework: string): string => {
+  const names: Record<string, string> = {
+    'theravada': 'Theravada Buddhism',
+    'freudian': 'Psychoanalysis',
+    'jungian': 'Jungian Psychology',
+    'hermetic': 'Hermeticism',
+    'hermeticism': 'Hermeticism',
+    'advaita': 'Advaita Vedanta',
+    'advaita_vedanta': 'Advaita Vedanta',
+    'taoist': 'Taoism',
+    'taoism': 'Taoism',
+  };
+  return names[framework.toLowerCase()] || framework;
 };
