@@ -72,8 +72,7 @@ export const GoalDialog = ({ open, onOpenChange, onSave, editingGoal, patterns }
         goalType: editingGoal.goal_type || "general",
         title: editingGoal.title,
         description: editingGoal.description || "",
-       target_date: formData.targetDate?.toISOString():null, // or just formData.targetDate
-
+        targetDate: editingGoal.target_date ? new Date(editingGoal.target_date) : undefined,
         linkedPatterns: editingGoal.linked_patterns?.map((p: any) => p.id) || [],
         status: editingGoal.status,
       });
