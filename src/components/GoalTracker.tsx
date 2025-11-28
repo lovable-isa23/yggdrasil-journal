@@ -336,6 +336,7 @@ export const GoalTracker = () => {
           open={isReflectionOpen}
           onOpenChange={setIsReflectionOpen}
           goalId={reflectingGoalId}
+          goalTitle={goals.find(g => g.id === reflectingGoalId)?.title}
           reflectionType="checkin"
           onComplete={fetchData}
         />

@@ -40,15 +40,16 @@ interface Milestone {
 
 interface MilestoneManagerProps {
   goalId: string;
+  goalTitle?: string;
   milestones: Milestone[];
   onUpdate: () => void;
 }
 
-export const MilestoneManager = ({ goalId, milestones, onUpdate }: MilestoneManagerProps) => {
+export const MilestoneManager = ({ goalId, goalTitle, milestones, onUpdate }: MilestoneManagerProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingMilestone, setEditingMilestone] = useState<Milestone | null>(null);
   const [isReflectionOpen, setIsReflectionOpen] = useState(false);
-  const [completingMilestoneId, setCompletingMilestoneId] = useState<string | null>(null);
+  const [completingMilestone, setCompletingMilestone] = useState<Milestone | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -109,7 +110,7 @@ export const MilestoneManager = ({ goalId, milestones, onUpdate }: MilestoneMana
   const handleToggleComplete = async (milestone: Milestone) => {
     if (!milestone.completed_at) {
       // Opening reflection dialog before marking as complete
-      setCompletingMilestoneId(milestone.id);
+      setCompletingMilestone(milestone);
       setIsReflectionOpen(true);
     } else {
       // Unmarking as complete
@@ -130,17 +131,17 @@ export const MilestoneManager = ({ goalId, milestones, onUpdate }: MilestoneMana
   };
 
   const handleReflectionComplete = async () => {
-    if (!completingMilestoneId) return;
+    if (!completingMilestone) return;
 
     try {
       const { error } = await supabase
         .from("goal_milestones")
         .update({ completed_at: new Date().toISOString() })
-        .eq("id", completingMilestoneId);
+        .eq("id", completingMilestone.id);
 
       if (error) throw error;
       toast.success("Milestone completed! 🎉");
-      setCompletingMilestoneId(null);
+      setCompletingMilestone(null);
       onUpdate();
     } catch (error) {
       console.error("Error completing milestone:", error);
@@ -342,6 +343,8 @@ export const MilestoneManager = ({ goalId, milestones, onUpdate }: MilestoneMana
         open={isReflectionOpen}
         onOpenChange={setIsReflectionOpen}
         goalId={goalId}
+        goalTitle={goalTitle}
+        milestoneTitle={completingMilestone?.title}
         reflectionType="milestone"
         onComplete={handleReflectionComplete}
       />

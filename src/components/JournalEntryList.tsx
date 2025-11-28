@@ -45,6 +45,9 @@ interface JournalEntry {
   image_url?: string;
   transcription_source?: string;
   depth_score?: number | null;
+  source_type?: string;
+  source_practice_id?: string;
+  source_milestone_id?: string;
 }
 
 interface JournalEntryListProps {
@@ -76,7 +79,16 @@ const getReadingTime = (wordCount: number): string => {
   return minutes === 1 ? '1 min read' : `${minutes} min read`;
 };
 
-const getMoodStyles = (moodType?: string) => {
+const getMoodStyles = (moodType?: string, sourceType?: string) => {
+  // Sourced entries (sacred practice / reflection) get teal/cyan styling
+  if (sourceType && sourceType !== 'manual') {
+    return {
+      bg: 'from-teal-100 to-cyan-50 dark:from-teal-950/30 dark:to-cyan-900/20',
+      border: 'border-l-teal-500',
+      textAccent: 'text-teal-700 dark:text-teal-300'
+    };
+  }
+  
   const moods = {
     dream: { bg: 'from-purple-100 to-purple-50 dark:from-purple-950/30 dark:to-purple-900/20', border: 'border-l-purple-400', textAccent: 'text-purple-700 dark:text-purple-300' },
     reflection: { bg: 'from-blue-100 to-blue-50 dark:from-blue-950/30 dark:to-blue-900/20', border: 'border-l-blue-400', textAccent: 'text-blue-700 dark:text-blue-300' },
@@ -86,6 +98,17 @@ const getMoodStyles = (moodType?: string) => {
     general: { bg: 'from-[#F9F0E5] to-[#FFF7ED] dark:from-[#2A2420] dark:to-[#1F1A17]', border: 'border-l-[#D4A574]', textAccent: 'text-[#8B6F47] dark:text-[#D4A574]' }
   };
   return moods[moodType as keyof typeof moods] || moods.general;
+};
+
+const getSourceBadge = (sourceType?: string) => {
+  if (!sourceType || sourceType === 'manual') return null;
+  
+  if (sourceType === 'sacred_practice') {
+    return { label: 'Sacred Practice', className: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300' };
+  } else if (sourceType === 'milestone_reflection' || sourceType === 'goal_reflection') {
+    return { label: 'Journey Reflection', className: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300' };
+  }
+  return null;
 };
 
 const getDepthBadge = (depthScore?: number | null) => {
@@ -310,10 +333,11 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
     <div className="space-y-4 w-full max-w-full overflow-hidden">
       {filteredAndSortedEntries.map((entry) => {
          const isOpen = openEntries.has(entry.id);
-         const moodStyles = getMoodStyles(entry.mood_type);
+         const moodStyles = getMoodStyles(entry.mood_type, entry.source_type);
          const wordCount = getWordCount(entry.content);
          const preview = getPreview(entry.content);
          const moodOption = MOOD_OPTIONS.find(m => m.value === (entry.mood_type || 'general'));
+         const sourceBadge = getSourceBadge(entry.source_type);
 
          return (
            <Card key={entry.id} className={`overflow-hidden w-full max-w-full border-l-4 ${moodStyles.border} bg-gradient-to-br ${moodStyles.bg} transition-all duration-200 hover:-translate-y-1 hover:shadow-lg`}>
@@ -333,6 +357,7 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
                     )}
                    {!isOpen && <p className="text-sm text-muted-foreground line-clamp-2">{preview}</p>}
                     <div className="flex flex-wrap items-center gap-2">
+                      {sourceBadge && <Badge variant="secondary" className={`gap-1 ${sourceBadge.className}`}><span>✨</span>{sourceBadge.label}</Badge>}
                       {moodOption && <Badge variant="outline" className={`gap-1 ${moodStyles.textAccent}`}><span>{moodOption.icon}</span><span>{moodOption.label}</span></Badge>}
                       {(() => {
                         const depthBadge = getDepthBadge(entry.depth_score);

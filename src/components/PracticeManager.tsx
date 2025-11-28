@@ -11,8 +11,19 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
-  DialogTrigger 
+  DialogTrigger,
+  DialogDescription,
 } from "./ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "./ui/alert-dialog";
 import {
   Select,
   SelectContent,
@@ -42,6 +53,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import ReactMarkdown from "react-markdown";
 
 interface Practice {
   id: string;
@@ -115,6 +127,14 @@ export const PracticeManager = ({ goalId, goalType, intention }: PracticeManager
     frequency: "daily",
   });
   const [loadingAI, setLoadingAI] = useState(false);
+  
+  // Delete confirmation state
+  const [practiceToDelete, setPracticeToDelete] = useState<Practice | null>(null);
+  
+  // Practice log dialog state
+  const [practiceToLog, setPracticeToLog] = useState<Practice | null>(null);
+  const [logNotes, setLogNotes] = useState("");
+  const [isLogging, setIsLogging] = useState(false);
 
   useEffect(() => {
     fetchPractices();
@@ -184,23 +204,70 @@ export const PracticeManager = ({ goalId, goalType, intention }: PracticeManager
     }
   };
 
-  const handleLogPractice = async (practiceId: string) => {
+  const handleDeletePractice = async () => {
+    if (!practiceToDelete) return;
+    
+    try {
+      // Soft delete - set is_active to false
+      const { error } = await supabase
+        .from("goal_practices")
+        .update({ is_active: false })
+        .eq("id", practiceToDelete.id);
+
+      if (error) throw error;
+
+      toast.success("Practice removed");
+      setPracticeToDelete(null);
+      fetchPractices();
+    } catch (error) {
+      console.error("Error deleting practice:", error);
+      toast.error("Failed to remove practice");
+    }
+  };
+
+  const handleLogPractice = async () => {
+    if (!practiceToLog) return;
+    
+    setIsLogging(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { error } = await supabase.from("practice_logs").insert({
-        practice_id: practiceId,
+      // Create practice log
+      const { error: logError } = await supabase.from("practice_logs").insert({
+        practice_id: practiceToLog.id,
         user_id: user.id,
+        notes: logNotes || null,
       });
 
-      if (error) throw error;
+      if (logError) throw logError;
+
+      // If notes were provided, also create a journal entry
+      if (logNotes.trim()) {
+        const { error: entryError } = await supabase.functions.invoke("encrypt-entry", {
+          body: {
+            title: `Practice: ${practiceToLog.title}`,
+            content: logNotes,
+            source_type: "sacred_practice",
+            source_practice_id: practiceToLog.id,
+          },
+        });
+
+        if (entryError) {
+          console.error("Error creating journal entry:", entryError);
+          // Don't fail the whole operation, just log
+        }
+      }
 
       toast.success("Practice completed! ✨");
+      setPracticeToLog(null);
+      setLogNotes("");
       fetchPractices();
     } catch (error) {
       console.error("Error logging practice:", error);
       toast.error("Failed to log practice");
+    } finally {
+      setIsLogging(false);
     }
   };
 
@@ -313,7 +380,7 @@ export const PracticeManager = ({ goalId, goalType, intention }: PracticeManager
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Description</label>
+                  <label className="text-sm font-medium">Description (supports markdown)</label>
                   <Textarea
                     value={newPractice.description}
                     onChange={(e) => setNewPractice({ ...newPractice, description: e.target.value })}
@@ -389,7 +456,9 @@ export const PracticeManager = ({ goalId, goalType, intention }: PracticeManager
                         <Badge variant="outline" className="text-xs">{practice.frequency}</Badge>
                       </div>
                       {practice.description && (
-                        <p className="text-sm text-muted-foreground">{practice.description}</p>
+                        <div className="text-sm text-muted-foreground prose prose-sm max-w-none dark:prose-invert">
+                          <ReactMarkdown>{practice.description}</ReactMarkdown>
+                        </div>
                       )}
                       <div className="flex items-center gap-3 text-xs text-muted-foreground">
                         {streak > 0 && (
@@ -407,20 +476,96 @@ export const PracticeManager = ({ goalId, goalType, intention }: PracticeManager
                       </div>
                     </div>
                   </div>
-                  <Button
-                    size="sm"
-                    variant={todayLog ? "outline" : "default"}
-                    onClick={() => handleLogPractice(practice.id)}
-                    disabled={!!todayLog}
-                  >
-                    {todayLog ? <CheckCircle2 className="h-4 w-4" /> : <Calendar className="h-4 w-4" />}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => setPracticeToDelete(practice)}
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={todayLog ? "outline" : "default"}
+                      onClick={() => {
+                        if (!todayLog) {
+                          setPracticeToLog(practice);
+                        }
+                      }}
+                      disabled={!!todayLog}
+                    >
+                      {todayLog ? <CheckCircle2 className="h-4 w-4" /> : <Calendar className="h-4 w-4" />}
+                    </Button>
+                  </div>
                 </div>
               </Card>
             );
           })}
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!practiceToDelete} onOpenChange={(open) => !open && setPracticeToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Practice</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove "{practiceToDelete?.title}"? Your streak history will be preserved but hidden.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeletePractice} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Practice Log Dialog */}
+      <Dialog open={!!practiceToLog} onOpenChange={(open) => {
+        if (!open) {
+          setPracticeToLog(null);
+          setLogNotes("");
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Complete Practice</DialogTitle>
+            <DialogDescription>
+              Log your completion of "{practiceToLog?.title}". Add optional reflection notes to create a journal entry.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="log-notes">Reflection Notes (optional)</Label>
+              <Textarea
+                id="log-notes"
+                value={logNotes}
+                onChange={(e) => setLogNotes(e.target.value)}
+                placeholder="How did this practice feel today? What did you notice?"
+                className="min-h-24"
+              />
+              <p className="text-xs text-muted-foreground">
+                If you add notes, they'll be saved as a journal entry too.
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => {
+              setPracticeToLog(null);
+              setLogNotes("");
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleLogPractice} disabled={isLogging}>
+              {isLogging && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Complete Practice
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -11,11 +11,21 @@ interface ReflectionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   goalId: string;
+  goalTitle?: string;
+  milestoneTitle?: string;
   reflectionType: "checkin" | "milestone" | "completion";
   onComplete: () => void;
 }
 
-export const ReflectionDialog = ({ open, onOpenChange, goalId, reflectionType, onComplete }: ReflectionDialogProps) => {
+export const ReflectionDialog = ({ 
+  open, 
+  onOpenChange, 
+  goalId, 
+  goalTitle,
+  milestoneTitle,
+  reflectionType, 
+  onComplete 
+}: ReflectionDialogProps) => {
   const [reflection, setReflection] = useState({
     what_worked: "",
     what_challenged: "",
@@ -30,6 +40,38 @@ export const ReflectionDialog = ({ open, onOpenChange, goalId, reflectionType, o
     completion: "Journey Completion Reflection",
   };
 
+  const buildJournalContent = () => {
+    const sections: string[] = [];
+    
+    if (reflection.what_worked) {
+      sections.push(`## What Worked\n${reflection.what_worked}`);
+    }
+    if (reflection.what_challenged) {
+      sections.push(`## What Challenged\n${reflection.what_challenged}`);
+    }
+    if (reflection.insights) {
+      sections.push(`## Insights\n${reflection.insights}`);
+    }
+    if (reflection.next_steps && reflectionType !== "completion") {
+      sections.push(`## Next Steps\n${reflection.next_steps}`);
+    }
+    
+    return sections.join("\n\n");
+  };
+
+  const getJournalTitle = () => {
+    switch (reflectionType) {
+      case "checkin":
+        return `Journey Check-In: ${goalTitle || "My Goal"}`;
+      case "milestone":
+        return `Milestone: ${milestoneTitle || "Achievement"}`;
+      case "completion":
+        return `Journey Completion: ${goalTitle || "My Goal"}`;
+      default:
+        return "Reflection";
+    }
+  };
+
   const handleSave = async () => {
     if (!reflection.what_worked && !reflection.what_challenged && !reflection.insights && !reflection.next_steps) {
       toast.error("Please fill in at least one field");
@@ -41,6 +83,7 @@ export const ReflectionDialog = ({ open, onOpenChange, goalId, reflectionType, o
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      // Save to goal_reflections
       const { error } = await supabase.from("goal_reflections").insert({
         goal_id: goalId,
         user_id: user.id,
@@ -49,6 +92,27 @@ export const ReflectionDialog = ({ open, onOpenChange, goalId, reflectionType, o
       });
 
       if (error) throw error;
+
+      // Also create a journal entry
+      const journalContent = buildJournalContent();
+      if (journalContent.trim()) {
+        const sourceType = reflectionType === "milestone" ? "milestone_reflection" : "goal_reflection";
+        
+        const { error: entryError } = await supabase.functions.invoke("encrypt-entry", {
+          body: {
+            title: getJournalTitle(),
+            content: journalContent,
+            source_type: sourceType,
+            // Note: We don't have milestone_id here in this context, 
+            // but it could be passed if needed
+          },
+        });
+
+        if (entryError) {
+          console.error("Error creating journal entry:", entryError);
+          // Don't fail the whole operation
+        }
+      }
 
       toast.success("Reflection saved 🌟");
       setReflection({ what_worked: "", what_challenged: "", insights: "", next_steps: "" });
@@ -114,6 +178,10 @@ export const ReflectionDialog = ({ open, onOpenChange, goalId, reflectionType, o
               />
             </div>
           )}
+
+          <p className="text-xs text-muted-foreground">
+            Your reflection will also be saved as a journal entry.
+          </p>
 
           <div className="flex gap-2 justify-end">
             <Button variant="outline" onClick={() => onOpenChange(false)}>

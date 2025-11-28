@@ -129,6 +129,10 @@ serve(async (req) => {
           title: decryptedTitle,
           content: decryptedContent,
           depth_score,
+          // Explicitly include source columns
+          source_type: entry.source_type || 'manual',
+          source_practice_id: entry.source_practice_id || null,
+          source_milestone_id: entry.source_milestone_id || null,
         };
       })
     );
