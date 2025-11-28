@@ -424,7 +424,7 @@ export const PracticeManager = ({ goalId, goalType, intention }: PracticeManager
       </div>
 
       {practices.length === 0 ? (
-        <Card className="p-8 text-center">
+        <Card className="w-full max-w-full overflow-hidden p-8 text-center">
           <Sparkles className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
           <p className="text-muted-foreground mb-4">No practices yet. Add practices to support your journey.</p>
           <Button size="sm" variant="outline" onClick={handleSuggestPractices} disabled={loadingAI}>
@@ -432,7 +432,7 @@ export const PracticeManager = ({ goalId, goalType, intention }: PracticeManager
           </Button>
         </Card>
       ) : (
-        <div className="grid gap-3">
+        <div className="grid gap-3 w-full max-w-full">
           {practices.map((practice) => {
             const Icon = practiceTypeIcons[practice.practice_type] || Sparkles;
             const iconColor = practiceTypeColors[practice.practice_type] || "text-primary";
@@ -444,19 +444,19 @@ export const PracticeManager = ({ goalId, goalType, intention }: PracticeManager
             });
 
             return (
-              <Card key={practice.id} className="p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3 flex-1">
-                    <div className={`p-2 rounded-lg border border-border/30 ${iconColor}`} style={{ backgroundColor: '#F9F0E5' }}>
+              <Card key={practice.id} className="w-full max-w-full overflow-hidden p-4">
+                <div className="flex items-start justify-between gap-2 sm:gap-3">
+                  <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
+                    <div className={`p-2 rounded-lg border border-border/30 flex-shrink-0 ${iconColor}`} style={{ backgroundColor: '#F9F0E5' }}>
                       <Icon className="h-4 w-4" />
                     </div>
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <h5 className="font-medium">{practice.title}</h5>
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h5 className="font-medium break-words">{practice.title}</h5>
                         <Badge variant="outline" className="text-xs">{practice.frequency}</Badge>
                       </div>
                       {practice.description && (
-                        <div className="text-sm text-muted-foreground prose prose-sm max-w-none dark:prose-invert">
+                        <div className="text-sm text-muted-foreground prose prose-sm max-w-none dark:prose-invert break-words overflow-hidden">
                           <ReactMarkdown>{practice.description}</ReactMarkdown>
                         </div>
                       )}

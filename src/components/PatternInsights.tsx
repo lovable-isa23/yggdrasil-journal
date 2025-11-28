@@ -240,27 +240,28 @@ export const PatternInsights = () => {
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-4 w-full max-w-full">
             {patterns.map((pattern) => (
               <Collapsible
                 key={pattern.id}
                 open={openPatterns.has(pattern.id)}
                 onOpenChange={() => togglePattern(pattern.id)}
+                className="w-full max-w-full"
               >
-                <Card className="p-4 hover:shadow-md transition-shadow">
+                <Card className="w-full max-w-full overflow-hidden p-4 hover:shadow-md transition-shadow">
                   <CollapsibleTrigger className="w-full">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-center gap-3 flex-1 text-left">
-                        <span className="text-2xl">{getPatternIcon(pattern.pattern_type)}</span>
-                        <div>
-                          <h4 className="font-semibold text-base">{pattern.title}</h4>
+                    <div className="flex items-start justify-between gap-2 sm:gap-4">
+                      <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0 text-left">
+                        <span className="text-2xl flex-shrink-0">{getPatternIcon(pattern.pattern_type)}</span>
+                        <div className="min-w-0">
+                          <h4 className="font-semibold text-base break-words">{pattern.title}</h4>
                           <Badge variant="secondary" className={`mt-1 ${getPatternColor(pattern.pattern_type)}`}>
                             {pattern.pattern_type}
                           </Badge>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-right">
+                      <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                        <div className="text-right hidden sm:block">
                           <div className="text-sm font-medium text-muted-foreground mb-1">
                             Confidence
                           </div>
@@ -282,7 +283,12 @@ export const PatternInsights = () => {
                   </CollapsibleTrigger>
 
                   <CollapsibleContent className="mt-3 space-y-3">
-                    <p className="text-sm text-muted-foreground">
+                    <div className="sm:hidden">
+                      <div className="text-sm font-medium text-muted-foreground mb-1">Confidence</div>
+                      <Progress value={pattern.confidence_score * 100} className="w-full h-2" />
+                      <div className="text-xs text-muted-foreground mt-1">{Math.round(pattern.confidence_score * 100)}%</div>
+                    </div>
+                    <p className="text-sm text-muted-foreground break-words">
                       {pattern.description}
                     </p>
 
@@ -321,7 +327,7 @@ export const PatternInsights = () => {
                       <div className="bg-accent/50 rounded-lg p-3 mt-2">
                         <div className="flex items-start gap-2">
                           <Lightbulb className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
-                          <p className="text-sm font-medium">
+                          <p className="text-sm font-medium break-words">
                             {pattern.actionable_insight}
                           </p>
                         </div>
