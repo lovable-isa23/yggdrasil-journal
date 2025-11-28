@@ -184,29 +184,51 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
       }
     }
 
-    // Apply sorting
+    // Apply sorting with secondary sort by created_at for stability
+    const stableSort = (a: JournalEntry, b: JournalEntry, primaryCompare: number) => {
+      if (primaryCompare !== 0) return primaryCompare;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    };
+
     if (sortOption) {
       switch (sortOption) {
         case 'date-desc':
-          result.sort((a, b) => new Date(b.entry_date).getTime() - new Date(a.entry_date).getTime());
+          result.sort((a, b) => stableSort(a, b, 
+            new Date(b.entry_date).getTime() - new Date(a.entry_date).getTime()
+          ));
           break;
         case 'date-asc':
-          result.sort((a, b) => new Date(a.entry_date).getTime() - new Date(b.entry_date).getTime());
+          result.sort((a, b) => {
+            const dateCompare = new Date(a.entry_date).getTime() - new Date(b.entry_date).getTime();
+            if (dateCompare !== 0) return dateCompare;
+            return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+          });
           break;
         case 'word-count-desc':
-          result.sort((a, b) => getWordCount(b.content) - getWordCount(a.content));
+          result.sort((a, b) => stableSort(a, b, 
+            getWordCount(b.content) - getWordCount(a.content)
+          ));
           break;
         case 'word-count-asc':
-          result.sort((a, b) => getWordCount(a.content) - getWordCount(b.content));
+          result.sort((a, b) => stableSort(a, b, 
+            getWordCount(a.content) - getWordCount(b.content)
+          ));
           break;
         case 'favorites-first':
           result.sort((a, b) => {
             if (a.is_favorite && !b.is_favorite) return -1;
             if (!a.is_favorite && b.is_favorite) return 1;
-            return new Date(b.entry_date).getTime() - new Date(a.entry_date).getTime();
+            return stableSort(a, b, 
+              new Date(b.entry_date).getTime() - new Date(a.entry_date).getTime()
+            );
           });
           break;
       }
+    } else {
+      // Default sort: newest first by entry_date, then created_at
+      result.sort((a, b) => stableSort(a, b, 
+        new Date(b.entry_date).getTime() - new Date(a.entry_date).getTime()
+      ));
     }
 
     return result;
