@@ -84,14 +84,20 @@ const screenshots: Screenshot[] = [
     title: "Emotional Journey"
   },
   {
-    src: graphImage1,
-    alt: "Knowledge graph visualization of journal entities",
-    title: "Knowledge Connections"
-  },
-  {
-    src: graphImage2,
-    alt: "Interactive keyword network visualization",
-    title: "Keyword Networks"
+    title: "Knowledge Connections",
+    alt: "Map the connections between people, places, themes, and ideas across all your journal entries. Watch your personal knowledge network grow over time.",
+    images: [
+      {
+        src: graphImage1,
+        alt: "Entity connections graph",
+        caption: "Entity connections: People, places, and things that matter to you"
+      },
+      {
+        src: graphImage2,
+        alt: "Theme patterns graph",
+        caption: "Theme patterns: Abstract concepts and emotional threads"
+      }
+    ]
   },
   {
     src: patternsImage,
@@ -113,7 +119,7 @@ export const AppShowcase = () => {
               <img
                 src={selectedImage.src}
                 alt={selectedImage.alt}
-                className="w-full h-auto rounded-lg"
+                className="w-full max-h-[90vh] object-contain rounded-lg"
               />
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background/90 to-transparent p-6">
                 <h3 className="text-xl font-semibold text-foreground">
