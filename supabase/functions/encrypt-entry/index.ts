@@ -68,7 +68,19 @@ serve(async (req) => {
       });
     }
 
-    const { title, content, entry_date, import_batch_id, linked_goals, audio_url, image_url, transcription_source } = await req.json();
+    const { 
+      title, 
+      content, 
+      entry_date, 
+      import_batch_id, 
+      linked_goals, 
+      audio_url, 
+      image_url, 
+      transcription_source,
+      source_type,
+      source_practice_id,
+      source_milestone_id,
+    } = await req.json();
     
     if (!title || !content) {
       return new Response(JSON.stringify({ error: 'Title and content are required' }), {
@@ -107,6 +119,9 @@ serve(async (req) => {
         audio_url: audio_url || null,
         image_url: image_url || null,
         transcription_source: transcription_source || 'typed',
+        source_type: source_type || 'manual',
+        source_practice_id: source_practice_id || null,
+        source_milestone_id: source_milestone_id || null,
       })
       .select()
       .single();

@@ -407,6 +407,9 @@ export type Database = {
           linked_goals: string[] | null
           mood_color: string | null
           mood_type: string | null
+          source_milestone_id: string | null
+          source_practice_id: string | null
+          source_type: string | null
           tags: Json | null
           title: string
           transcription_source: string | null
@@ -426,6 +429,9 @@ export type Database = {
           linked_goals?: string[] | null
           mood_color?: string | null
           mood_type?: string | null
+          source_milestone_id?: string | null
+          source_practice_id?: string | null
+          source_type?: string | null
           tags?: Json | null
           title: string
           transcription_source?: string | null
@@ -445,6 +451,9 @@ export type Database = {
           linked_goals?: string[] | null
           mood_color?: string | null
           mood_type?: string | null
+          source_milestone_id?: string | null
+          source_practice_id?: string | null
+          source_type?: string | null
           tags?: Json | null
           title?: string
           transcription_source?: string | null
@@ -457,6 +466,20 @@ export type Database = {
             columns: ["import_batch_id"]
             isOneToOne: false
             referencedRelation: "import_history"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_source_milestone_id_fkey"
+            columns: ["source_milestone_id"]
+            isOneToOne: false
+            referencedRelation: "goal_milestones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_source_practice_id_fkey"
+            columns: ["source_practice_id"]
+            isOneToOne: false
+            referencedRelation: "goal_practices"
             referencedColumns: ["id"]
           },
         ]
