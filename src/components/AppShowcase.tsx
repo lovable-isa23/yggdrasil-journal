@@ -4,25 +4,69 @@ import {
   Dialog,
   DialogContent,
 } from "@/components/ui/dialog";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 import insightsImage1 from "@/assets/screenshot-insights-1.png";
-import insightsImage2 from "@/assets/screenshot-insights-2.png";
 import analyticsImage from "@/assets/screenshot-analytics.png";
 import reflectionImage from "@/assets/screenshot-reflection.png";
 import sentimentImage from "@/assets/screenshot-sentiment.png";
 import graphImage1 from "@/assets/screenshot-graph-1.png";
 import graphImage2 from "@/assets/screenshot-graph-2.png";
 import patternsImage from "@/assets/screenshot-patterns.png";
+import insightsSummaryImage from "@/assets/screenshot-insights-summary.png";
+import insightsAnalysisImage from "@/assets/screenshot-insights-analysis.png";
+import insightsThemesImage from "@/assets/screenshot-insights-themes.png";
+import insightsSpiritualImage from "@/assets/screenshot-insights-spiritual.png";
 
-const screenshots = [
+interface CarouselImage {
+  src: string;
+  alt: string;
+  caption: string;
+}
+
+interface Screenshot {
+  src?: string;
+  alt: string;
+  title: string;
+  images?: CarouselImage[];
+}
+
+const screenshots: Screenshot[] = [
   {
     src: insightsImage1,
     alt: "AI-powered crisis detection with emergency resources including 988 Suicide & Crisis Lifeline and Crisis Text Line",
     title: "Crisis Safety Support"
   },
   {
-    src: insightsImage2,
-    alt: "Journal entry with sentiment analysis",
-    title: "AI-Powered Insights"
+    title: "AI-Powered Insights",
+    alt: "Unlock deep understanding with AI-powered summaries, semantic analysis, emotional insights, and spiritual parallels including chakras, tarot archetypes, and sacred geometry—with more to come!",
+    images: [
+      {
+        src: insightsSummaryImage,
+        alt: "AI-generated summary",
+        caption: "AI-generated summary captures the essence of your entry"
+      },
+      {
+        src: insightsAnalysisImage,
+        alt: "Deep analysis with multiple frameworks",
+        caption: "Multi-framework insights with patterns, reflections, and action steps"
+      },
+      {
+        src: insightsThemesImage,
+        alt: "Themes and emotions extraction",
+        caption: "Automatic theme extraction and emotional intensity tracking"
+      },
+      {
+        src: insightsSpiritualImage,
+        alt: "Spiritual parallels and connections",
+        caption: "Chakra resonance, tarot archetypes, and sacred geometry connections"
+      }
+    ]
   },
   {
     src: analyticsImage,
@@ -103,6 +147,8 @@ export const AppShowcase = () => {
           <div className="space-y-16">
             {screenshots.map((screenshot, index) => {
               const isEven = index % 2 === 0;
+              const hasCarousel = !!screenshot.images;
+              
               return (
                 <div
                   key={index}
@@ -114,20 +160,54 @@ export const AppShowcase = () => {
                   }}
                 >
                   <div className={`grid grid-cols-1 lg:grid-cols-2 gap-8 items-center ${isEven ? '' : 'lg:grid-flow-dense'}`}>
-                    {/* Image */}
-                    <div 
-                      className={`group relative overflow-hidden rounded-2xl border border-border bg-card shadow-soft hover:shadow-medium transition-all duration-300 cursor-pointer ${isEven ? '' : 'lg:col-start-2'}`}
-                      onClick={() => setSelectedImage(screenshot)}
-                    >
-                      <div className="aspect-[16/10] overflow-hidden">
-                        <img
-                          src={screenshot.src}
-                          alt={screenshot.alt}
-                          className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
-                          loading="lazy"
-                          decoding="async"
-                        />
-                      </div>
+                    {/* Image or Carousel */}
+                    <div className={`${isEven ? '' : 'lg:col-start-2'}`}>
+                      {hasCarousel ? (
+                        <Carousel className="w-full">
+                          <CarouselContent>
+                            {screenshot.images!.map((image, imgIndex) => (
+                              <CarouselItem key={imgIndex}>
+                                <div 
+                                  className="group relative overflow-hidden rounded-2xl border border-border bg-card shadow-soft hover:shadow-medium transition-all duration-300 cursor-pointer"
+                                  onClick={() => setSelectedImage({ src: image.src, alt: image.alt, title: image.caption })}
+                                >
+                                  <div className="aspect-[16/10] overflow-hidden">
+                                    <img
+                                      src={image.src}
+                                      alt={image.alt}
+                                      className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                                      loading="lazy"
+                                      decoding="async"
+                                    />
+                                  </div>
+                                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background/90 to-transparent p-4">
+                                    <p className="text-sm text-foreground font-medium">
+                                      {image.caption}
+                                    </p>
+                                  </div>
+                                </div>
+                              </CarouselItem>
+                            ))}
+                          </CarouselContent>
+                          <CarouselPrevious className="left-2" />
+                          <CarouselNext className="right-2" />
+                        </Carousel>
+                      ) : (
+                        <div 
+                          className="group relative overflow-hidden rounded-2xl border border-border bg-card shadow-soft hover:shadow-medium transition-all duration-300 cursor-pointer"
+                          onClick={() => setSelectedImage({ src: screenshot.src!, alt: screenshot.alt, title: screenshot.title })}
+                        >
+                          <div className="aspect-[16/10] overflow-hidden">
+                            <img
+                              src={screenshot.src}
+                              alt={screenshot.alt}
+                              className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                     
                     {/* Caption */}
