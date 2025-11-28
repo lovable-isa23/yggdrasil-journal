@@ -39,9 +39,14 @@ interface Screenshot {
 
 const screenshots: Screenshot[] = [
   {
-    src: insightsImage1,
-    alt: "AI-powered crisis detection with emergency resources including 988 Suicide & Crisis Lifeline and Crisis Text Line",
-    title: "Crisis Safety Support"
+    src: analyticsImage,
+    alt: "Analytics dashboard showing writing trends and statistics",
+    title: "Track Your Progress"
+  },
+  {
+    src: sentimentImage,
+    alt: "Track your emotional journey over time with intensity graphs, frequent emotion badges, and discover what themes and entities you mention when feeling specific emotions. Understand the patterns behind your feelings.",
+    title: "Emotional Journey"
   },
   {
     title: "AI-Powered Insights",
@@ -70,19 +75,9 @@ const screenshots: Screenshot[] = [
     ]
   },
   {
-    src: analyticsImage,
-    alt: "Analytics dashboard showing writing trends and statistics",
-    title: "Track Your Progress"
-  },
-  {
     src: reflectionImage,
-    alt: "AI-generated reflection prompts",
+    alt: "Receive personalized guidance from Yggi, your AI spiritual companion. Drawing from multiple wisdom traditions including Buddhism, Jungian psychology, and Hermetic philosophy, Yggi offers deep insights into your patterns and growth opportunities.",
     title: "Guided Reflections"
-  },
-  {
-    src: sentimentImage,
-    alt: "Sentiment tracking over time with emotional patterns",
-    title: "Emotional Journey"
   },
   {
     title: "Knowledge Connections",
@@ -104,6 +99,11 @@ const screenshots: Screenshot[] = [
     src: patternsImage,
     alt: "Yggdrasil automatically identifies recurring patterns in your thoughts, emotions, and behaviors across all your entries. Discover deep-seated beliefs, emotional cycles, and cognitive patterns—complete with confidence scores, trend indicators, related keywords, and personalized growth suggestions.",
     title: "Pattern Recognition"
+  },
+  {
+    src: insightsImage1,
+    alt: "AI-powered crisis detection with emergency resources including 988 Suicide & Crisis Lifeline and Crisis Text Line",
+    title: "Crisis Safety Support"
   }
 ];
 
