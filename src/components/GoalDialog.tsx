@@ -8,11 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Calendar } from "./ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Badge } from "./ui/badge";
-import { CalendarIcon, Sparkles, Target, BookOpen, Heart, Lightbulb, Palette, Users } from "lucide-react";
+import { CalendarIcon, Sparkles, Target, BookOpen, Heart, Lightbulb, Palette, Users, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { getCurrentMoonPhase } from "@/lib/moon-phases";
-import { MoonPhaseIndicator } from "./MoonPhaseIndicator";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Pattern {
   id: string;
@@ -52,6 +53,8 @@ const GOAL_TYPES = [
 
 export const GoalDialog = ({ open, onOpenChange, onSave, editingGoal, patterns }: GoalDialogProps) => {
   const [step, setStep] = useState(1);
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [aiSuggested, setAiSuggested] = useState(false);
   const [formData, setFormData] = useState({
     intention: "",
     goalType: "general",
@@ -73,7 +76,8 @@ export const GoalDialog = ({ open, onOpenChange, onSave, editingGoal, patterns }
         linkedPatterns: editingGoal.linked_patterns?.map((p: any) => p.id) || [],
         status: editingGoal.status,
       });
-      setStep(1); // Start at first step for editing too
+      setAiSuggested(false);
+      setStep(1);
     } else {
       setFormData({
         intention: "",
@@ -84,11 +88,53 @@ export const GoalDialog = ({ open, onOpenChange, onSave, editingGoal, patterns }
         linkedPatterns: [],
         status: "active",
       });
+      setAiSuggested(false);
       setStep(1);
     }
   }, [editingGoal, open]);
 
-  const handleNext = () => {
+  const extractGoalDetails = async () => {
+    if (!formData.intention || formData.intention.trim().length < 10) {
+      return false;
+    }
+
+    setIsExtracting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('extract-goal-details', {
+        body: { 
+          intention: formData.intention,
+          goalType: formData.goalType
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.title && data?.description) {
+        setFormData(prev => ({
+          ...prev,
+          title: data.title,
+          description: data.description
+        }));
+        setAiSuggested(true);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error extracting goal details:", error);
+      toast.error("Couldn't generate suggestions, but you can fill in the details manually");
+      return false;
+    } finally {
+      setIsExtracting(false);
+    }
+  };
+
+  const handleNext = async () => {
+    if (step === 1 && !editingGoal) {
+      // Moving from Step 1 to Step 2 - extract goal details if we have intention
+      if (formData.intention && formData.intention.trim().length >= 10) {
+        await extractGoalDetails();
+      }
+    }
     if (step < 3) setStep(step + 1);
   };
 
@@ -112,6 +158,16 @@ export const GoalDialog = ({ open, onOpenChange, onSave, editingGoal, patterns }
         ? prev.linkedPatterns.filter(id => id !== patternId)
         : [...prev.linkedPatterns, patternId]
     }));
+  };
+
+  const handleTitleChange = (value: string) => {
+    setFormData(prev => ({ ...prev, title: value }));
+    if (aiSuggested) setAiSuggested(false);
+  };
+
+  const handleDescriptionChange = (value: string) => {
+    setFormData(prev => ({ ...prev, description: value }));
+    if (aiSuggested) setAiSuggested(false);
   };
 
   const selectedGoalType = GOAL_TYPES.find(t => t.value === formData.goalType);
@@ -177,24 +233,47 @@ export const GoalDialog = ({ open, onOpenChange, onSave, editingGoal, patterns }
           {/* Step 2: Define Your Path */}
           {step === 2 && (
             <div className="space-y-6 animate-in fade-in-50">
+              {aiSuggested && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground bg-primary/5 rounded-lg p-3 border border-primary/20">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <span>Yggi crafted these suggestions from your intention. Feel free to refine them.</span>
+                </div>
+              )}
+
               <div className="space-y-2">
-                <Label htmlFor="title">Journey Title *</Label>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="title">Journey Title *</Label>
+                  {aiSuggested && (
+                    <Badge variant="secondary" className="text-xs gap-1">
+                      <Sparkles className="h-3 w-3" />
+                      AI-suggested
+                    </Badge>
+                  )}
+                </div>
                 <Input
                   id="title"
                   placeholder="Give your journey a name..."
                   value={formData.title}
-                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                  onChange={(e) => handleTitleChange(e.target.value)}
                   className="h-12 text-base"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Path Description</Label>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="description">Path Description</Label>
+                  {aiSuggested && (
+                    <Badge variant="secondary" className="text-xs gap-1">
+                      <Sparkles className="h-3 w-3" />
+                      AI-suggested
+                    </Badge>
+                  )}
+                </div>
                 <Textarea
                   id="description"
                   placeholder="How will this journey unfold? What steps will you take?"
                   value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  onChange={(e) => handleDescriptionChange(e.target.value)}
                   className="min-h-32 text-base"
                 />
               </div>
@@ -303,6 +382,7 @@ export const GoalDialog = ({ open, onOpenChange, onSave, editingGoal, patterns }
             type="button"
             variant="outline"
             onClick={step === 1 ? () => onOpenChange(false) : handleBack}
+            disabled={isExtracting}
           >
             {step === 1 ? "Cancel" : "Back"}
           </Button>
@@ -311,9 +391,16 @@ export const GoalDialog = ({ open, onOpenChange, onSave, editingGoal, patterns }
             {step < 3 ? (
               <Button
                 onClick={handleNext}
-                disabled={step === 1 && !formData.intention && !formData.goalType}
+                disabled={(step === 1 && !formData.intention && !formData.goalType) || isExtracting}
               >
-                Continue
+                {isExtracting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Yggi is crafting your path...
+                  </>
+                ) : (
+                  "Continue"
+                )}
               </Button>
             ) : (
               <Button
