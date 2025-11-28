@@ -160,9 +160,9 @@ export const JourneyTimeline = ({ goalId, refreshTrigger }: JourneyTimelineProps
 
   if (events.length === 0) {
     return (
-      <Card className="p-8 text-center">
+      <Card className="w-full max-w-full overflow-hidden p-8 text-center">
         <Calendar className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
-        <p className="text-muted-foreground">Your journey timeline will appear here as you add milestones, write entries, and reflect.</p>
+        <p className="text-muted-foreground break-words">Your journey timeline will appear here as you add milestones, write entries, and reflect.</p>
       </Card>
     );
   }
@@ -176,7 +176,7 @@ export const JourneyTimeline = ({ goalId, refreshTrigger }: JourneyTimelineProps
 
   return (
     <>
-      <div className="space-y-4">
+      <div className="space-y-4 w-full max-w-full overflow-hidden">
         <div className="flex items-center gap-2">
           <Calendar className="h-5 w-5 text-primary" />
           <h4 className="font-semibold">Journey Timeline</h4>
@@ -195,21 +195,21 @@ export const JourneyTimeline = ({ goalId, refreshTrigger }: JourneyTimelineProps
                 
                 <Card 
                   className={cn(
-                    "p-4 hover:shadow-md transition-shadow",
+                    "w-full max-w-full overflow-hidden p-4 hover:shadow-md transition-shadow",
                     event.type === "reflection" && "cursor-pointer"
                   )}
                   onClick={() => event.type === "reflection" && handleReflectionClick(event)}
                 >
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <h5 className="font-medium">{event.title}</h5>
-                      <Badge variant="outline" className="text-xs">
+                    <div className="flex items-start justify-between gap-2 flex-wrap">
+                      <h5 className="font-medium break-words min-w-0 flex-1">{event.title}</h5>
+                      <Badge variant="outline" className="text-xs flex-shrink-0">
                         {format(new Date(event.date), "MMM d, yyyy")}
                       </Badge>
                     </div>
                     
                     {event.description && (
-                      <p className="text-sm text-muted-foreground">{event.description}</p>
+                      <p className="text-sm text-muted-foreground break-words">{event.description}</p>
                     )}
                     
                     {event.type === "milestone" && event.completed && (

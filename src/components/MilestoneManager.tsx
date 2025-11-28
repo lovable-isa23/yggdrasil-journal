@@ -264,7 +264,7 @@ export const MilestoneManager = ({ goalId, goalTitle, milestones, onUpdate }: Mi
       {/* Milestone List */}
       <div className="space-y-2">
         {sortedMilestones.length === 0 ? (
-          <Card className="p-6 text-center">
+          <Card className="w-full max-w-full overflow-hidden p-6 text-center">
             <p className="text-sm text-muted-foreground">
               No milestones yet. Break your journey into smaller steps!
             </p>
@@ -274,7 +274,7 @@ export const MilestoneManager = ({ goalId, goalTitle, milestones, onUpdate }: Mi
             <Card
               key={milestone.id}
               className={cn(
-                "p-4 transition-all",
+                "w-full max-w-full overflow-hidden p-4 transition-all",
                 milestone.completed_at && "bg-accent/30"
               )}
             >
@@ -292,13 +292,13 @@ export const MilestoneManager = ({ goalId, goalTitle, milestones, onUpdate }: Mi
                 
                 <div className="flex-1 min-w-0">
                   <h4 className={cn(
-                    "font-medium",
+                    "font-medium break-words",
                     milestone.completed_at && "line-through text-muted-foreground"
                   )}>
                     {milestone.title}
                   </h4>
                   {milestone.description && (
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-sm text-muted-foreground mt-1 break-words">
                       {milestone.description}
                     </p>
                   )}

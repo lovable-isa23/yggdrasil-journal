@@ -39,7 +39,7 @@ const Goals = () => {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 overflow-x-hidden">
         <NPSTooltip />
         {/* Header */}
         <header className="border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-50">
@@ -98,7 +98,7 @@ const Goals = () => {
         </header>
 
         {/* Main Content */}
-        <main className="container mx-auto px-6 sm:px-8 lg:px-12 py-8 sm:py-12">
+        <main className="container mx-auto px-4 sm:px-6 lg:px-12 py-8 sm:py-12">
           {/* Hero Section */}
           <div className="text-center space-y-3 mb-12">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">

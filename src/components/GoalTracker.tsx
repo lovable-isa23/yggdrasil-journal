@@ -258,19 +258,19 @@ export const GoalTracker = () => {
             const isOpen = openGoals.has(goal.id);
             
             return (
-              <Collapsible key={goal.id} open={isOpen} onOpenChange={() => toggleGoal(goal.id)}>
-                <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-                  <CollapsibleTrigger className="w-full p-6 text-left">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-3 flex-1">
-                        <div className={cn("p-2 rounded-lg border border-border/30", color)} style={{ backgroundColor: '#F9F0E5' }}><GoalIcon className="h-5 w-5" /></div>
-                        <div className="flex-1 space-y-2">
+              <Collapsible key={goal.id} open={isOpen} onOpenChange={() => toggleGoal(goal.id)} className="w-full max-w-full">
+                <Card className="w-full max-w-full overflow-hidden hover:shadow-lg transition-shadow">
+                  <CollapsibleTrigger className="w-full p-4 sm:p-6 text-left">
+                    <div className="flex items-start justify-between gap-2 sm:gap-4">
+                      <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
+                        <div className={cn("p-2 rounded-lg border border-border/30 flex-shrink-0", color)} style={{ backgroundColor: '#F9F0E5' }}><GoalIcon className="h-5 w-5" /></div>
+                        <div className="flex-1 min-w-0 space-y-2">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="text-xl font-semibold">{goal.title}</h3>
+                            <h3 className="text-lg sm:text-xl font-semibold break-words">{goal.title}</h3>
                             {getStatusBadge(goal.status)}
                           </div>
-                          {goal.intention && <p className="text-sm text-muted-foreground italic">"{goal.intention.substring(0, 120)}{goal.intention.length > 120 ? "..." : ""}"</p>}
-                          <div className="flex flex-wrap gap-4 text-sm">
+                          {goal.intention && <p className="text-sm text-muted-foreground italic break-words">"{goal.intention.substring(0, 120)}{goal.intention.length > 120 ? "..." : ""}"</p>}
+                          <div className="flex flex-wrap gap-2 sm:gap-4 text-sm">
                             {goal.target_date && <div className="flex items-center gap-2 text-muted-foreground"><CalendarIcon className="h-4 w-4" /><span>{format(new Date(goal.target_date), "MMM d, yyyy")}</span></div>}
                             {goalMilestones.length > 0 && <Badge variant="outline">{goalMilestones.filter(m => m.completed_at).length}/{goalMilestones.length} milestones</Badge>}
                           </div>
@@ -281,8 +281,8 @@ export const GoalTracker = () => {
                   </CollapsibleTrigger>
 
                   <CollapsibleContent>
-                    <div className="px-6 pb-6 space-y-6 border-t pt-6">
-                      {goal.description && <div className="space-y-2"><p className="text-sm font-medium">Journey Path</p><p className="text-muted-foreground">{goal.description}</p></div>}
+                    <div className="px-4 sm:px-6 pb-6 space-y-6 border-t pt-6 w-full max-w-full overflow-hidden">
+                      {goal.description && <div className="space-y-2"><p className="text-sm font-medium">Journey Path</p><p className="text-muted-foreground break-words">{goal.description}</p></div>}
                       {goal.linked_patterns && goal.linked_patterns.length > 0 && (
                         <div className="space-y-2">
                           <p className="text-sm font-medium">Connected Patterns</p>
@@ -296,7 +296,7 @@ export const GoalTracker = () => {
                       
                       <JourneyTimeline goalId={goal.id} refreshTrigger={timelineRefreshTrigger} />
                       
-                      <div className="flex gap-2 pt-4 border-t">
+                      <div className="flex flex-wrap gap-2 pt-4 border-t">
                         <Button variant="outline" size="sm" onClick={() => { setReflectingGoalId(goal.id); setIsReflectionOpen(true); }}>
                           <Heart className="h-4 w-4 mr-2" />Reflect
                         </Button>
