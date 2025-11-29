@@ -168,9 +168,6 @@ const Insights = () => {
                         Upload multiple files at once (.txt, .md, .json, .pdf)
                       </p>
                       <DataImport onImportComplete={handleImportComplete} />
-                      <p className="text-xs text-muted-foreground italic">
-                        💡 Tip: Hold Ctrl/Cmd to select multiple files
-                      </p>
                     </div>
 
                     {/* Export Section */}
