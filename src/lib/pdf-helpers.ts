@@ -48,7 +48,7 @@ export const addSection = (
 export const addStyledSection = (
   doc: jsPDF,
   title: string,
-  icon: string,
+  _icon: string, // Icon parameter kept for API compatibility but not rendered (emojis don't work in jsPDF)
   yPos: number,
   margin: number = 25
 ): number => {
@@ -64,11 +64,11 @@ export const addStyledSection = (
   setFillColor(doc, colors.highlight);
   doc.rect(margin - 5, yPos - 6, pageWidth - margin * 2 + 10, 14, "F");
   
-  // Section title with icon
+  // Section title (no emoji - jsPDF can't render them)
   doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
   setColor(doc, colors.primary);
-  doc.text(`${icon}  ${title}`, margin, yPos + 3);
+  doc.text(title, margin, yPos + 3);
   
   setColor(doc, colors.text);
   return yPos + 16;
@@ -219,20 +219,9 @@ export const addBulletList = (
   return currentY;
 };
 
-// Helper for framework icons
-export const getFrameworkIcon = (framework: string): string => {
-  const icons: Record<string, string> = {
-    'theravada': '☸️',
-    'freudian': '🧠',
-    'jungian': '🌓',
-    'hermetic': '⚗️',
-    'hermeticism': '⚗️',
-    'advaita': '🕉️',
-    'advaita_vedanta': '🕉️',
-    'taoist': '☯️',
-    'taoism': '☯️',
-  };
-  return icons[framework.toLowerCase()] || '📖';
+// Helper for framework icons (returns empty string as jsPDF can't render emojis)
+export const getFrameworkIcon = (_framework: string): string => {
+  return '';
 };
 
 export const getFrameworkName = (framework: string): string => {

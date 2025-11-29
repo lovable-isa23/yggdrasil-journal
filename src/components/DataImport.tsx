@@ -291,9 +291,8 @@ export const DataImport = ({ onImportComplete }: { onImportComplete: () => void 
             <p>
               <span className="font-medium">Supports:</span> .txt, .md, .json, .pdf
             </p>
-            <p className="flex items-center gap-1">
-              <span className="font-medium">Multiple files allowed</span> - 
-              Hold Ctrl/Cmd when selecting
+            <p>
+              <span className="font-medium">Multiple files allowed</span>
             </p>
           </div>
         )}

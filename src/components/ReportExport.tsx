@@ -170,7 +170,7 @@ export const ReportExport = () => {
             doc.setFontSize(10);
             doc.setFont("helvetica", "bold");
             setColor(doc, colors.secondary);
-            doc.text("💡 Actionable Insight:", margin + 5, yPos);
+            doc.text("Actionable Insight:", margin + 5, yPos);
             yPos += 5;
             doc.setFont("helvetica", "normal");
             setColor(doc, colors.text);
@@ -374,7 +374,7 @@ export const ReportExport = () => {
           doc.setFontSize(11);
           doc.setFont("helvetica", "bold");
           setColor(doc, colors.primary);
-          doc.text("📚 Wisdom Traditions Applied:", margin, yPos);
+          doc.text("Wisdom Traditions Applied:", margin, yPos);
           yPos += 7;
 
           doc.setFontSize(10);
@@ -395,7 +395,7 @@ export const ReportExport = () => {
           doc.setFontSize(11);
           doc.setFont("helvetica", "bold");
           setColor(doc, colors.spiritual);
-          doc.text("🧘 Chakra Resonance:", margin, yPos);
+          doc.text("Chakra Resonance:", margin, yPos);
           yPos += 7;
 
           doc.setFontSize(10);
@@ -416,7 +416,7 @@ export const ReportExport = () => {
           doc.setFontSize(11);
           doc.setFont("helvetica", "bold");
           setColor(doc, colors.spiritual);
-          doc.text("🔮 Tarot Archetypes:", margin, yPos);
+          doc.text("Tarot Archetypes:", margin, yPos);
           yPos += 7;
 
           doc.setFontSize(10);

@@ -177,7 +177,7 @@ export const DataExport = () => {
             pdf.setFontSize(10);
             pdf.setFont("helvetica", "bold");
             setColor(pdf, colors.accent);
-            pdf.text(`📊 Depth Score: ${insight.depth_score}/10`, margin, yPosition);
+            pdf.text(`Depth Score: ${insight.depth_score}/10`, margin, yPosition);
             yPosition += 8;
           }
 
@@ -228,7 +228,7 @@ export const DataExport = () => {
                 yPosition = checkPageBreak(pdf, yPosition, 6, margin);
                 pdf.setFont("helvetica", "italic");
                 setColor(pdf, colors.text);
-                yPosition = wrapText(pdf, `→ ${q}`, pageWidth - margin * 2 - 10, margin + 5, yPosition, 5);
+                yPosition = wrapText(pdf, `- ${q}`, pageWidth - margin * 2 - 10, margin + 5, yPosition, 5);
               });
               yPosition += 6;
             }
@@ -244,7 +244,7 @@ export const DataExport = () => {
                 yPosition = checkPageBreak(pdf, yPosition, 6, margin);
                 pdf.setFont("helvetica", "normal");
                 setColor(pdf, colors.text);
-                yPosition = wrapText(pdf, `✓ ${step}`, pageWidth - margin * 2 - 10, margin + 5, yPosition, 5);
+                yPosition = wrapText(pdf, `- ${step}`, pageWidth - margin * 2 - 10, margin + 5, yPosition, 5);
               });
               yPosition += 6;
             }
@@ -339,7 +339,7 @@ export const DataExport = () => {
             pdf.setFontSize(10);
             pdf.setFont("helvetica", "bold");
             setColor(pdf, colors.spiritual);
-            pdf.text("🧘 Chakra Resonance:", margin, yPosition);
+            pdf.text("Chakra Resonance:", margin, yPosition);
             yPosition += 6;
             
             insight.chakra_tags.forEach((tag: any) => {
@@ -358,7 +358,7 @@ export const DataExport = () => {
             pdf.setFontSize(10);
             pdf.setFont("helvetica", "bold");
             setColor(pdf, colors.spiritual);
-            pdf.text("🔮 Tarot Archetypes:", margin, yPosition);
+            pdf.text("Tarot Archetypes:", margin, yPosition);
             yPosition += 6;
             
             insight.tarot_tags.forEach((tag: any) => {

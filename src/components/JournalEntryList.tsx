@@ -399,80 +399,84 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
 
          return (
            <Card key={entry.id} className={`overflow-hidden w-full max-w-full border-l-4 ${moodStyles.border} bg-gradient-to-br ${moodStyles.bg} transition-all duration-200 hover:-translate-y-1 hover:shadow-lg`}>
-             <CardHeader className="pb-3">
-               <div className="flex items-start justify-between gap-4">
-                 <div className="flex-1 space-y-2 min-w-0">
-                   <button onClick={() => toggleOpen(entry.id)} className="flex items-center gap-2 w-full text-left hover:opacity-70 transition-opacity">
-                     <CardTitle className="text-lg">{entry.title}</CardTitle>
-                     {isOpen ? <ChevronUp className="h-5 w-5 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 text-muted-foreground" />}
-                   </button>
-                    {(entry.audio_url || entry.image_url) && (
-                      <div className="flex flex-wrap items-center gap-2 text-xs">
-                        {entry.transcription_source && entry.audio_url && <Badge variant="secondary" className="gap-1 h-6"><span>📄</span><span>Voice transcribed</span></Badge>}
-                        {entry.audio_url && <Badge variant="secondary" className="gap-1 h-6"><Mic className="h-3 w-3" /><span>Audio</span></Badge>}
-                        {entry.image_url && <Badge variant="secondary" className="gap-1 h-6"><ImageIcon className="h-3 w-3" /><span>Image</span></Badge>}
-                      </div>
-                    )}
-                   {!isOpen && <p className="text-sm text-muted-foreground line-clamp-2">{preview}</p>}
-                    <div className="flex flex-wrap items-center gap-2">
-                      {sourceBadge && <Badge variant="secondary" className={`gap-1 ${sourceBadge.className}`}><span>✨</span>{sourceBadge.label}</Badge>}
-                      {moodOption && <Badge variant="outline" className={`gap-1 ${moodStyles.textAccent}`}><span>{moodOption.icon}</span><span>{moodOption.label}</span></Badge>}
-                      {(() => {
-                        const depthBadge = getDepthBadge(entry.depth_score);
-                        return depthBadge && <Badge variant="outline" className={depthBadge.className}>{depthBadge.label}</Badge>;
-                      })()}
-                      {entry.tags?.map(tag => <Badge key={tag} variant="secondary">#{tag}</Badge>)}
-                      {entry.linked_goals && entry.linked_goals.length > 0 && (
-                        <Badge variant="outline" className="gap-1 text-primary">
-                          <Target className="h-3 w-3" />
-                          {entry.linked_goals.length} goal{entry.linked_goals.length > 1 ? 's' : ''}
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                      <span>{wordCount.toLocaleString()} words</span><span>•</span>
-                      <span>{getReadingTime(wordCount)}</span><span>•</span>
-                      <span>{format(new Date(entry.entry_date), "MMM d, yyyy")}</span>
-                    </div>
-                    <TooltipProvider>
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              Created {format(new Date(entry.created_at), "MMM d, yyyy 'at' h:mm a")}
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Created: {format(new Date(entry.created_at), "PPpp")}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                        {entry.created_at !== entry.updated_at && (
-                          <>
-                            <span>•</span>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span className="flex items-center gap-1">
-                                  Modified {format(new Date(entry.updated_at), "MMM d, yyyy 'at' h:mm a")}
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Last modified: {format(new Date(entry.updated_at), "PPpp")}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </>
-                        )}
-                      </div>
-                    </TooltipProvider>
-                   <EntryQuickActions entryId={entry.id} isFavorite={entry.is_favorite || false} moodType={entry.mood_type || 'general'} tags={entry.tags || []}
-                     onFavoriteChange={(isFavorite) => handleEntryUpdate(entry.id, { is_favorite: isFavorite })}
-                     onMoodChange={(mood_type) => handleEntryUpdate(entry.id, { mood_type })}
-                     onTagsChange={(tags) => handleEntryUpdate(entry.id, { tags })} />
+             <CardHeader className="pb-3 relative">
+               {/* Small floating edit/delete buttons */}
+               <div className="absolute top-3 right-3 flex gap-1">
+                 <Button variant="ghost" className="h-7 w-7 p-0" onClick={() => openEditDialog(entry)}>
+                   <Edit className="h-3.5 w-3.5" />
+                 </Button>
+                 <Button variant="ghost" className="h-7 w-7 p-0" onClick={() => setEntryToDelete(entry.id)}>
+                   <Trash2 className="h-3.5 w-3.5" />
+                 </Button>
+               </div>
+               
+               <div className="space-y-2 pr-16">
+                 <button onClick={() => toggleOpen(entry.id)} className="flex items-center gap-2 w-full text-left hover:opacity-70 transition-opacity">
+                   <CardTitle className="text-lg">{entry.title}</CardTitle>
+                   {isOpen ? <ChevronUp className="h-5 w-5 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 text-muted-foreground" />}
+                 </button>
+                 {(entry.audio_url || entry.image_url) && (
+                   <div className="flex flex-wrap items-center gap-2 text-xs">
+                     {entry.transcription_source && entry.audio_url && <Badge variant="secondary" className="gap-1 h-6"><span>📄</span><span>Voice transcribed</span></Badge>}
+                     {entry.audio_url && <Badge variant="secondary" className="gap-1 h-6"><Mic className="h-3 w-3" /><span>Audio</span></Badge>}
+                     {entry.image_url && <Badge variant="secondary" className="gap-1 h-6"><ImageIcon className="h-3 w-3" /><span>Image</span></Badge>}
+                   </div>
+                 )}
+                 {!isOpen && <p className="text-sm text-muted-foreground line-clamp-2">{preview}</p>}
+                 <div className="flex flex-wrap items-center gap-2">
+                   {sourceBadge && <Badge variant="secondary" className={`gap-1 ${sourceBadge.className}`}><span>✨</span>{sourceBadge.label}</Badge>}
+                   {moodOption && <Badge variant="outline" className={`gap-1 ${moodStyles.textAccent}`}><span>{moodOption.icon}</span><span>{moodOption.label}</span></Badge>}
+                   {(() => {
+                     const depthBadge = getDepthBadge(entry.depth_score);
+                     return depthBadge && <Badge variant="outline" className={depthBadge.className}>{depthBadge.label}</Badge>;
+                   })()}
+                   {entry.tags?.map(tag => <Badge key={tag} variant="secondary">#{tag}</Badge>)}
+                   {entry.linked_goals && entry.linked_goals.length > 0 && (
+                     <Badge variant="outline" className="gap-1 text-primary">
+                       <Target className="h-3 w-3" />
+                       {entry.linked_goals.length} goal{entry.linked_goals.length > 1 ? 's' : ''}
+                     </Badge>
+                   )}
                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="icon" onClick={() => openEditDialog(entry)}><Edit className="h-4 w-4" /></Button>
-                    <Button variant="outline" size="icon" onClick={() => setEntryToDelete(entry.id)}><Trash2 className="h-4 w-4" /></Button>
-                  </div>
+                 <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                   <span>{wordCount.toLocaleString()} words</span><span>•</span>
+                   <span>{getReadingTime(wordCount)}</span><span>•</span>
+                   <span>{format(new Date(entry.entry_date), "MMM d, yyyy")}</span>
+                 </div>
+                 <TooltipProvider>
+                   <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                     <Tooltip>
+                       <TooltipTrigger asChild>
+                         <span className="flex items-center gap-1">
+                           <Clock className="h-3 w-3" />
+                           Created {format(new Date(entry.created_at), "MMM d, yyyy 'at' h:mm a")}
+                         </span>
+                       </TooltipTrigger>
+                       <TooltipContent>
+                         <p>Created: {format(new Date(entry.created_at), "PPpp")}</p>
+                       </TooltipContent>
+                     </Tooltip>
+                     {entry.created_at !== entry.updated_at && (
+                       <>
+                         <span>•</span>
+                         <Tooltip>
+                           <TooltipTrigger asChild>
+                             <span className="flex items-center gap-1">
+                               Modified {format(new Date(entry.updated_at), "MMM d, yyyy 'at' h:mm a")}
+                             </span>
+                           </TooltipTrigger>
+                           <TooltipContent>
+                             <p>Last modified: {format(new Date(entry.updated_at), "PPpp")}</p>
+                           </TooltipContent>
+                         </Tooltip>
+                       </>
+                     )}
+                   </div>
+                 </TooltipProvider>
+                 <EntryQuickActions entryId={entry.id} isFavorite={entry.is_favorite || false} moodType={entry.mood_type || 'general'} tags={entry.tags || []}
+                   onFavoriteChange={(isFavorite) => handleEntryUpdate(entry.id, { is_favorite: isFavorite })}
+                   onMoodChange={(mood_type) => handleEntryUpdate(entry.id, { mood_type })}
+                   onTagsChange={(tags) => handleEntryUpdate(entry.id, { tags })} />
                </div>
              </CardHeader>
              {isOpen && (<><CardContent className="pt-4 border-t"><div className="prose prose-sm max-w-full dark:prose-invert break-words overflow-hidden md:prose-ul:list-disc md:prose-ol:list-decimal prose-ul:list-none prose-ol:list-none prose-ul:pl-0 prose-ol:pl-0 prose-li:leading-tight md:prose-li:leading-relaxed prose-p:leading-snug md:prose-p:leading-relaxed"><ReactMarkdown>{entry.content}</ReactMarkdown></div></CardContent>
