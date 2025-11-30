@@ -6,6 +6,7 @@ import { Textarea } from "./ui/textarea";
 import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Switch } from "./ui/switch";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
 import { 
   Dialog, 
   DialogContent, 
@@ -48,7 +49,9 @@ import {
   Calendar,
   Wind,
   Brain,
-  BookOpen
+  BookOpen,
+  ChevronDown,
+  ChevronRight
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -127,6 +130,7 @@ export const PracticeManager = ({ goalId, goalType, intention }: PracticeManager
     frequency: "daily",
   });
   const [loadingAI, setLoadingAI] = useState(false);
+  const [expandedPractices, setExpandedPractices] = useState<Set<string>>(new Set());
   
   // Delete confirmation state
   const [practiceToDelete, setPracticeToDelete] = useState<Practice | null>(null);
@@ -135,6 +139,18 @@ export const PracticeManager = ({ goalId, goalType, intention }: PracticeManager
   const [practiceToLog, setPracticeToLog] = useState<Practice | null>(null);
   const [logNotes, setLogNotes] = useState("");
   const [isLogging, setIsLogging] = useState(false);
+
+  const togglePractice = (practiceId: string) => {
+    setExpandedPractices(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(practiceId)) {
+        newSet.delete(practiceId);
+      } else {
+        newSet.add(practiceId);
+      }
+      return newSet;
+    });
+  };
 
   useEffect(() => {
     fetchPractices();
@@ -443,62 +459,89 @@ export const PracticeManager = ({ goalId, goalType, intention }: PracticeManager
               return logDate.toDateString() === today.toDateString();
             });
 
+            const isExpanded = expandedPractices.has(practice.id);
+            const hasDescription = !!practice.description;
+
             return (
-              <Card key={practice.id} className="w-full max-w-full overflow-hidden p-4">
-                <div className="flex items-start justify-between gap-2 sm:gap-3">
-                  <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
-                    <div className={`p-2 rounded-lg border border-border/30 flex-shrink-0 ${iconColor}`} style={{ backgroundColor: '#F9F0E5' }}>
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1 min-w-0 space-y-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h5 className="font-medium break-words">{practice.title}</h5>
-                        <Badge variant="outline" className="text-xs">{practice.frequency}</Badge>
-                      </div>
-                      {practice.description && (
-                        <div className="text-sm text-muted-foreground prose prose-sm max-w-none dark:prose-invert break-words overflow-hidden">
-                          <ReactMarkdown>{practice.description}</ReactMarkdown>
+              <Card key={practice.id} className="w-full max-w-full overflow-hidden">
+                <Collapsible open={isExpanded} onOpenChange={() => hasDescription && togglePractice(practice.id)}>
+                  <div className="p-4">
+                    <div className="flex items-start justify-between gap-2 sm:gap-3">
+                      <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
+                        <div className={`p-2 rounded-lg border border-border/30 flex-shrink-0 ${iconColor}`} style={{ backgroundColor: '#F9F0E5' }}>
+                          <Icon className="h-4 w-4" />
                         </div>
-                      )}
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                        {streak > 0 && (
-                          <div className="flex items-center gap-1">
-                            <Flame className="h-3 w-3 text-orange-500" />
-                            <span>{streak} day streak</span>
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <CollapsibleTrigger 
+                            className={`flex items-center gap-2 flex-wrap text-left w-full ${hasDescription ? 'cursor-pointer' : 'cursor-default'}`}
+                            disabled={!hasDescription}
+                          >
+                            <h5 className="font-medium break-words">{practice.title}</h5>
+                            <Badge variant="outline" className="text-xs">{practice.frequency}</Badge>
+                            {hasDescription && (
+                              isExpanded 
+                                ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                : <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </CollapsibleTrigger>
+                          
+                          {/* Preview - shown when collapsed */}
+                          {hasDescription && !isExpanded && (
+                            <p className="text-sm text-muted-foreground line-clamp-2 break-words">
+                              {practice.description!.substring(0, 100)}{practice.description!.length > 100 ? "..." : ""}
+                            </p>
+                          )}
+                          
+                          {/* Full description - shown when expanded */}
+                          <CollapsibleContent>
+                            {hasDescription && (
+                              <div className="text-sm text-muted-foreground prose prose-sm max-w-none dark:prose-invert break-words overflow-hidden">
+                                <ReactMarkdown>{practice.description}</ReactMarkdown>
+                              </div>
+                            )}
+                          </CollapsibleContent>
+                          
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            {streak > 0 && (
+                              <div className="flex items-center gap-1">
+                                <Flame className="h-3 w-3 text-orange-500" />
+                                <span>{streak} day streak</span>
+                              </div>
+                            )}
+                            {todayLog && (
+                              <div className="flex items-center gap-1 text-green-600">
+                                <CheckCircle2 className="h-3 w-3" />
+                                <span>Completed today</span>
+                              </div>
+                            )}
                           </div>
-                        )}
-                        {todayLog && (
-                          <div className="flex items-center gap-1 text-green-600">
-                            <CheckCircle2 className="h-3 w-3" />
-                            <span>Completed today</span>
-                          </div>
-                        )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => setPracticeToDelete(practice)}
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={todayLog ? "outline" : "default"}
+                          onClick={() => {
+                            if (!todayLog) {
+                              setPracticeToLog(practice);
+                            }
+                          }}
+                          disabled={!!todayLog}
+                        >
+                          {todayLog ? <CheckCircle2 className="h-4 w-4" /> : <Calendar className="h-4 w-4" />}
+                        </Button>
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => setPracticeToDelete(practice)}
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={todayLog ? "outline" : "default"}
-                      onClick={() => {
-                        if (!todayLog) {
-                          setPracticeToLog(practice);
-                        }
-                      }}
-                      disabled={!!todayLog}
-                    >
-                      {todayLog ? <CheckCircle2 className="h-4 w-4" /> : <Calendar className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
+                </Collapsible>
               </Card>
             );
           })}
