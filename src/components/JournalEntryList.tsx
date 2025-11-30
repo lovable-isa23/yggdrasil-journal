@@ -29,7 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { cn, parseLocalDate } from "@/lib/utils";
 
 interface JournalEntry {
   id: string;
@@ -297,7 +297,7 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
     setEntryToEdit(entry);
     setEditTitle(entry.title);
     setEditContent(entry.content);
-    setEditDate(new Date(entry.entry_date));
+    setEditDate(parseLocalDate(entry.entry_date));
     setEditLinkedGoals(entry.linked_goals || []);
   };
 
@@ -441,7 +441,7 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                    <span>{wordCount.toLocaleString()} words</span><span>•</span>
                    <span>{getReadingTime(wordCount)}</span><span>•</span>
-                   <span>{format(new Date(entry.entry_date), "MMM d, yyyy")}</span>
+                   <span>{format(parseLocalDate(entry.entry_date), "MMM d, yyyy")}</span>
                  </div>
                  <TooltipProvider>
                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">

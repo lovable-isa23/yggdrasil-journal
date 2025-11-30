@@ -6,7 +6,7 @@ import { Button } from "./ui/button";
 import { Loader2, Calendar, BookOpen, Target, Sparkles, Heart, ChevronDown, ChevronUp } from "lucide-react";
 import { format } from "date-fns";
 import { ReflectionViewDialog } from "./ReflectionViewDialog";
-import { cn } from "@/lib/utils";
+import { cn, parseLocalDate } from "@/lib/utils";
 import { ScrollArea } from "./ui/scroll-area";
 
 interface TimelineEvent {
@@ -67,7 +67,7 @@ export const JourneyTimeline = ({ goalId, refreshTrigger }: JourneyTimelineProps
       const entries = decryptedData?.entries?.filter((entry: any) => 
         entry.linked_goals?.includes(goalId)
       ).sort((a: any, b: any) => 
-        new Date(a.entry_date).getTime() - new Date(b.entry_date).getTime()
+        parseLocalDate(a.entry_date).getTime() - parseLocalDate(b.entry_date).getTime()
       ) || [];
 
       // Fetch practices
