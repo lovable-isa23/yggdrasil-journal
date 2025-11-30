@@ -15,16 +15,40 @@ export const NPSTooltip = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user has already seen the NPS tooltip
-    const hasSeenNPS = localStorage.getItem("hasSeenNPS");
-    
-    // Show after 5 seconds if not seen before
-    if (!hasSeenNPS) {
-      const timer = setTimeout(() => {
-        setIsVisible(true);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
+    const checkExistingNPS = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return; // Not logged in, don't show
+
+        // Check database for existing response from this user
+        const { data: existingResponse } = await supabase
+          .from("nps_responses")
+          .select("id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        // If user already submitted, don't show
+        if (existingResponse) {
+          localStorage.setItem("hasSeenNPS", "true"); // Sync localStorage
+          return;
+        }
+
+        // Also check localStorage for users who dismissed without submitting
+        const hasSeenNPS = localStorage.getItem("hasSeenNPS");
+        if (hasSeenNPS) return;
+
+        // Show after 5 seconds
+        const timer = setTimeout(() => {
+          setIsVisible(true);
+        }, 5000);
+        
+        return () => clearTimeout(timer);
+      } catch (error) {
+        console.error("Error checking NPS status:", error);
+      }
+    };
+
+    checkExistingNPS();
   }, []);
 
   const handleClose = () => {
