@@ -5,6 +5,7 @@ import { FileJson, FileText } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import { format } from "date-fns";
+import { parseLocalDate } from "@/lib/utils";
 import { useLoading } from "@/contexts/LoadingContext";
 import {
   addCoverPage,
@@ -142,7 +143,7 @@ export const DataExport = () => {
         pdf.setFontSize(10);
         pdf.setFont("helvetica", "italic");
         setColor(pdf, colors.textLight);
-        pdf.text(format(new Date(entry.entry_date), "MMMM d, yyyy"), margin, yPosition);
+        pdf.text(format(parseLocalDate(entry.entry_date), "MMMM d, yyyy"), margin, yPosition);
         yPosition += 10;
 
         // Entry Content

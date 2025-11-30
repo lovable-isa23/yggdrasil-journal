@@ -7,7 +7,7 @@ import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
-import { cn } from "@/lib/utils";
+import { cn, parseLocalDate } from "@/lib/utils";
 import { useLoading } from "@/contexts/LoadingContext";
 import {
   addCoverPage,
@@ -64,7 +64,7 @@ export const ReportExport = () => {
       
       const allEntries = decryptedData?.entries || [];
       const entries = allEntries.filter((entry: any) => {
-        const entryDate = new Date(entry.entry_date);
+        const entryDate = parseLocalDate(entry.entry_date);
         return entryDate >= dateRange.from && entryDate <= dateRange.to;
       });
 
