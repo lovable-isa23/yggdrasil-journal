@@ -47,3 +47,6 @@ verify_jwt = true
 
 [functions.update-entry]
 verify_jwt = true
+
+[functions.demo-parse]
+verify_jwt = false
