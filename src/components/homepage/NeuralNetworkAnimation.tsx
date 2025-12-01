@@ -33,13 +33,13 @@ export const NeuralNetworkAnimation = () => {
   const isMobile = useIsMobile();
 
   const initializeNetwork = useCallback((width: number, height: number) => {
-    const nodeCount = isMobile ? 25 : 50;
+    const coreNodeCount = isMobile ? 18 : 35;
+    const outerNodeCount = isMobile ? 12 : 25;
     const nodes: Node[] = [];
     const colorArray = Object.values(COLORS);
 
-    // Create nodes with organic clustering
-    for (let i = 0; i < nodeCount; i++) {
-      // Create clusters around center
+    // Create core nodes clustered around center
+    for (let i = 0; i < coreNodeCount; i++) {
       const angle = Math.random() * Math.PI * 2;
       const distance = Math.random() * Math.min(width, height) * 0.35 + 50;
       const centerX = width / 2;
@@ -54,6 +54,46 @@ export const NeuralNetworkAnimation = () => {
         color: colorArray[Math.floor(Math.random() * colorArray.length)],
         pulsePhase: Math.random() * Math.PI * 2,
         pulseSpeed: 0.02 + Math.random() * 0.02,
+      });
+    }
+
+    // Create peripheral nodes near edges and corners
+    for (let i = 0; i < outerNodeCount; i++) {
+      const edge = Math.floor(Math.random() * 4);
+      let x: number, y: number;
+      
+      const margin = 80;
+      const outerZone = 0.25;
+      
+      switch (edge) {
+        case 0: // Top
+          x = Math.random() * width;
+          y = margin + Math.random() * height * outerZone;
+          break;
+        case 1: // Right
+          x = width - margin - Math.random() * width * outerZone;
+          y = Math.random() * height;
+          break;
+        case 2: // Bottom
+          x = Math.random() * width;
+          y = height - margin - Math.random() * height * outerZone;
+          break;
+        case 3: // Left
+        default:
+          x = margin + Math.random() * width * outerZone;
+          y = Math.random() * height;
+          break;
+      }
+      
+      nodes.push({
+        x,
+        y,
+        vx: (Math.random() - 0.5) * 0.2,
+        vy: (Math.random() - 0.5) * 0.2,
+        radius: Math.random() * 3 + 2,
+        color: colorArray[Math.floor(Math.random() * colorArray.length)],
+        pulsePhase: Math.random() * Math.PI * 2,
+        pulseSpeed: 0.015 + Math.random() * 0.015,
       });
     }
 
