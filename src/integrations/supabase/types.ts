@@ -404,6 +404,7 @@ export type Database = {
           image_url: string | null
           import_batch_id: string | null
           is_favorite: boolean | null
+          linked_entries: string[] | null
           linked_goals: string[] | null
           mood_color: string | null
           mood_type: string | null
@@ -426,6 +427,7 @@ export type Database = {
           image_url?: string | null
           import_batch_id?: string | null
           is_favorite?: boolean | null
+          linked_entries?: string[] | null
           linked_goals?: string[] | null
           mood_color?: string | null
           mood_type?: string | null
@@ -448,6 +450,7 @@ export type Database = {
           image_url?: string | null
           import_batch_id?: string | null
           is_favorite?: boolean | null
+          linked_entries?: string[] | null
           linked_goals?: string[] | null
           mood_color?: string | null
           mood_type?: string | null
