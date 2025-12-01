@@ -91,8 +91,8 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
     try {
       const { data, error } = await supabase.functions.invoke('decrypt-entries');
       if (error) throw error;
-      // Get recent entries (last 20) for linking
-      const entries = (data?.entries || []).slice(0, 20).map((e: any) => ({
+      // Get all entries for linking
+      const entries = (data?.entries || []).map((e: any) => ({
         id: e.id,
         title: e.title,
         entry_date: e.entry_date,

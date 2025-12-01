@@ -2,7 +2,6 @@ import { useState } from "react";
 import { AuthGuard } from "@/components/AuthGuard";
 import { JournalEditor } from "@/components/JournalEditor";
 import { JournalEntryList } from "@/components/JournalEntryList";
-import { DataExport } from "@/components/DataExport";
 import { DataImport } from "@/components/DataImport";
 import { NPSTooltip } from "@/components/NPSTooltip";
 import { EntryFilters, FilterOptions, SortOption } from "@/components/EntryFilters";
@@ -134,10 +133,7 @@ const Journal = () => {
                   <FileText className="h-6 w-6 text-primary" />
                   <h3 className="text-2xl font-bold">Your Entries</h3>
                 </div>
-                <div className="flex gap-2 sm:gap-3">
-                  <DataImport onImportComplete={handleEntryCreated} />
-                  <DataExport />
-                </div>
+                <DataImport onImportComplete={handleEntryCreated} />
               </div>
               
               <EntryFilters
