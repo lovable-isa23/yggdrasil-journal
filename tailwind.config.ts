@@ -57,6 +57,12 @@ export default {
           teal: "hsl(var(--cosmic-teal))",
           cream: "hsl(var(--soft-cream))",
         },
+        graph: {
+          relationships: "hsl(var(--graph-relationships))",
+          emotions: "hsl(var(--graph-emotions))",
+          activities: "hsl(var(--graph-activities))",
+          insights: "hsl(var(--graph-insights))",
+        },
         testimonials: {
           bg: "hsl(var(--testimonials-bg))",
         },
@@ -102,12 +108,86 @@ export default {
             backgroundPosition: "0% 50%",
           },
         },
+        "pulse-glow": {
+          "0%, 100%": {
+            filter: "drop-shadow(0 0 8px hsla(var(--sage-green) / 0.4))",
+            transform: "scale(1)",
+          },
+          "50%": {
+            filter: "drop-shadow(0 0 15px hsla(var(--sage-green) / 0.6))",
+            transform: "scale(1.05)",
+          },
+        },
+        "float-gentle": {
+          "0%, 100%": {
+            transform: "translateY(0) rotate(0deg)",
+          },
+          "25%": {
+            transform: "translateY(-10px) rotate(1deg)",
+          },
+          "75%": {
+            transform: "translateY(5px) rotate(-1deg)",
+          },
+        },
+        "draw-line": {
+          from: {
+            strokeDashoffset: "1000",
+          },
+          to: {
+            strokeDashoffset: "0",
+          },
+        },
+        "node-appear": {
+          from: {
+            transform: "scale(0)",
+            opacity: "0",
+          },
+          "50%": {
+            transform: "scale(1.2)",
+          },
+          to: {
+            transform: "scale(1)",
+            opacity: "1",
+          },
+        },
+        "insight-bubble": {
+          from: {
+            transform: "translateY(10px)",
+            opacity: "0",
+          },
+          to: {
+            transform: "translateY(0)",
+            opacity: "1",
+          },
+        },
+        "flow-particle": {
+          "0%": {
+            offsetDistance: "0%",
+            opacity: "0",
+          },
+          "10%": {
+            opacity: "1",
+          },
+          "90%": {
+            opacity: "1",
+          },
+          "100%": {
+            offsetDistance: "100%",
+            opacity: "0",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "pulse-slow": "pulse-slow 4s ease-in-out infinite",
         "gradient": "gradient 8s ease infinite",
+        "pulse-glow": "pulse-glow 2s ease-in-out infinite",
+        "float-gentle": "float-gentle 6s ease-in-out infinite",
+        "draw-line": "draw-line 2s ease-out forwards",
+        "node-appear": "node-appear 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards",
+        "insight-bubble": "insight-bubble 0.4s ease-out forwards",
+        "flow-particle": "flow-particle 3s linear infinite",
       },
     },
   },
