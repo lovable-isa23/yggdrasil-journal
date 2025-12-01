@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import yggdrasilHeroBg from "@/assets/yggdrasil-hero-bg.png";
 
 interface Entity {
   name: string;
@@ -86,8 +87,15 @@ export const LiveDemoSection = () => {
   return (
     <section
       ref={elementRef}
-      className="py-24 px-6 bg-background grain-overlay relative overflow-hidden"
+      className="py-24 px-6 grain-overlay relative overflow-hidden"
+      style={{
+        backgroundImage: `url(${yggdrasilHeroBg})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
     >
+      {/* Semi-transparent overlay for text readability */}
+      <div className="absolute inset-0 bg-background/85" />
       <div className="container mx-auto max-w-6xl relative z-10">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
