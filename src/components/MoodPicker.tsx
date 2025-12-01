@@ -43,11 +43,11 @@ const MOOD_OPTIONS: MoodOption[] = [
     borderColor: 'border-orange-400',
   },
   {
-    value: 'celebration',
-    label: 'Celebration',
-    icon: '🎉',
-    gradient: 'from-pink-100 to-pink-50',
-    borderColor: 'border-rose-400',
+    value: 'intention',
+    label: 'Intention',
+    icon: '🎯',
+    gradient: 'from-emerald-100 to-green-50',
+    borderColor: 'border-emerald-400',
   },
   {
     value: 'general',
