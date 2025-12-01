@@ -9,7 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ReactMarkdown from "react-markdown";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Target, X, MessageSquareReply } from "lucide-react";
+import { CalendarIcon, Target, X, MessageSquareReply, Link2, ChevronDown } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -203,82 +204,90 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
         )}
       </div>
 
-      {goals.length > 0 && (
-        <div className="space-y-3">
-          <Label className="flex items-center gap-2">
-            <Target className="h-4 w-4" />
-            Link to Active Journeys (Optional)
-          </Label>
-          <p className="text-sm text-muted-foreground">
-            Connect this entry to your spiritual journeys
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {goals.map((goal) => {
-              const isSelected = selectedGoals.includes(goal.id);
-              return (
-                <button
-                  key={goal.id}
-                  type="button"
-                  onClick={() => toggleGoal(goal.id)}
-                  className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-lg border transition-all",
-                    isSelected
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border hover:border-primary/50"
-                  )}
-                >
-                  <span className="text-sm">{goal.title}</span>
-                  {isSelected && <X className="h-3 w-3" />}
-                </button>
-              );
-            })}
-          </div>
-          {selectedGoals.length > 0 && (
-            <div className="flex gap-2 items-center text-sm text-muted-foreground">
-              <Badge variant="secondary">{selectedGoals.length}</Badge>
-              <span>journey{selectedGoals.length > 1 ? "s" : ""} linked</span>
-            </div>
-          )}
-        </div>
-      )}
+      {(goals.length > 0 || recentEntries.length > 0) && (
+        <Collapsible defaultOpen={false}>
+          <CollapsibleTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full justify-between px-3 py-2 h-auto"
+            >
+              <span className="flex items-center gap-2 text-sm font-medium">
+                <Link2 className="h-4 w-4" />
+                Link to journeys or entries (optional)
+              </span>
+              <span className="flex items-center gap-2">
+                {(selectedGoals.length + selectedEntries.length) > 0 && (
+                  <Badge variant="secondary" className="text-xs">
+                    {selectedGoals.length + selectedEntries.length} linked
+                  </Badge>
+                )}
+                <ChevronDown className="h-4 w-4 transition-transform duration-200 [[data-state=open]_&]:rotate-180" />
+              </span>
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-4 pt-4">
+            {goals.length > 0 && (
+              <div className="space-y-3 pl-2">
+                <Label className="flex items-center gap-2 text-sm">
+                  <Target className="h-4 w-4" />
+                  Active Journeys
+                </Label>
+                <div className="flex flex-wrap gap-2">
+                  {goals.map((goal) => {
+                    const isSelected = selectedGoals.includes(goal.id);
+                    return (
+                      <button
+                        key={goal.id}
+                        type="button"
+                        onClick={() => toggleGoal(goal.id)}
+                        className={cn(
+                          "flex items-center gap-2 px-3 py-2 rounded-lg border transition-all",
+                          isSelected
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border hover:border-primary/50"
+                        )}
+                      >
+                        <span className="text-sm">{goal.title}</span>
+                        {isSelected && <X className="h-3 w-3" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
-      {recentEntries.length > 0 && (
-        <div className="space-y-3">
-          <Label className="flex items-center gap-2">
-            <MessageSquareReply className="h-4 w-4" />
-            Link to Previous Entries (Optional)
-          </Label>
-          <p className="text-sm text-muted-foreground">
-            Connect this entry to related journal entries to create a thread
-          </p>
-          <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
-            {recentEntries.map((entry) => {
-              const isSelected = selectedEntries.includes(entry.id);
-              return (
-                <button
-                  key={entry.id}
-                  type="button"
-                  onClick={() => toggleEntry(entry.id)}
-                  className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-lg border transition-all text-left",
-                    isSelected
-                      ? "border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                      : "border-border hover:border-blue-500/50"
-                  )}
-                >
-                  <span className="text-sm truncate max-w-[180px]">{entry.title}</span>
-                  {isSelected && <X className="h-3 w-3" />}
-                </button>
-              );
-            })}
-          </div>
-          {selectedEntries.length > 0 && (
-            <div className="flex gap-2 items-center text-sm text-muted-foreground">
-              <Badge variant="secondary" className="bg-blue-500/10 text-blue-600 dark:text-blue-400">{selectedEntries.length}</Badge>
-              <span>entr{selectedEntries.length > 1 ? "ies" : "y"} linked</span>
-            </div>
-          )}
-        </div>
+            {recentEntries.length > 0 && (
+              <div className="space-y-3 pl-2">
+                <Label className="flex items-center gap-2 text-sm">
+                  <MessageSquareReply className="h-4 w-4" />
+                  Previous Entries
+                </Label>
+                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                  {recentEntries.map((entry) => {
+                    const isSelected = selectedEntries.includes(entry.id);
+                    return (
+                      <button
+                        key={entry.id}
+                        type="button"
+                        onClick={() => toggleEntry(entry.id)}
+                        className={cn(
+                          "flex items-center gap-2 px-3 py-2 rounded-lg border transition-all text-left",
+                          isSelected
+                            ? "border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                            : "border-border hover:border-blue-500/50"
+                        )}
+                      >
+                        <span className="text-sm truncate max-w-[180px]">{entry.title}</span>
+                        {isSelected && <X className="h-3 w-3" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </CollapsibleContent>
+        </Collapsible>
       )}
 
       <div className="space-y-2">
