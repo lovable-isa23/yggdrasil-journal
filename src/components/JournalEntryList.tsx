@@ -3,7 +3,7 @@ import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2, Calendar as CalendarIcon, ChevronDown, ChevronUp, Mic, Image as ImageIcon, Loader2, FileText, Edit, Clock, X, Target } from "lucide-react";
+import { Trash2, Calendar as CalendarIcon, ChevronDown, ChevronUp, Mic, Image as ImageIcon, Loader2, FileText, Edit, Clock, X, Target, MessageSquareReply } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -50,6 +50,7 @@ interface JournalEntry {
   source_practice_id?: string;
   source_milestone_id?: string;
   linked_goals?: string[];
+  linked_entries?: string[];
 }
 
 interface Goal {
@@ -142,6 +143,7 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
   const [editContent, setEditContent] = useState("");
   const [editDate, setEditDate] = useState<Date>(new Date());
   const [editLinkedGoals, setEditLinkedGoals] = useState<string[]>([]);
+  const [editLinkedEntries, setEditLinkedEntries] = useState<string[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
@@ -299,6 +301,7 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
     setEditContent(entry.content);
     setEditDate(parseLocalDate(entry.entry_date));
     setEditLinkedGoals(entry.linked_goals || []);
+    setEditLinkedEntries(entry.linked_entries || []);
   };
 
   const closeEditDialog = () => {
@@ -307,6 +310,7 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
     setEditContent("");
     setEditDate(new Date());
     setEditLinkedGoals([]);
+    setEditLinkedEntries([]);
   };
 
   const toggleGoal = (goalId: string) => {
@@ -314,6 +318,14 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
       prev.includes(goalId) 
         ? prev.filter(id => id !== goalId)
         : [...prev, goalId]
+    );
+  };
+
+  const toggleLinkedEntry = (entryId: string) => {
+    setEditLinkedEntries(prev => 
+      prev.includes(entryId) 
+        ? prev.filter(id => id !== entryId)
+        : [...prev, entryId]
     );
   };
 
@@ -339,6 +351,7 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
           content: editContent,
           entry_date: formattedDate,
           linked_goals: editLinkedGoals,
+          linked_entries: editLinkedEntries,
         },
       });
 
@@ -398,7 +411,7 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
          const sourceBadge = getSourceBadge(entry.source_type);
 
          return (
-           <Card key={entry.id} className={`overflow-hidden w-full max-w-full border-l-4 ${moodStyles.border} bg-gradient-to-br ${moodStyles.bg} transition-all duration-200 hover:-translate-y-1 hover:shadow-lg`}>
+           <Card key={entry.id} id={`entry-${entry.id}`} className={`overflow-hidden w-full max-w-full border-l-4 ${moodStyles.border} bg-gradient-to-br ${moodStyles.bg} transition-all duration-200 hover:-translate-y-1 hover:shadow-lg`}>
              <CardHeader className="pb-3 relative">
                {/* Small floating edit/delete buttons */}
                <div className="absolute top-3 right-3 flex gap-1">
@@ -431,12 +444,18 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
                      return depthBadge && <Badge variant="outline" className={depthBadge.className}>{depthBadge.label}</Badge>;
                    })()}
                    {entry.tags?.map(tag => <Badge key={tag} variant="secondary">#{tag}</Badge>)}
-                   {entry.linked_goals && entry.linked_goals.length > 0 && (
-                     <Badge variant="outline" className="gap-1 text-primary">
-                       <Target className="h-3 w-3" />
-                       {entry.linked_goals.length} goal{entry.linked_goals.length > 1 ? 's' : ''}
-                     </Badge>
-                   )}
+                    {entry.linked_goals && entry.linked_goals.length > 0 && (
+                      <Badge variant="outline" className="gap-1 text-primary">
+                        <Target className="h-3 w-3" />
+                        {entry.linked_goals.length} goal{entry.linked_goals.length > 1 ? 's' : ''}
+                      </Badge>
+                    )}
+                    {entry.linked_entries && entry.linked_entries.length > 0 && (
+                      <Badge variant="outline" className="gap-1 text-blue-600 dark:text-blue-400">
+                        <MessageSquareReply className="h-3 w-3" />
+                        {entry.linked_entries.length} linked {entry.linked_entries.length > 1 ? 'entries' : 'entry'}
+                      </Badge>
+                    )}
                  </div>
                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                    <span>{wordCount.toLocaleString()} words</span><span>•</span>
@@ -479,8 +498,50 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
                    onTagsChange={(tags) => handleEntryUpdate(entry.id, { tags })} />
                </div>
              </CardHeader>
-             {isOpen && (<><CardContent className="pt-4 border-t"><div className="prose prose-sm max-w-full dark:prose-invert break-words overflow-hidden md:prose-ul:list-disc md:prose-ol:list-decimal prose-ul:list-none prose-ol:list-none prose-ul:pl-0 prose-ol:pl-0 prose-li:leading-tight md:prose-li:leading-relaxed prose-p:leading-snug md:prose-p:leading-relaxed"><ReactMarkdown>{entry.content}</ReactMarkdown></div></CardContent>
-             <CardFooter className="w-full max-w-full overflow-hidden"><EntryInsights entryId={entry.id} title={entry.title} content={entry.content} /></CardFooter></>)}
+              {isOpen && (
+                <>
+                  <CardContent className="pt-4 border-t">
+                    <div className="prose prose-sm max-w-full dark:prose-invert break-words overflow-hidden md:prose-ul:list-disc md:prose-ol:list-decimal prose-ul:list-none prose-ol:list-none prose-ul:pl-0 prose-ol:pl-0 prose-li:leading-tight md:prose-li:leading-relaxed prose-p:leading-snug md:prose-p:leading-relaxed">
+                      <ReactMarkdown>{entry.content}</ReactMarkdown>
+                    </div>
+                    
+                    {/* Show linked entries when expanded */}
+                    {entry.linked_entries && entry.linked_entries.length > 0 && (
+                      <div className="mt-4 pt-4 border-t border-border/50">
+                        <h5 className="text-sm font-medium flex items-center gap-2 mb-3 text-muted-foreground">
+                          <MessageSquareReply className="h-4 w-4" />
+                          Related Entries
+                        </h5>
+                        <div className="flex flex-wrap gap-2">
+                          {entries
+                            .filter(e => entry.linked_entries?.includes(e.id))
+                            .map(linkedEntry => (
+                              <button
+                                key={linkedEntry.id}
+                                onClick={() => {
+                                  // Expand the linked entry
+                                  setOpenEntries(prev => {
+                                    const newSet = new Set(prev);
+                                    newSet.add(linkedEntry.id);
+                                    return newSet;
+                                  });
+                                  // Scroll to it
+                                  document.getElementById(`entry-${linkedEntry.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                }}
+                                className="text-sm px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-colors"
+                              >
+                                {linkedEntry.title}
+                              </button>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                  <CardFooter className="w-full max-w-full overflow-hidden">
+                    <EntryInsights entryId={entry.id} title={entry.title} content={entry.content} />
+                  </CardFooter>
+                </>
+              )}
            </Card>
          );
        })}
@@ -585,6 +646,49 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
                 {editLinkedGoals.length > 0 && (
                   <p className="text-xs text-muted-foreground">
                     {editLinkedGoals.length} goal{editLinkedGoals.length > 1 ? 's' : ''} linked
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Linked Entries Section */}
+            {entries.length > 1 && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <MessageSquareReply className="h-4 w-4" />
+                  Link to Related Entries
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Connect this entry to other journal entries to create a thread
+                </p>
+                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                  {entries
+                    .filter(e => e.id !== entryToEdit?.id)
+                    .slice(0, 20)
+                    .map((entry) => {
+                      const isSelected = editLinkedEntries.includes(entry.id);
+                      return (
+                        <button
+                          key={entry.id}
+                          type="button"
+                          onClick={() => toggleLinkedEntry(entry.id)}
+                          disabled={isSaving}
+                          className={cn(
+                            "inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm transition-all",
+                            isSelected
+                              ? "bg-blue-600 text-white"
+                              : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                          )}
+                        >
+                          <span className="truncate max-w-[150px]">{entry.title}</span>
+                          {isSelected && <X className="h-3 w-3" />}
+                        </button>
+                      );
+                    })}
+                </div>
+                {editLinkedEntries.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {editLinkedEntries.length} entr{editLinkedEntries.length > 1 ? 'ies' : 'y'} linked
                   </p>
                 )}
               </div>

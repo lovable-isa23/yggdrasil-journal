@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ReactMarkdown from "react-markdown";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Target, X } from "lucide-react";
+import { CalendarIcon, Target, X, MessageSquareReply } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -30,6 +30,12 @@ interface Goal {
   status: string;
 }
 
+interface RecentEntry {
+  id: string;
+  title: string;
+  entry_date: string;
+}
+
 export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
   const [entryDate, setEntryDate] = useState<Date>(() => {
     const today = new Date();
@@ -38,6 +44,8 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
   });
   const [goals, setGoals] = useState<Goal[]>([]);
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
+  const [recentEntries, setRecentEntries] = useState<RecentEntry[]>([]);
+  const [selectedEntries, setSelectedEntries] = useState<string[]>([]);
   const [audioUrl, setAudioUrl] = useState<string | undefined>();
   const [imageUrl, setImageUrl] = useState<string | undefined>();
   
@@ -60,6 +68,7 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
 
   useEffect(() => {
     fetchGoals();
+    fetchRecentEntries();
   }, []);
 
   const fetchGoals = async () => {
@@ -77,11 +86,35 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
     }
   };
 
+  const fetchRecentEntries = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('decrypt-entries');
+      if (error) throw error;
+      // Get recent entries (last 20) for linking
+      const entries = (data?.entries || []).slice(0, 20).map((e: any) => ({
+        id: e.id,
+        title: e.title,
+        entry_date: e.entry_date,
+      }));
+      setRecentEntries(entries);
+    } catch (error) {
+      console.error("Error fetching recent entries:", error);
+    }
+  };
+
   const toggleGoal = (goalId: string) => {
     setSelectedGoals(prev =>
       prev.includes(goalId)
         ? prev.filter(id => id !== goalId)
         : [...prev, goalId]
+    );
+  };
+
+  const toggleEntry = (entryId: string) => {
+    setSelectedEntries(prev =>
+      prev.includes(entryId)
+        ? prev.filter(id => id !== entryId)
+        : [...prev, entryId]
     );
   };
 
@@ -128,6 +161,7 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
           content: data.content,
           entry_date: localDate,
           linked_goals: selectedGoals,
+          linked_entries: selectedEntries,
           audio_url: audioUrl,
           image_url: imageUrl,
           transcription_source: audioUrl ? 'voice' : imageUrl ? 'image' : 'typed',
@@ -139,11 +173,14 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
       toast.success("Journal entry created (AES-256 encrypted)!");
       reset();
       setSelectedGoals([]);
+      setSelectedEntries([]);
       setAudioUrl(undefined);
       setImageUrl(undefined);
       const today = new Date();
       today.setHours(12, 0, 0, 0);
       setEntryDate(today);
+      // Refresh recent entries list
+      fetchRecentEntries();
       onEntryCreated();
     } catch (error: any) {
       toast.error(error.message || "Failed to create entry");
@@ -200,6 +237,45 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
             <div className="flex gap-2 items-center text-sm text-muted-foreground">
               <Badge variant="secondary">{selectedGoals.length}</Badge>
               <span>journey{selectedGoals.length > 1 ? "s" : ""} linked</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {recentEntries.length > 0 && (
+        <div className="space-y-3">
+          <Label className="flex items-center gap-2">
+            <MessageSquareReply className="h-4 w-4" />
+            Link to Previous Entries (Optional)
+          </Label>
+          <p className="text-sm text-muted-foreground">
+            Connect this entry to related journal entries to create a thread
+          </p>
+          <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+            {recentEntries.map((entry) => {
+              const isSelected = selectedEntries.includes(entry.id);
+              return (
+                <button
+                  key={entry.id}
+                  type="button"
+                  onClick={() => toggleEntry(entry.id)}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2 rounded-lg border transition-all text-left",
+                    isSelected
+                      ? "border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                      : "border-border hover:border-blue-500/50"
+                  )}
+                >
+                  <span className="text-sm truncate max-w-[180px]">{entry.title}</span>
+                  {isSelected && <X className="h-3 w-3" />}
+                </button>
+              );
+            })}
+          </div>
+          {selectedEntries.length > 0 && (
+            <div className="flex gap-2 items-center text-sm text-muted-foreground">
+              <Badge variant="secondary" className="bg-blue-500/10 text-blue-600 dark:text-blue-400">{selectedEntries.length}</Badge>
+              <span>entr{selectedEntries.length > 1 ? "ies" : "y"} linked</span>
             </div>
           )}
         </div>

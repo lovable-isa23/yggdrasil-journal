@@ -68,7 +68,7 @@ serve(async (req) => {
       });
     }
 
-    const { entryId, title, content, entry_date, linked_goals } = await req.json();
+    const { entryId, title, content, entry_date, linked_goals, linked_entries } = await req.json();
     
     if (!entryId || !title || !content) {
       return new Response(JSON.stringify({ error: 'Entry ID, title and content are required' }), {
@@ -129,6 +129,10 @@ serve(async (req) => {
 
     if (linked_goals !== undefined) {
       updateData.linked_goals = linked_goals;
+    }
+
+    if (linked_entries !== undefined) {
+      updateData.linked_entries = linked_entries;
     }
 
     const { data: entry, error: updateError } = await supabaseAdmin
