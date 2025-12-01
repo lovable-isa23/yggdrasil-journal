@@ -13,7 +13,7 @@ import { CalendarIcon, Target, X, MessageSquareReply, Link2, ChevronDown } from 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { journalEntrySchema, type JournalEntryFormData } from "@/lib/validations";
@@ -22,6 +22,8 @@ import { ImageUploader } from "@/components/ImageUploader";
 
 interface JournalEditorProps {
   onEntryCreated: () => void;
+  replyToEntry?: { id: string; title: string } | null;
+  onReplyHandled?: () => void;
 }
 
 interface Goal {
@@ -37,7 +39,8 @@ interface RecentEntry {
   entry_date: string;
 }
 
-export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
+export const JournalEditor = ({ onEntryCreated, replyToEntry, onReplyHandled }: JournalEditorProps) => {
+  const titleInputRef = useRef<HTMLInputElement>(null);
   const [entryDate, setEntryDate] = useState<Date>(() => {
     const today = new Date();
     today.setHours(12, 0, 0, 0);
@@ -71,6 +74,22 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
     fetchGoals();
     fetchRecentEntries();
   }, []);
+
+  useEffect(() => {
+    if (replyToEntry) {
+      // Pre-select the entry we're replying to
+      setSelectedEntries(prev => 
+        prev.includes(replyToEntry.id) ? prev : [...prev, replyToEntry.id]
+      );
+      // Scroll editor into view and focus title
+      setTimeout(() => {
+        titleInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        titleInputRef.current?.focus();
+      }, 100);
+      // Notify parent that we've handled the reply
+      onReplyHandled?.();
+    }
+  }, [replyToEntry, onReplyHandled]);
 
   const fetchGoals = async () => {
     try {
@@ -194,6 +213,7 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
         <Label htmlFor="title">Title</Label>
         <Input
           id="title"
+          ref={titleInputRef}
           type="text"
           placeholder="Give your entry a title..."
           {...register("title")}
