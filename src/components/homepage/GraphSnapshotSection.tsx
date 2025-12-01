@@ -202,8 +202,10 @@ export const GraphSnapshotSection = () => {
               {/* Arrow pointer */}
               <div 
                 className={cn(
-                  "absolute w-3 h-3 bg-card/90 border-l border-t border-border rotate-45",
-                  annotation.align === "left" ? "-right-1.5 top-4" : "-left-1.5 top-4"
+                  "absolute w-3 h-3 bg-card/90 border-border rotate-45",
+                  annotation.align === "left" 
+                    ? "-right-1.5 top-4 border-t border-r" 
+                    : "-left-1.5 top-4 border-b border-l"
                 )}
               />
             </div>
