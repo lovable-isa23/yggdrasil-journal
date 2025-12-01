@@ -69,6 +69,7 @@ interface JournalEntryListProps {
   };
   sortOption?: 'date-desc' | 'date-asc' | 'word-count-desc' | 'word-count-asc' | 'favorites-first';
   onEntriesLoaded?: (total: number, filtered: number) => void;
+  onReply?: (entryId: string, entryTitle: string) => void;
 }
 
 const getPreview = (content: string): string => {
@@ -133,7 +134,7 @@ const getDepthBadge = (depthScore?: number | null) => {
   }
 };
 
-export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntriesLoaded }: JournalEntryListProps) {
+export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntriesLoaded, onReply }: JournalEntryListProps) {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [openEntries, setOpenEntries] = useState<Set<string>>(new Set());
@@ -412,16 +413,19 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
 
          return (
            <Card key={entry.id} id={`entry-${entry.id}`} className={`overflow-hidden w-full max-w-full border-l-4 ${moodStyles.border} bg-gradient-to-br ${moodStyles.bg} transition-all duration-200 hover:-translate-y-1 hover:shadow-lg`}>
-             <CardHeader className="pb-3 relative">
-               {/* Small floating edit/delete buttons */}
-               <div className="absolute top-3 right-3 flex gap-1">
-                 <Button variant="ghost" className="h-7 w-7 p-0" onClick={() => openEditDialog(entry)}>
-                   <Edit className="h-3.5 w-3.5" />
-                 </Button>
-                 <Button variant="ghost" className="h-7 w-7 p-0" onClick={() => setEntryToDelete(entry.id)}>
-                   <Trash2 className="h-3.5 w-3.5" />
-                 </Button>
-               </div>
+              <CardHeader className="pb-3 relative">
+                {/* Small floating reply/edit/delete buttons */}
+                <div className="absolute top-3 right-3 flex gap-1">
+                  <Button variant="ghost" className="h-7 w-7 p-0" onClick={() => onReply?.(entry.id, entry.title)} title="Reply to this entry">
+                    <MessageSquareReply className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button variant="ghost" className="h-7 w-7 p-0" onClick={() => openEditDialog(entry)}>
+                    <Edit className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button variant="ghost" className="h-7 w-7 p-0" onClick={() => setEntryToDelete(entry.id)}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
                
                <div className="space-y-2 pr-16">
                  <button onClick={() => toggleOpen(entry.id)} className="flex items-center gap-2 w-full text-left hover:opacity-70 transition-opacity">

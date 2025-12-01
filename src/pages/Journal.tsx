@@ -20,6 +20,7 @@ const Journal = () => {
   });
   const [sortOption, setSortOption] = useState<SortOption>('date-desc');
   const [entryCounts, setEntryCounts] = useState({ total: 0, filtered: 0 });
+  const [replyToEntry, setReplyToEntry] = useState<{ id: string; title: string } | null>(null);
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -33,6 +34,14 @@ const Journal = () => {
 
   const handleEntriesLoaded = (total: number, filtered: number) => {
     setEntryCounts({ total, filtered });
+  };
+
+  const handleReply = (entryId: string, entryTitle: string) => {
+    setReplyToEntry({ id: entryId, title: entryTitle });
+  };
+
+  const handleReplyHandled = () => {
+    setReplyToEntry(null);
   };
 
   return (
@@ -123,7 +132,11 @@ const Journal = () => {
                 <BookOpen className="h-6 w-6 text-primary" />
                 <h3 className="text-2xl font-bold">Create New Entry</h3>
               </div>
-              <JournalEditor onEntryCreated={handleEntryCreated} />
+              <JournalEditor 
+                onEntryCreated={handleEntryCreated} 
+                replyToEntry={replyToEntry}
+                onReplyHandled={handleReplyHandled}
+              />
             </section>
 
             {/* Entries List */}
@@ -148,6 +161,7 @@ const Journal = () => {
                 filters={filters}
                 sortOption={sortOption}
                 onEntriesLoaded={handleEntriesLoaded}
+                onReply={handleReply}
               />
             </section>
           </div>
