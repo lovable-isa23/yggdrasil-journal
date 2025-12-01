@@ -210,7 +210,7 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
             <Button
               type="button"
               variant="ghost"
-              className="w-full justify-between px-3 py-2 h-auto"
+              className="w-full justify-between px-3 py-2 h-auto border border-border/50 hover:border-border"
             >
               <span className="flex items-center gap-2 text-sm font-medium">
                 <Link2 className="h-4 w-4" />
