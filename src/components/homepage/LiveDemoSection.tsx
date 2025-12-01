@@ -114,9 +114,9 @@ export const LiveDemoSection = () => {
               <textarea
                 value={inputText}
                 onChange={handleInputChange}
-                placeholder="Try it: Type a few sentences from your day... 
+                placeholder="Try it: Type a few sentences from your day...
 
-For example: 'Had coffee with Sarah this morning. We talked about work stress and I realized I've been feeling anxious about the upcoming deadline. Going for a run later helped clear my head.'"
+For example: 'Met Emma for brunch at our favorite café—she's been struggling with her job search and I could see the exhaustion in her eyes. Reminded me of how overwhelmed I felt last year when I was between jobs. Afterward, went for a long walk in the park and felt this unexpected wave of gratitude. Need to text Mom tonight, haven't talked to her in a week.'"
                 className="w-full h-[220px] bg-transparent resize-none border-none focus:outline-none focus:ring-0 text-foreground placeholder:text-muted-foreground/60 leading-7"
                 maxLength={500}
               />

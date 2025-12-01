@@ -40,7 +40,7 @@ export const BetaWaitlistCTA = () => {
           {/* Beta Access Card */}
           <div
             className={cn(
-              "relative p-8 rounded-2xl border-2 border-secondary/50 bg-card glass",
+              "relative p-8 pt-10 rounded-2xl border-2 border-secondary/50 bg-card glass",
               "transition-all duration-700 hover:shadow-emphasis hover:border-secondary",
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
             )}
@@ -76,7 +76,7 @@ export const BetaWaitlistCTA = () => {
           {/* Waitlist Card */}
           <div
             className={cn(
-              "relative p-8 rounded-2xl border border-border bg-card",
+              "relative p-8 pt-10 rounded-2xl border border-border bg-card",
               "transition-all duration-700 hover:shadow-medium hover:border-primary/50",
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
             )}
