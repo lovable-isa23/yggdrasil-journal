@@ -3,7 +3,7 @@ import * as d3 from "d3";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { Loader2, Calendar, FileText, Maximize2, Download, Image as ImageIcon, FileDown, Network } from "lucide-react";
+import { Loader2, Calendar, FileText, Maximize2, Download, Image as ImageIcon, FileDown, Network, Lightbulb } from "lucide-react";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
@@ -54,6 +54,7 @@ export const KnowledgeGraph = () => {
   const [minStrength, setMinStrength] = useState(1);
   const graphContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const [connectionInsights, setConnectionInsights] = useState<string[]>([]);
 
   useEffect(() => {
     fetchGraphData();
@@ -68,6 +69,9 @@ export const KnowledgeGraph = () => {
   useEffect(() => {
     if (graphData.nodes.length > 0) {
       renderGraph();
+      generateInsights(graphData.nodes, graphData.links);
+    } else {
+      setConnectionInsights([]);
     }
   }, [graphData]);
 
@@ -245,6 +249,52 @@ export const KnowledgeGraph = () => {
     const filteredNodes = nodes.filter(node => connectedNodeIds.has(node.id));
 
     setGraphData({ nodes: filteredNodes, links });
+  };
+
+  const generateInsights = (nodes: GraphNode[], links: GraphLink[]) => {
+    const insights: string[] = [];
+    
+    if (nodes.length === 0 || links.length === 0) {
+      setConnectionInsights([]);
+      return;
+    }
+
+    // Find strongest connections
+    const sortedLinks = [...links].sort((a, b) => (b.value || 0) - (a.value || 0));
+    
+    // Top 2 strongest connections
+    sortedLinks.slice(0, 2).forEach(link => {
+      const sourceName = typeof link.source === 'object' ? link.source.name : link.source;
+      const targetName = typeof link.target === 'object' ? link.target.name : link.target;
+      insights.push(`"${sourceName}" and "${targetName}" appear together frequently`);
+    });
+    
+    // Most connected node
+    const nodeConnectionCounts = new Map<string, number>();
+    links.forEach(link => {
+      const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
+      const targetId = typeof link.target === 'object' ? link.target.id : link.target;
+      nodeConnectionCounts.set(sourceId, (nodeConnectionCounts.get(sourceId) || 0) + 1);
+      nodeConnectionCounts.set(targetId, (nodeConnectionCounts.get(targetId) || 0) + 1);
+    });
+    
+    const mostConnected = nodes.reduce((max, node) => {
+      const count = nodeConnectionCounts.get(node.id) || 0;
+      return count > (nodeConnectionCounts.get(max?.id || '') || 0) ? node : max;
+    }, nodes[0]);
+    
+    if (mostConnected) {
+      const count = nodeConnectionCounts.get(mostConnected.id) || 0;
+      const typeLabel = activeTab === 'entities' ? 'entity' : activeTab === 'themes' ? 'theme' : 'keyword';
+      insights.push(`"${mostConnected.name}" is your most connected ${typeLabel} with ${count} connections`);
+    }
+
+    // Total node count insight
+    if (nodes.length > 3) {
+      insights.push(`${nodes.length} ${activeTab} are interconnected in your journal`);
+    }
+    
+    setConnectionInsights(insights.slice(0, 4));
   };
 
   const handleShowAll = () => {
@@ -614,6 +664,26 @@ export const KnowledgeGraph = () => {
                   </div>
                 )}
               </div>
+
+              {/* Connection Insights */}
+              {connectionInsights.length > 0 && (
+                <div className="mt-6 p-4 bg-muted/30 rounded-lg border">
+                  <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <Lightbulb className="h-4 w-4" />
+                    Connection Insights
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {connectionInsights.map((insight, i) => (
+                      <div
+                        key={i}
+                        className="px-3 py-1.5 bg-card rounded-full border border-border text-sm text-muted-foreground"
+                      >
+                        {insight}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>

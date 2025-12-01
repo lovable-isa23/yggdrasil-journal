@@ -33,10 +33,22 @@ export const TimelineVisualization = () => {
   const [selectedTag, setSelectedTag] = useState<{ tag: string; type: 'theme' | 'emotion' | 'entity' } | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [tagEntries, setTagEntries] = useState<any[]>([]);
+  const [decryptedEntries, setDecryptedEntries] = useState<any[]>([]);
 
   useEffect(() => {
     fetchTimelineData();
   }, [dateRange, showAll]);
+
+  // Fetch decrypted entries once on mount
+  useEffect(() => {
+    const fetchDecryptedEntries = async () => {
+      const { data, error } = await supabase.functions.invoke('decrypt-entries');
+      if (!error && data?.entries) {
+        setDecryptedEntries(data.entries);
+      }
+    };
+    fetchDecryptedEntries();
+  }, []);
 
   const fetchTimelineData = async () => {
     setLoading(true);
@@ -114,7 +126,7 @@ export const TimelineVisualization = () => {
       .slice(0, 5);
   };
 
-  const handleTagClick = async (tag: string, type: 'theme' | 'emotion' | 'entity') => {
+  const handleTagClick = (tag: string, type: 'theme' | 'emotion' | 'entity') => {
     setSelectedTag({ tag, type });
     setIsSheetOpen(true);
     
@@ -128,18 +140,12 @@ export const TimelineVisualization = () => {
       })
       .map(item => item.entryId);
     
-    // Fetch full entry data
-    if (relatedEntryIds.length > 0) {
-      const { data } = await supabase
-        .from("journal_entries")
-        .select("*")
-        .in("id", relatedEntryIds)
-        .order("entry_date", { ascending: false });
-      
-      if (data) {
-        setTagEntries(data);
-      }
-    }
+    // Filter from already-decrypted entries
+    const relatedEntries = decryptedEntries
+      .filter(entry => relatedEntryIds.includes(entry.id))
+      .sort((a, b) => new Date(b.entry_date).getTime() - new Date(a.entry_date).getTime());
+    
+    setTagEntries(relatedEntries);
   };
 
   const exportTimelinePDF = () => {
