@@ -40,11 +40,17 @@ export const Hero = () => {
 
           {/* Main Headline */}
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight">
-            <span className="bg-gradient-to-r from-earth-brown via-primary to-secondary bg-clip-text text-transparent">
+            <span 
+              className="bg-gradient-to-r from-earth-brown via-primary to-secondary bg-clip-text text-transparent"
+              style={{ textShadow: '0 0 40px rgba(255,255,255,0.6), 0 0 80px rgba(255,255,255,0.4)' }}
+            >
               Turn your journal into a
             </span>
             <br />
-            <span className="text-foreground">
+            <span 
+              className="text-foreground"
+              style={{ textShadow: '0 0 30px rgba(255,255,255,0.5), 0 0 60px rgba(255,255,255,0.3)' }}
+            >
               living map of your mind
             </span>
           </h1>
