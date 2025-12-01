@@ -210,13 +210,13 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
             <Button
               type="button"
               variant="ghost"
-              className="w-full justify-between px-3 py-2 h-auto border border-border/50 hover:border-border"
+              className="w-full justify-between px-3 py-2 h-auto border border-border/50 hover:border-border flex-wrap gap-y-2"
             >
-              <span className="flex items-center gap-2 text-sm font-medium">
-                <Link2 className="h-4 w-4" />
-                Link to journeys or entries (optional)
+              <span className="flex items-center gap-2 text-sm font-medium min-w-0">
+                <Link2 className="h-4 w-4 flex-shrink-0" />
+                <span className="truncate">Link to journeys or entries (optional)</span>
               </span>
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-2 flex-shrink-0">
                 {(selectedGoals.length + selectedEntries.length) > 0 && (
                   <Badge variant="secondary" className="text-xs">
                     {selectedGoals.length + selectedEntries.length} linked
@@ -242,14 +242,14 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
                         type="button"
                         onClick={() => toggleGoal(goal.id)}
                         className={cn(
-                          "flex items-center gap-2 px-3 py-2 rounded-lg border transition-all",
+                          "flex items-center gap-2 px-3 py-2 rounded-lg border transition-all max-w-full",
                           isSelected
                             ? "border-primary bg-primary/10 text-primary"
                             : "border-border hover:border-primary/50"
                         )}
                       >
-                        <span className="text-sm">{goal.title}</span>
-                        {isSelected && <X className="h-3 w-3" />}
+                        <span className="text-sm truncate">{goal.title}</span>
+                        {isSelected && <X className="h-3 w-3 flex-shrink-0" />}
                       </button>
                     );
                   })}
@@ -272,14 +272,14 @@ export const JournalEditor = ({ onEntryCreated }: JournalEditorProps) => {
                         type="button"
                         onClick={() => toggleEntry(entry.id)}
                         className={cn(
-                          "flex items-center gap-2 px-3 py-2 rounded-lg border transition-all text-left",
+                          "flex items-center gap-2 px-3 py-2 rounded-lg border transition-all text-left max-w-full",
                           isSelected
                             ? "border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400"
                             : "border-border hover:border-blue-500/50"
                         )}
                       >
                         <span className="text-sm truncate max-w-[180px]">{entry.title}</span>
-                        {isSelected && <X className="h-3 w-3" />}
+                        {isSelected && <X className="h-3 w-3 flex-shrink-0" />}
                       </button>
                     );
                   })}
