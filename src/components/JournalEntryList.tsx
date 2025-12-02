@@ -154,13 +154,26 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
     try {
       setLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!session) {
+        setLoading(false);
+        return;
+      }
       const { data, error } = await supabase.functions.invoke('decrypt-entries');
-      if (error) throw error;
+      if (error) {
+        // Handle 401 silently - user is logging out or session expired
+        if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
+          setLoading(false);
+          return;
+        }
+        throw error;
+      }
       setEntries(data?.entries || []);
     } catch (error: any) {
-      console.error("Error fetching entries:", error);
-      toast({ title: "Error", description: "Failed to load journal entries", variant: "destructive" });
+      // Only show error if it's not an auth error (user might be logging out)
+      if (!error.message?.includes('401') && !error.message?.includes('Unauthorized')) {
+        console.error("Error fetching entries:", error);
+        toast({ title: "Error", description: "Failed to load journal entries", variant: "destructive" });
+      }
     } finally {
       setLoading(false);
     }
