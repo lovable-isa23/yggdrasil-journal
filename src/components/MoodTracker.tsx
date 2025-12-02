@@ -23,13 +23,68 @@ type MoodPoint = {
 };
 
 const POSITIVE_EMOTIONS = [
-  "happy", "joy", "joyful", "excited", "grateful", "content", "peaceful", "hopeful",
-  "confident", "proud", "enthusiastic", "optimistic", "loved", "satisfied", "relieved"
+  // Base forms
+  "happy", "happiness", "joy", "joyful", "joyous",
+  "excited", "excitement", "exciting",
+  "grateful", "gratitude", "thankful",
+  "content", "contentment", "contented",
+  "peaceful", "peace", "serene", "serenity",
+  "hopeful", "hope", "hoping",
+  "confident", "confidence",
+  "proud", "pride",
+  "enthusiastic", "enthusiasm",
+  "optimistic", "optimism",
+  "loved", "love", "loving",
+  "satisfied", "satisfaction",
+  "relieved", "relief",
+  // Additional positive emotions
+  "calm", "calmness",
+  "curious", "curiosity",
+  "motivated", "motivation",
+  "inspired", "inspiration",
+  "comfortable", "comfort",
+  "determined", "determination",
+  "appreciative", "appreciation",
+  "amused", "amusement",
+  "connected", "connection",
+  "empowered", "empowerment",
+  "fulfilled", "fulfillment",
+  "relaxed", "relaxation",
+  "safe", "safety",
+  "secure", "security"
 ];
 
 const NEGATIVE_EMOTIONS = [
-  "sad", "angry", "anxious", "depressed", "frustrated", "worried", "stressed",
-  "fearful", "lonely", "guilty", "ashamed", "disappointed", "hopeless", "overwhelmed"
+  // Base forms
+  "sad", "sadness",
+  "angry", "anger",
+  "anxious", "anxiety",
+  "depressed", "depression",
+  "frustrated", "frustration",
+  "worried", "worry",
+  "stressed", "stress",
+  "fearful", "fear", "scared",
+  "lonely", "loneliness",
+  "guilty", "guilt",
+  "ashamed", "shame",
+  "disappointed", "disappointment",
+  "hopeless", "hopelessness",
+  "overwhelmed",
+  // Additional negative emotions
+  "hurt", "hurting",
+  "lost",
+  "tired", "tiredness", "exhausted", "exhaustion",
+  "confused", "confusion",
+  "nervous", "nervousness",
+  "resentful", "resentment",
+  "helpless", "helplessness",
+  "insecure", "insecurity",
+  "uncomfortable",
+  "defensive", "defensiveness",
+  "envious", "envy",
+  "jealous", "jealousy",
+  "resigned", "resignation",
+  "despair", "despairing"
 ];
 
 export const MoodTracker = () => {
@@ -57,13 +112,22 @@ export const MoodTracker = () => {
     emotions.forEach(({ emotion, intensity }) => {
       const emotionLower = emotion.toLowerCase();
       
-      if (POSITIVE_EMOTIONS.some(pos => emotionLower.includes(pos))) {
+      // Bidirectional check: emotion contains word OR word contains emotion
+      const isPositive = POSITIVE_EMOTIONS.some(pos => 
+        emotionLower.includes(pos) || pos.includes(emotionLower)
+      );
+      const isNegative = NEGATIVE_EMOTIONS.some(neg => 
+        emotionLower.includes(neg) || neg.includes(emotionLower)
+      );
+      
+      if (isPositive && !isNegative) {
         score += intensity;
         totalIntensity += intensity;
-      } else if (NEGATIVE_EMOTIONS.some(neg => emotionLower.includes(neg))) {
+      } else if (isNegative && !isPositive) {
         score -= intensity;
         totalIntensity += intensity;
       }
+      // Neutral emotions don't affect the score
     });
 
     // Normalize to -10 to +10 scale
