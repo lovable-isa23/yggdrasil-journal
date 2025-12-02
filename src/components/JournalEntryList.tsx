@@ -3,7 +3,7 @@ import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2, Calendar as CalendarIcon, ChevronDown, ChevronUp, Mic, Image as ImageIcon, Loader2, FileText, Edit, Clock, X, Target, MessageSquareReply } from "lucide-react";
+import { Trash2, Calendar as CalendarIcon, ChevronDown, ChevronUp, Mic, Image as ImageIcon, Loader2, FileText, Edit, Clock, X, Target, MessageSquareReply, ArrowRight, ArrowLeft } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -30,6 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn, parseLocalDate } from "@/lib/utils";
+import { EntryLinkSelector } from "@/components/EntryLinkSelector";
 
 interface JournalEntry {
   id: string;
@@ -509,37 +510,68 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
                       <ReactMarkdown>{entry.content}</ReactMarkdown>
                     </div>
                     
-                    {/* Show linked entries when expanded */}
-                    {entry.linked_entries && entry.linked_entries.length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-border/50">
-                        <h5 className="text-sm font-medium flex items-center gap-2 mb-3 text-muted-foreground">
-                          <MessageSquareReply className="h-4 w-4" />
-                          Related Entries
-                        </h5>
-                        <div className="flex flex-wrap gap-2">
-                          {entries
-                            .filter(e => entry.linked_entries?.includes(e.id))
-                            .map(linkedEntry => (
+                    {/* Show bidirectional linked entries when expanded */}
+                    {(() => {
+                      // Outgoing: entries this one links to
+                      const outgoingIds = entry.linked_entries || [];
+                      const outgoingEntries = entries.filter(e => outgoingIds.includes(e.id));
+                      
+                      // Incoming: entries that link to this one
+                      const incomingEntries = entries.filter(e => 
+                        e.id !== entry.id && e.linked_entries?.includes(entry.id)
+                      );
+                      
+                      const hasRelated = outgoingEntries.length > 0 || incomingEntries.length > 0;
+                      
+                      if (!hasRelated) return null;
+                      
+                      return (
+                        <div className="mt-4 pt-4 border-t border-border/50">
+                          <h5 className="text-sm font-medium flex items-center gap-2 mb-3 text-muted-foreground">
+                            <MessageSquareReply className="h-4 w-4" />
+                            Related Entries
+                          </h5>
+                          <div className="flex flex-wrap gap-2">
+                            {/* Outgoing links (I link to these) */}
+                            {outgoingEntries.map(linkedEntry => (
                               <button
-                                key={linkedEntry.id}
+                                key={`out-${linkedEntry.id}`}
                                 onClick={() => {
-                                  // Expand the linked entry
                                   setOpenEntries(prev => {
                                     const newSet = new Set(prev);
                                     newSet.add(linkedEntry.id);
                                     return newSet;
                                   });
-                                  // Scroll to it
                                   document.getElementById(`entry-${linkedEntry.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                                 }}
-                                className="text-sm px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-colors"
+                                className="text-sm px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-colors flex items-center gap-1.5"
                               >
-                                {linkedEntry.title}
+                                <ArrowRight className="h-3 w-3" />
+                                <span className="truncate max-w-[150px]">{linkedEntry.title}</span>
                               </button>
                             ))}
+                            {/* Incoming links (these link to me) */}
+                            {incomingEntries.map(linkedEntry => (
+                              <button
+                                key={`in-${linkedEntry.id}`}
+                                onClick={() => {
+                                  setOpenEntries(prev => {
+                                    const newSet = new Set(prev);
+                                    newSet.add(linkedEntry.id);
+                                    return newSet;
+                                  });
+                                  document.getElementById(`entry-${linkedEntry.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                }}
+                                className="text-sm px-3 py-1.5 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20 transition-colors flex items-center gap-1.5"
+                              >
+                                <ArrowLeft className="h-3 w-3" />
+                                <span className="truncate max-w-[150px]">{linkedEntry.title}</span>
+                              </button>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
                   </CardContent>
                   <CardFooter className="w-full max-w-full overflow-hidden">
                     <EntryInsights entryId={entry.id} title={entry.title} content={entry.content} />
@@ -665,36 +697,13 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
                 <p className="text-xs text-muted-foreground">
                   Connect this entry to other journal entries to create a thread
                 </p>
-                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
-                  {entries
-                    .filter(e => e.id !== entryToEdit?.id)
-                    .slice(0, 20)
-                    .map((entry) => {
-                      const isSelected = editLinkedEntries.includes(entry.id);
-                      return (
-                        <button
-                          key={entry.id}
-                          type="button"
-                          onClick={() => toggleLinkedEntry(entry.id)}
-                          disabled={isSaving}
-                          className={cn(
-                            "inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm transition-all",
-                            isSelected
-                              ? "bg-blue-600 text-white"
-                              : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                          )}
-                        >
-                          <span className="truncate max-w-[150px]">{entry.title}</span>
-                          {isSelected && <X className="h-3 w-3" />}
-                        </button>
-                      );
-                    })}
-                </div>
-                {editLinkedEntries.length > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    {editLinkedEntries.length} entr{editLinkedEntries.length > 1 ? 'ies' : 'y'} linked
-                  </p>
-                )}
+                <EntryLinkSelector
+                  entries={entries.map(e => ({ id: e.id, title: e.title, entry_date: e.entry_date }))}
+                  selectedEntryIds={editLinkedEntries}
+                  onToggle={toggleLinkedEntry}
+                  excludeEntryId={entryToEdit?.id}
+                  disabled={isSaving}
+                />
               </div>
             )}
 

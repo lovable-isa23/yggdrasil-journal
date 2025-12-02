@@ -19,6 +19,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { journalEntrySchema, type JournalEntryFormData } from "@/lib/validations";
 import { AudioRecorder } from "@/components/AudioRecorder";
 import { ImageUploader } from "@/components/ImageUploader";
+import { EntryLinkSelector } from "@/components/EntryLinkSelector";
 
 interface JournalEditorProps {
   onEntryCreated: () => void;
@@ -281,29 +282,13 @@ export const JournalEditor = ({ onEntryCreated, replyToEntry, onReplyHandled }: 
               <div className="space-y-3 pl-2">
                 <Label className="flex items-center gap-2 text-sm">
                   <MessageSquareReply className="h-4 w-4" />
-                  Previous Entries
+                  Link to Entries
                 </Label>
-                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
-                  {recentEntries.map((entry) => {
-                    const isSelected = selectedEntries.includes(entry.id);
-                    return (
-                      <button
-                        key={entry.id}
-                        type="button"
-                        onClick={() => toggleEntry(entry.id)}
-                        className={cn(
-                          "flex items-center gap-2 px-3 py-2 rounded-lg border transition-all text-left max-w-full",
-                          isSelected
-                            ? "border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                            : "border-border hover:border-blue-500/50"
-                        )}
-                      >
-                        <span className="text-sm truncate max-w-[180px]">{entry.title}</span>
-                        {isSelected && <X className="h-3 w-3 flex-shrink-0" />}
-                      </button>
-                    );
-                  })}
-                </div>
+                <EntryLinkSelector
+                  entries={recentEntries}
+                  selectedEntryIds={selectedEntries}
+                  onToggle={toggleEntry}
+                />
               </div>
             )}
           </CollapsibleContent>
