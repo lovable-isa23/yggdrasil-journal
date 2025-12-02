@@ -33,8 +33,10 @@ export function YggiChat() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Check authentication status and load conversation
   useEffect(() => {
@@ -130,6 +132,18 @@ export function YggiChat() {
       toast.error("Failed to start new conversation");
     }
   };
+
+  // Track visualViewport height for mobile keyboard
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.visualViewport) {
+      const handleResize = () => {
+        setViewportHeight(window.visualViewport!.height);
+      };
+      
+      window.visualViewport.addEventListener('resize', handleResize);
+      return () => window.visualViewport?.removeEventListener('resize', handleResize);
+    }
+  }, []);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -290,6 +304,11 @@ export function YggiChat() {
     }
   };
 
+  const drawerStyle = viewportHeight ? { 
+    height: `${Math.min(viewportHeight * 0.85, window.innerHeight * 0.85)}px`,
+    maxHeight: `${viewportHeight * 0.85}px`
+  } : undefined;
+
   return (
     <>
       <Drawer open={open} onOpenChange={setOpen}>
@@ -302,7 +321,10 @@ export function YggiChat() {
             <span className="text-2xl">🌱</span>
           </Button>
         </DrawerTrigger>
-        <DrawerContent className="h-[85vh] max-h-[85vh]">
+        <DrawerContent 
+          className="h-[85vh] max-h-[85vh] supports-[height:100dvh]:h-[85dvh] supports-[height:100dvh]:max-h-[85dvh]"
+          style={drawerStyle}
+        >
           <DrawerHeader className="border-b">
             <div className="flex items-center justify-between">
               <div>
@@ -388,13 +410,19 @@ export function YggiChat() {
             </div>
           </ScrollArea>
 
-          <DrawerFooter className="border-t">
+          <DrawerFooter className="border-t sticky bottom-0 bg-background pb-[max(1rem,env(safe-area-inset-bottom))]">
             <div className="flex gap-2 max-w-3xl mx-auto w-full">
               <Textarea
+                ref={textareaRef}
                 placeholder="Ask Yggi anything..."
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
+                onFocus={() => {
+                  setTimeout(() => {
+                    textareaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }, 300);
+                }}
                 disabled={isLoading}
                 className="min-h-[60px] resize-none"
                 rows={2}
