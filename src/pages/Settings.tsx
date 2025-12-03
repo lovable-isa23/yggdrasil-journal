@@ -30,13 +30,13 @@ interface Preferences {
 
 const FRAMEWORK_CONFIGS = {
   spiritual: [
-    { key: 'enable_theravada' as keyof Preferences, icon: '🙏', name: 'Theravada Buddhism', description: 'Suffering, attachment, impermanence, mindfulness' },
-    { key: 'enable_hermetic' as keyof Preferences, icon: '⚗️', name: 'Hermeticism', description: 'Mental causation, correspondence, polarity, cycles' },
+    { key: 'enable_theravada' as keyof Preferences, icon: '☸️', name: 'Theravada Buddhism', description: 'Suffering, attachment, impermanence, mindfulness' },
+    { key: 'enable_hermetic' as keyof Preferences, icon: '🔮', name: 'Hermeticism', description: 'Mental causation, correspondence, polarity, cycles' },
     { key: 'enable_advaita' as keyof Preferences, icon: '🕉️', name: 'Advaita Vedanta', description: 'Self-inquiry, witness consciousness, true nature' },
     { key: 'enable_taoist' as keyof Preferences, icon: '☯️', name: 'Taoism', description: 'Flow, balance, wu wei, naturalness' },
   ],
   depth: [
-    { key: 'enable_freudian' as keyof Preferences, icon: '🛋️', name: 'Freudian', description: 'Unconscious conflict, defense mechanisms, childhood' },
+    { key: 'enable_freudian' as keyof Preferences, icon: '🔺', name: 'Freudian', description: 'Unconscious conflict, defense mechanisms, childhood' },
     { key: 'enable_jungian' as keyof Preferences, icon: '🌓', name: 'Jungian', description: 'Archetypes, shadow work, individuation' },
   ],
   modern: [

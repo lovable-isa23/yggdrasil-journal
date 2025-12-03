@@ -19,8 +19,9 @@ import {
   addPageFooter,
   checkPageBreak,
   addDivider,
-  getFrameworkIcon,
   getFrameworkName,
+  normalizeFrameworkKey,
+  getFrameworkCategory,
 } from "@/lib/pdf-helpers";
 
 export const ReportExport = () => {
@@ -369,25 +370,95 @@ export const ReportExport = () => {
         yPos = checkPageBreak(doc, yPos, 50, margin);
         yPos = addStyledSection(doc, "Spiritual Analysis", "✨", yPos, margin);
 
-        // Frameworks Used
+        // Frameworks Used - Show as percentage of entries
         if (frameworkMentions.size > 0) {
+          const totalAnalyzedEntries = insights.length;
+          
+          // Normalize and group frameworks by category
+          const normalizedCounts = new Map<string, number>();
+          Array.from(frameworkMentions.entries()).forEach(([fw, count]) => {
+            const normalized = normalizeFrameworkKey(fw);
+            if (normalized) {
+              normalizedCounts.set(normalized, (normalizedCounts.get(normalized) || 0) + count);
+            }
+          });
+          
+          const frameworkStats = Array.from(normalizedCounts.entries())
+            .map(([fw, count]) => ({
+              framework: fw,
+              count,
+              percentage: totalAnalyzedEntries > 0 ? Math.round((count / totalAnalyzedEntries) * 100) : 0,
+              category: getFrameworkCategory(fw),
+            }))
+            .sort((a, b) => b.percentage - a.percentage);
+          
+          const spiritualFrameworks = frameworkStats.filter(f => f.category === 'spiritual');
+          const depthFrameworks = frameworkStats.filter(f => f.category === 'depth');
+          const modernFrameworks = frameworkStats.filter(f => f.category === 'modern');
+          
           doc.setFontSize(11);
           doc.setFont("helvetica", "bold");
           setColor(doc, colors.primary);
-          doc.text("Wisdom Traditions Applied:", margin, yPos);
-          yPos += 7;
-
-          doc.setFontSize(10);
-          doc.setFont("helvetica", "normal");
-          setColor(doc, colors.text);
-          Array.from(frameworkMentions.entries())
-            .sort((a, b) => b[1] - a[1])
-            .forEach(([fw, count]) => {
+          doc.text("Framework Analysis:", margin, yPos);
+          yPos += 10;
+          
+          // Spiritual Traditions
+          if (spiritualFrameworks.length > 0) {
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            setColor(doc, colors.spiritual);
+            doc.text("Spiritual Traditions", margin + 3, yPos);
+            yPos += 6;
+            
+            doc.setFont("helvetica", "normal");
+            setColor(doc, colors.text);
+            spiritualFrameworks.forEach(({ framework, percentage }) => {
               yPos = checkPageBreak(doc, yPos, 6, margin);
-              doc.text(`${getFrameworkIcon(fw)} ${getFrameworkName(fw)}: ${count} applications`, margin + 5, yPos);
-              yPos += 6;
+              doc.text(`${getFrameworkName(framework)}: ${percentage}% of entries`, margin + 8, yPos);
+              yPos += 5;
             });
-          yPos += 6;
+            yPos += 4;
+          }
+          
+          // Depth Psychology
+          if (depthFrameworks.length > 0) {
+            yPos = checkPageBreak(doc, yPos, 15, margin);
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            setColor(doc, colors.primary);
+            doc.text("Depth Psychology", margin + 3, yPos);
+            yPos += 6;
+            
+            doc.setFont("helvetica", "normal");
+            setColor(doc, colors.text);
+            depthFrameworks.forEach(({ framework, percentage }) => {
+              yPos = checkPageBreak(doc, yPos, 6, margin);
+              doc.text(`${getFrameworkName(framework)}: ${percentage}% of entries`, margin + 8, yPos);
+              yPos += 5;
+            });
+            yPos += 4;
+          }
+          
+          // Modern Psychology
+          if (modernFrameworks.length > 0) {
+            yPos = checkPageBreak(doc, yPos, 15, margin);
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            setColor(doc, colors.secondary);
+            doc.text("Modern Psychology", margin + 3, yPos);
+            yPos += 6;
+            
+            doc.setFont("helvetica", "normal");
+            setColor(doc, colors.text);
+            modernFrameworks.forEach(({ framework, percentage }) => {
+              yPos = checkPageBreak(doc, yPos, 6, margin);
+              doc.text(`${getFrameworkName(framework)}: ${percentage}% of entries`, margin + 8, yPos);
+              yPos += 5;
+            });
+            yPos += 4;
+          }
+          
+          yPos += 4;
         }
 
         if (chakraMentions.size > 0) {
