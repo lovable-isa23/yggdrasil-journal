@@ -287,33 +287,44 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
               <Card className="w-full max-w-full overflow-hidden">
                 <div className="p-4 space-y-4 break-words">
                   {/* Badges section - only visible when accordion is open */}
-                  <div className="flex flex-wrap items-center gap-2 pb-3 border-b">
-                    {insights.depth_score && insights.depth_score >= 6 && (
-                      <Badge variant="secondary" className="text-xs">Deep Analysis</Badge>
-                    )}
-                    {insights.frameworks_applied && insights.frameworks_applied.length > 0 && (
-                      <>
-                        {insights.frameworks_applied.includes('theravada') && (
-                          <Badge variant="outline" className="text-xs">☸️ Buddhist</Badge>
+                  {(() => {
+                    // Only show framework badges if the framework is actually mentioned in the main insight text
+                    const mainInsight = insights.interpretation?.main_insight?.toLowerCase() || '';
+                    const frameworksApplied = insights.frameworks_applied || [];
+                    
+                    const isFrameworkMentioned = (framework: string, keywords: string[]) => {
+                      return frameworksApplied.includes(framework) && 
+                        keywords.some(keyword => mainInsight.includes(keyword.toLowerCase()));
+                    };
+                    
+                    const showBuddhist = isFrameworkMentioned('theravada', ['buddhis', 'theravada', 'dukkha', 'tanha', 'anicca', 'anatta', 'noble truth', 'eightfold', 'attachment', 'clinging', 'impermanence']);
+                    const showFreudian = isFrameworkMentioned('freudian', ['freud', 'psychoanaly', 'defense mechanism', 'unconscious', 'ego', 'superego', 'id ', 'repression', 'projection', 'sublimation']);
+                    const showJungian = isFrameworkMentioned('jungian', ['jung', 'archetype', 'shadow', 'anima', 'animus', 'individuation', 'collective unconscious', 'persona']);
+                    const showHermetic = (frameworksApplied.includes('hermetic') || frameworksApplied.includes('hermeticism')) && 
+                      ['hermetic', 'hermeticism', 'as above', 'mentalism', 'correspondence', 'vibration', 'polarity', 'rhythm', 'cause and effect', 'gender principle'].some(k => mainInsight.includes(k.toLowerCase()));
+                    const showAdvaita = (frameworksApplied.includes('advaita') || frameworksApplied.includes('advaita_vedanta')) &&
+                      ['advaita', 'vedanta', 'maya', 'atman', 'brahman', 'neti neti', 'witness', 'pure awareness', 'non-dual', 'avidya', 'moksha', 'self-inquiry'].some(k => mainInsight.includes(k.toLowerCase()));
+                    const showTaoist = (frameworksApplied.includes('taoist') || frameworksApplied.includes('taoism')) &&
+                      ['taois', 'wu wei', 'yin', 'yang', 'tao', 'effortless', 'flow', 'naturalness', 'ziran'].some(k => mainInsight.includes(k.toLowerCase()));
+                    
+                    const hasAnyBadge = insights.depth_score && insights.depth_score >= 6 || showBuddhist || showFreudian || showJungian || showHermetic || showAdvaita || showTaoist;
+                    
+                    if (!hasAnyBadge) return null;
+                    
+                    return (
+                      <div className="flex flex-wrap items-center gap-2 pb-3 border-b">
+                        {insights.depth_score && insights.depth_score >= 6 && (
+                          <Badge variant="secondary" className="text-xs">Deep Analysis</Badge>
                         )}
-                        {insights.frameworks_applied.includes('freudian') && (
-                          <Badge variant="outline" className="text-xs">🧠 Psychoanalytic</Badge>
-                        )}
-                        {insights.frameworks_applied.includes('jungian') && (
-                          <Badge variant="outline" className="text-xs">🌓 Jungian</Badge>
-                        )}
-                        {(insights.frameworks_applied.includes('hermetic') || insights.frameworks_applied.includes('hermeticism')) && (
-                          <Badge variant="outline" className="text-xs">🔮 Hermetic</Badge>
-                        )}
-                        {(insights.frameworks_applied.includes('advaita') || insights.frameworks_applied.includes('advaita_vedanta')) && (
-                          <Badge variant="outline" className="text-xs">🕉️ Advaita</Badge>
-                        )}
-                        {(insights.frameworks_applied.includes('taoist') || insights.frameworks_applied.includes('taoism')) && (
-                          <Badge variant="outline" className="text-xs">☯️ Taoist</Badge>
-                        )}
-                      </>
-                    )}
-                  </div>
+                        {showBuddhist && <Badge variant="outline" className="text-xs">☸️ Buddhist</Badge>}
+                        {showFreudian && <Badge variant="outline" className="text-xs">🧠 Psychoanalytic</Badge>}
+                        {showJungian && <Badge variant="outline" className="text-xs">🌓 Jungian</Badge>}
+                        {showHermetic && <Badge variant="outline" className="text-xs">🔮 Hermetic</Badge>}
+                        {showAdvaita && <Badge variant="outline" className="text-xs">🕉️ Advaita</Badge>}
+                        {showTaoist && <Badge variant="outline" className="text-xs">☯️ Taoist</Badge>}
+                      </div>
+                    );
+                  })()}
                   {/* Main Insight */}
                   <div className="prose prose-sm max-w-none">
                     <p className="text-sm leading-relaxed whitespace-pre-wrap">

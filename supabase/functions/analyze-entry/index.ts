@@ -206,7 +206,7 @@ Scoring guide:
 
 IMPORTANT: Crisis alone does NOT indicate depth. A frantic crisis entry may be surface-level. Depth comes from REFLECTION, INSIGHT, and SELF-INQUIRY, not emotional intensity.
 
-Consider: length (300+ words suggests engagement), emotional complexity, self-inquiry present, symbolic or dream content, psychological insight, pattern recognition. Bias toward higher scores when genuine reflection is present.
+Consider: length (250+ words suggests engagement), emotional complexity, self-inquiry present, symbolic or dream content, psychological insight, pattern recognition. Bias toward higher scores when genuine reflection is present.
 
 Entry Title: "${title}"
 Entry Content: "${content}"
