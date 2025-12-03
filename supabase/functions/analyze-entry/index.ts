@@ -230,6 +230,12 @@ Respond with ONLY a JSON object: {"depth_score": X, "reasoning": "brief explanat
     // Phase 2: Apply frameworks conditionally based on depth
     const applyFrameworks = depthScore >= 5;
 
+    // Randomize framework order to prevent positional bias
+    const frameworkOrder = [
+      'theravada', 'freudian', 'jungian', 'hermetic', 'advaita', 'taoist'
+    ].sort(() => Math.random() - 0.5);
+    console.log('Framework order for this analysis:', frameworkOrder);
+
     // Call Lovable AI for semantic analysis
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -242,7 +248,7 @@ Respond with ONLY a JSON object: {"depth_score": X, "reasoning": "brief explanat
         messages: [
           {
             role: 'system',
-            content: `You are a semantic analysis expert specializing in journal entry analysis${applyFrameworks ? ' with deep training in Theravada Buddhism, Freudian Psychoanalysis, and Jungian Psychology' : ''}. Extract meaningful insights from journal entries.
+            content: `You are a semantic analysis expert specializing in journal entry analysis${applyFrameworks ? ' with deep training in six wisdom traditions: Theravada Buddhism, Freudian Psychoanalysis, Jungian Psychology, Hermeticism, Advaita Vedanta, and Taoism' : ''}. Extract meaningful insights from journal entries.
 
 TONE GUIDELINES:
 - WARM & FRIENDLY: Write like a wise mentor who genuinely cares, not a clinical report
@@ -356,7 +362,18 @@ Style: Suggest softening grip, point to natural flow, reframe "giving up" as "le
 - Layer others where they naturally intersect
 - Translate concepts into accessible language (avoid jargon)
 - Synthesize insights rather than listing frameworks separately
-- Maximum 2-3 frameworks per entry (choose most relevant, don't force all six)
+- Apply 2-3 frameworks per entry
+
+**VARIETY REQUIREMENT** - To provide diverse perspectives over time:
+- For entries with depth ≥ 7: MUST include at least one from Hermeticism, Advaita Vedanta, or Taoism
+- Don't default to Buddhism/Freud/Jung every time - actively consider which tradition best fits THIS SPECIFIC content
+- Framework priority order for this analysis: ${frameworkOrder.join(' → ')}
+- When multiple frameworks seem equally relevant, prefer those appearing earlier in the priority order above
+
+**Framework Strengths** (use to guide selection):
+- Hermeticism: mental causation, patterns, cycles, correspondence between inner/outer, polarity
+- Advaita Vedanta: identity questions, separation/oneness, spiritual seeking, Self-inquiry, witness consciousness
+- Taoism: forcing vs. flow, control issues, balance, naturalness, effortless action, wu wei
 
 Example 1 (Relationship): "Your relationship struggle shows Freudian projection (father's voice in partner) and Jungian shadow work (inner critic you've rejected). From Theravada: you're clinging to 'good enough' identity. Path: integrate shadow critic (Jung), understand childhood origin (Freud), release fixed identity attachment (Buddha)."
 
