@@ -235,7 +235,7 @@ Respond with ONLY a JSON object: {"depth_score": X, "reasoning": "brief explanat
 
     // Randomize framework order to prevent positional bias
     const frameworkOrder = [
-      'theravada', 'freudian', 'jungian', 'hermetic', 'advaita', 'taoist'
+      'theravada', 'freudian', 'jungian', 'hermetic', 'advaita', 'taoist', 'attachment', 'ifs'
     ].sort(() => Math.random() - 0.5);
     console.log('Framework order for this analysis:', frameworkOrder);
 
@@ -360,6 +360,32 @@ Identify:
 
 Style: Suggest softening grip, point to natural flow, reframe "giving up" as "letting go," honor what wants to emerge, embrace simplicity
 
+### ATTACHMENT THEORY Framework
+**When to apply:** Relationships, connection anxiety, fear of abandonment, intimacy struggles, push-pull dynamics, trust issues
+
+Identify:
+- Attachment Style: Secure, Anxious-Preoccupied, Dismissive-Avoidant, or Fearful-Avoidant patterns
+- Internal Working Models: Core beliefs about self ("Am I worthy of love?") and others ("Are others reliable?")
+- Attachment Behaviors: Proximity-seeking, protest behaviors, deactivating strategies, hyperactivating strategies
+- Triggers: What activates the attachment system? Perceived rejection, distance, unavailability
+- Secure Base/Safe Haven: Do they have figures who provide security? Are they being that for others?
+- Early Patterns: How do current relationships echo early attachment experiences?
+
+Style: Name attachment patterns without pathologizing, trace current struggles to their protective origins, guide toward "earned secure attachment" through awareness
+
+### IFS (INTERNAL FAMILY SYSTEMS) Framework
+**When to apply:** Inner conflict, self-criticism, protective behaviors, feeling torn, internal dialogue, self-sabotage patterns
+
+Identify:
+- Parts: What distinct inner voices or aspects are present? (e.g., "a part of me wants X, but another part...")
+- Exiles: Wounded younger parts carrying pain, shame, fear - often hidden
+- Managers: Proactive protectors trying to keep control, prevent pain (perfectionism, people-pleasing, criticism)
+- Firefighters: Reactive protectors that emerge when exiles are triggered (numbing, distraction, impulsive behavior)
+- Self Energy: Access to the 8 C's - Curiosity, Calm, Clarity, Compassion, Confidence, Courage, Creativity, Connectedness
+- Polarization: Parts in conflict with each other (e.g., critic vs. procrastinator)
+
+Style: Help user "unblend" from parts, speak TO parts rather than AS them, recognize protectors' positive intent, guide toward Self-leadership
+
 ### INTEGRATION APPROACH
 - Start with most relevant framework
 - Layer others where they naturally intersect
@@ -367,8 +393,10 @@ Style: Suggest softening grip, point to natural flow, reframe "giving up" as "le
 - Synthesize insights rather than listing frameworks separately
 - Apply 2-3 frameworks per entry
 
+**MINIMUM REQUIREMENT**: Every entry analysis MUST apply at least one framework lens to provide psychological/spiritual depth. Even surface-level entries benefit from a single framework perspective.
+
 **VARIETY REQUIREMENT** - To provide diverse perspectives over time:
-- For entries with depth ≥ 7: MUST include at least one from Hermeticism, Advaita Vedanta, or Taoism
+- For entries with depth ≥ 7: MUST include at least one from Hermeticism, Advaita Vedanta, Taoism, Attachment Theory, or IFS
 - Don't default to Buddhism/Freud/Jung every time - actively consider which tradition best fits THIS SPECIFIC content
 - Framework priority order for this analysis: ${frameworkOrder.join(' → ')}
 - When multiple frameworks seem equally relevant, prefer those appearing earlier in the priority order above
@@ -377,12 +405,18 @@ Style: Suggest softening grip, point to natural flow, reframe "giving up" as "le
 - Hermeticism: mental causation, patterns, cycles, correspondence between inner/outer, polarity
 - Advaita Vedanta: identity questions, separation/oneness, spiritual seeking, Self-inquiry, witness consciousness
 - Taoism: forcing vs. flow, control issues, balance, naturalness, effortless action, wu wei
+- Attachment Theory: relationship anxiety, trust issues, abandonment fears, intimacy struggles, push-pull dynamics
+- IFS: inner conflict, self-criticism, protective behaviors, feeling torn, self-sabotage, internal dialogue
 
 Example 1 (Relationship): "Your relationship struggle shows Freudian projection (father's voice in partner) and Jungian shadow work (inner critic you've rejected). From Theravada: you're clinging to 'good enough' identity. Path: integrate shadow critic (Jung), understand childhood origin (Freud), release fixed identity attachment (Buddha)."
 
 Example 2 (Creative Block): "You're caught in pure yang energy—pushing, forcing, grinding (Taoist imbalance). Your mental state creates your experience: the more you think 'I'm blocked,' the more blocked you become (Hermetic Mentalism). Path: Practice wu wei (Taoism): stop trying for 48 hours, let it percolate. Your true Self (Advaita) isn't the 'creator'—it's the awareness watching the creative process unfold."
 
 Example 3 (Identity Crisis): "The roles you're clinging to—successful professional, good parent—are Maya (Advaita), temporary costumes obscuring your true nature. Notice the Hermetic polarity: the more you try to be 'good,' the more you feel 'bad.' Your witness consciousness (Advaita) can observe this without being trapped in it. Path: Practice Neti Neti—'I am not my job, I am not my role'—to discover what remains when identifications fall away."
+
+Example 4 (Relationship Anxiety): "This anxiety is your attachment system activating—specifically an anxious-preoccupied pattern (Attachment Theory). When you sense distance, your protest behaviors kick in: texting repeatedly, seeking reassurance, hypervigilance for signs of rejection. There's also a Critic Manager part (IFS) telling you 'if you were better, they'd be closer.' Path: Notice when your attachment alarm goes off, practice self-soothing instead of seeking external reassurance, get curious about the Critic's protective intent."
+
+Example 5 (Inner Conflict): "You're experiencing a classic IFS polarization: one part wants to take the risk and pursue the opportunity, another part is fiercely protecting you from potential failure and rejection. That protective part has good reasons—it remembers past disappointments. From a Jungian lens, the risk-taker might be your Hero archetype calling for individuation. Path: Instead of letting these parts battle, can you get curious about what each needs? What would both parts need to feel safe enough to move forward?"
 ` : ''}
 
 INTERPRETATION INSTRUCTIONS:
