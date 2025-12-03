@@ -194,16 +194,19 @@ serve(async (req) => {
         model: 'google/gemini-2.5-flash',
         messages: [{
           role: 'user',
-          content: `Rate this journal entry's psychological/spiritual depth on a scale of 1-10.
+          content: `Rate this journal entry's psychological/spiritual depth on a scale of 1-11 (scores of 11 are rare).
 
 Scoring guide:
-1-3: Surface-level (simple logging, brief notes, basic mood tracking)
-4-5: Moderate (some reflection, basic emotional processing, short gratitude)
-6-7: Deep (complex emotions, self-inquiry, pattern exploration, extended reflection)
-8-9: Profound (existential themes, unconscious material, identity work, transformation)
-10: Exceptionally deep (crisis, major transformation, deep shadow work, breakthrough moments)
+1-2: Surface-level (simple logging, brief notes, basic mood tracking)
+3-4: Moderate (some reflection, basic emotional processing, short gratitude lists)
+5-6: Thoughtful (personal exploration, emotional awareness, meaningful self-reflection)
+7-8: Deep (complex emotions, self-inquiry, pattern exploration, extended reflection)
+9-10: Profound (existential themes, unconscious material, identity work, transformation, spiritual insight)
+11: Exceptional (identity-shattering revelation, major psychological transformation, deep shadow integration, genuine breakthrough moments) - RARE, reserve for truly extraordinary entries
 
-Consider: length (word count), emotional complexity, thematic depth, self-inquiry present, symbolic content, psychological exploration.
+IMPORTANT: Crisis alone does NOT indicate depth. A frantic crisis entry may be surface-level. Depth comes from REFLECTION, INSIGHT, and SELF-INQUIRY, not emotional intensity.
+
+Consider: length (300+ words suggests engagement), emotional complexity, self-inquiry present, symbolic or dream content, psychological insight, pattern recognition. Bias toward higher scores when genuine reflection is present.
 
 Entry Title: "${title}"
 Entry Content: "${content}"
