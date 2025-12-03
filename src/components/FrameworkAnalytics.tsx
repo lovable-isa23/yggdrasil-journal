@@ -366,18 +366,17 @@ export const FrameworkAnalytics = () => {
                     wrapperStyle={{ cursor: 'pointer' }}
                   />
                   {Object.entries(FRAMEWORK_CONFIG).map(([key, config]) => (
-                    visibleFrameworks.has(key) && (
-                      <Line
-                        key={key}
-                        type="monotone"
-                        dataKey={key}
-                        name={`${config.icon} ${config.name}`}
-                        stroke={config.color}
-                        strokeWidth={2}
-                        dot={{ r: 3 }}
-                        activeDot={{ r: 5 }}
-                      />
-                    )
+                    <Line
+                      key={key}
+                      type="monotone"
+                      dataKey={key}
+                      name={`${config.icon} ${config.name}`}
+                      stroke={config.color}
+                      strokeWidth={visibleFrameworks.has(key) ? 2 : 0}
+                      dot={visibleFrameworks.has(key) ? { r: 3 } : false}
+                      activeDot={visibleFrameworks.has(key) ? { r: 5 } : false}
+                      hide={!visibleFrameworks.has(key)}
+                    />
                   ))}
                 </LineChart>
               </ResponsiveContainer>
