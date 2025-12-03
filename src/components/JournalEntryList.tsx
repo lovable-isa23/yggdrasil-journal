@@ -616,7 +616,7 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
       </AlertDialog>
 
       <Dialog open={entryToEdit !== null} onOpenChange={(open) => !open && closeEditDialog()}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[calc(100vw-2rem)] sm:w-full sm:max-w-4xl max-h-[85vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Edit Journal Entry</DialogTitle>
             <DialogDescription>
@@ -732,12 +732,12 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
                     value={editContent}
                     onChange={(e) => setEditContent(e.target.value)}
                     placeholder="Write your entry here... (Markdown supported)"
-                    className="min-h-[300px] font-mono text-sm"
+                    className="min-h-[200px] sm:min-h-[300px] font-mono text-sm"
                     disabled={isSaving}
                   />
                 </TabsContent>
                 <TabsContent value="preview" className="mt-2">
-                  <div className="min-h-[300px] rounded-md border bg-muted/50 p-4">
+                  <div className="min-h-[200px] sm:min-h-[300px] rounded-md border bg-muted/50 p-4">
                     <div className="prose prose-sm max-w-full dark:prose-invert break-words overflow-hidden md:prose-ul:list-disc md:prose-ol:list-decimal prose-ul:list-none prose-ol:list-none prose-ul:pl-0 prose-ol:pl-0 prose-li:leading-tight md:prose-li:leading-relaxed prose-p:leading-snug md:prose-p:leading-relaxed">
                       <ReactMarkdown>{editContent || "*No content to preview*"}</ReactMarkdown>
                     </div>
@@ -747,7 +747,7 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <Button variant="outline" onClick={closeEditDialog} disabled={isSaving}>
               Cancel
             </Button>
