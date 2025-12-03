@@ -68,6 +68,9 @@ export const JournalEditor = ({ onEntryCreated, replyToEntry, onReplyHandled }: 
     },
   });
 
+  // Destructure ref from register to merge with our custom ref
+  const { ref: titleFormRef, ...titleRest } = register("title");
+
   const title = watch("title");
   const content = watch("content");
 
@@ -214,10 +217,13 @@ export const JournalEditor = ({ onEntryCreated, replyToEntry, onReplyHandled }: 
         <Label htmlFor="title">Title</Label>
         <Input
           id="title"
-          ref={titleInputRef}
+          ref={(e) => {
+            titleFormRef(e);
+            titleInputRef.current = e;
+          }}
           type="text"
           placeholder="Give your entry a title..."
-          {...register("title")}
+          {...titleRest}
           className="h-12 text-lg"
         />
         {errors.title && (
