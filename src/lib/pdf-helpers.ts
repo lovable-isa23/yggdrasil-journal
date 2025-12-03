@@ -227,7 +227,7 @@ export const getFrameworkIcon = (_framework: string): string => {
 export const getFrameworkName = (framework: string): string => {
   const names: Record<string, string> = {
     'theravada': 'Theravada Buddhism',
-    'freudian': 'Psychoanalysis',
+    'freudian': 'Freudian',
     'jungian': 'Jungian Psychology',
     'hermetic': 'Hermeticism',
     'hermeticism': 'Hermeticism',
@@ -235,6 +235,36 @@ export const getFrameworkName = (framework: string): string => {
     'advaita_vedanta': 'Advaita Vedanta',
     'taoist': 'Taoism',
     'taoism': 'Taoism',
+    'attachment': 'Attachment Theory',
+    'attachment_theory': 'Attachment Theory',
+    'ifs': 'IFS',
+    'internal_family_systems': 'IFS',
+    'cbt': 'CBT',
+    'cognitive_behavioral': 'CBT',
+    'dbt': 'DBT',
+    'dialectical': 'DBT',
   };
   return names[framework.toLowerCase()] || framework;
+};
+
+export const normalizeFrameworkKey = (fw: string): string | null => {
+  const normalized = fw.toLowerCase().replace(/[_\s]/g, '');
+  if (normalized.includes('theravada') || normalized.includes('buddhis')) return 'theravada';
+  if (normalized.includes('hermetic') || normalized.includes('hermeticism')) return 'hermetic';
+  if (normalized.includes('advaita') || normalized.includes('vedanta')) return 'advaita';
+  if (normalized.includes('taoist') || normalized.includes('taoism')) return 'taoist';
+  if (normalized.includes('freudian') || normalized.includes('psychoanaly')) return 'freudian';
+  if (normalized.includes('jungian') || normalized.includes('jung')) return 'jungian';
+  if (normalized.includes('attachment')) return 'attachment';
+  if (normalized.includes('ifs') || normalized.includes('internalfamily')) return 'ifs';
+  if (normalized.includes('cbt') || normalized.includes('cognitivebehavior')) return 'cbt';
+  if (normalized.includes('dbt') || normalized.includes('dialectical')) return 'dbt';
+  return null;
+};
+
+export const getFrameworkCategory = (fw: string): 'spiritual' | 'depth' | 'modern' => {
+  const key = normalizeFrameworkKey(fw);
+  if (['theravada', 'hermetic', 'advaita', 'taoist'].includes(key || '')) return 'spiritual';
+  if (['freudian', 'jungian'].includes(key || '')) return 'depth';
+  return 'modern';
 };

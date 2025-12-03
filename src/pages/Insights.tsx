@@ -8,12 +8,13 @@ import { ReportExport } from "@/components/ReportExport";
 import { DataExport } from "@/components/DataExport";
 import { DataImport } from "@/components/DataImport";
 import { NPSTooltip } from "@/components/NPSTooltip";
+import { FrameworkAnalytics } from "@/components/FrameworkAnalytics";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { LogOut, BookOpen, Settings as SettingsIcon, BarChart3, Brain, TrendingUp, Target, FileText, Sparkles, Upload } from "lucide-react";
+import { LogOut, BookOpen, Settings as SettingsIcon, BarChart3, Brain, TrendingUp, Target, FileText, Sparkles, Upload, Layers } from "lucide-react";
 import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
 import { toast } from "sonner";
 
@@ -129,6 +130,17 @@ const Insights = () => {
               <div className="grid gap-6 lg:grid-cols-2">
                 <MoodTracker />
                 <SentimentTracking />
+              </div>
+            </section>
+
+            {/* Framework Analysis Section */}
+            <section>
+              <div className="flex items-center gap-2 mb-6">
+                <Layers className="h-6 w-6 text-primary" />
+                <h3 className="text-2xl font-bold">Framework Analysis</h3>
+              </div>
+              <div className="grid gap-6">
+                <FrameworkAnalytics />
               </div>
             </section>
 

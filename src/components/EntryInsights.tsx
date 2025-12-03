@@ -325,7 +325,7 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
                           <Badge variant="secondary" className="text-xs">Deep Analysis</Badge>
                         )}
                         {showBuddhist && <Badge variant="outline" className="text-xs">☸️ Buddhist</Badge>}
-                        {showFreudian && <Badge variant="outline" className="text-xs">🧠 Freudian</Badge>}
+                        {showFreudian && <Badge variant="outline" className="text-xs">🔺 Freudian</Badge>}
                         {showJungian && <Badge variant="outline" className="text-xs">🌓 Jungian</Badge>}
                         {showHermetic && <Badge variant="outline" className="text-xs">🔮 Hermetic</Badge>}
                         {showVedanta && <Badge variant="outline" className="text-xs">🕉️ Vedanta</Badge>}
