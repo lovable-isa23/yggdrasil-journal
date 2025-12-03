@@ -300,20 +300,13 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
                     const showBuddhist = isFrameworkMentioned('theravada', ['buddhis', 'theravada', 'dukkha', 'tanha', 'anicca', 'anatta', 'noble truth', 'eightfold', 'clinging', 'impermanence']);
                     const showFreudian = isFrameworkMentioned('freudian', ['freud', 'psychoanaly', 'defense mechanism', 'unconscious', 'ego', 'superego', 'id ', 'repression', 'projection', 'sublimation']);
                     const showJungian = isFrameworkMentioned('jungian', ['jung', 'archetype', 'shadow', 'anima', 'animus', 'individuation', 'collective unconscious', 'persona']);
-                    const showHermetic = (frameworksApplied.includes('hermetic') || frameworksApplied.includes('hermeticism')) && 
-                      ['hermetic', 'hermeticism', 'as above', 'mentalism', 'correspondence', 'vibration', 'polarity', 'rhythm', 'cause and effect', 'gender principle'].some(k => mainInsight.includes(k.toLowerCase()));
-                    const showVedanta = (frameworksApplied.includes('advaita') || frameworksApplied.includes('advaita_vedanta') || frameworksApplied.includes('vedanta')) &&
-                      ['advaita', 'vedanta', 'maya', 'atman', 'brahman', 'neti neti', 'witness', 'pure awareness', 'non-dual', 'avidya', 'moksha', 'self-inquiry'].some(k => mainInsight.includes(k.toLowerCase()));
-                    const showTaoist = (frameworksApplied.includes('taoist') || frameworksApplied.includes('taoism')) &&
-                      ['taois', 'wu wei', 'yin', 'yang', 'tao', 'effortless', 'flow', 'naturalness', 'ziran'].some(k => mainInsight.includes(k.toLowerCase()));
-                    const showAttachment = (frameworksApplied.includes('attachment') || frameworksApplied.includes('attachment_theory')) &&
-                      ['attachment', 'secure base', 'anxious attachment', 'avoidant', 'internal working model', 'attachment style', 'attachment pattern', 'protest behavior', 'hyperactivat', 'deactivat'].some(k => mainInsight.includes(k.toLowerCase()));
-                    const showIFS = (frameworksApplied.includes('ifs') || frameworksApplied.includes('internal_family_systems')) &&
-                      ['ifs', 'internal family', 'parts', 'exile', 'manager', 'firefighter', 'self-leadership', 'protector', 'part of me', 'inner part'].some(k => mainInsight.includes(k.toLowerCase()));
-                    const showCBT = (frameworksApplied.includes('cbt') || frameworksApplied.includes('cognitive_behavioral')) &&
-                      ['cbt', 'cognitive behavioral', 'cognitive distortion', 'automatic thought', 'core belief', 'all-or-nothing', 'catastrophiz', 'mind reading', 'fortune telling', 'should statement', 'labeling', 'filtering', 'overgeneraliz', 'cognitive triangle'].some(k => mainInsight.includes(k.toLowerCase()));
-                    const showDBT = (frameworksApplied.includes('dbt') || frameworksApplied.includes('dialectical')) &&
-                      ['dbt', 'dialectic', 'wise mind', 'emotion mind', 'reasonable mind', 'radical acceptance', 'distress tolerance', 'interpersonal effectiveness', 'dear man', 'emotional dysregulation', 'validation', 'both/and'].some(k => mainInsight.includes(k.toLowerCase()));
+                    const showHermetic = isFrameworkMentioned('hermetic', ['hermetic', 'as above', 'mentalism', 'correspondence', 'vibration', 'polarity', 'rhythm', 'cause and effect', 'gender principle']);
+                    const showVedanta = isFrameworkMentioned('advaita', ['advaita', 'vedanta', 'maya', 'atman', 'brahman', 'neti neti', 'witness', 'pure awareness', 'non-dual', 'avidya', 'moksha', 'self-inquiry']);
+                    const showTaoist = isFrameworkMentioned('taoist', ['taois', 'wu wei', 'yin', 'yang', 'tao', 'effortless', 'flow', 'naturalness', 'ziran']);
+                    const showAttachment = isFrameworkMentioned('attachment', ['attachment', 'secure base', 'anxious attachment', 'avoidant', 'internal working model', 'attachment style', 'attachment pattern', 'protest behavior', 'hyperactivat', 'deactivat']);
+                    const showIFS = isFrameworkMentioned('ifs', ['ifs', 'internal family', 'parts', 'exile', 'manager', 'firefighter', 'self-leadership', 'protector', 'part of me', 'inner part']);
+                    const showCBT = isFrameworkMentioned('cbt', ['cbt', 'cognitive behavioral', 'cognitive distortion', 'automatic thought', 'core belief', 'all-or-nothing', 'catastrophiz', 'mind reading', 'fortune telling', 'should statement', 'labeling', 'filtering', 'overgeneraliz', 'cognitive triangle']);
+                    const showDBT = isFrameworkMentioned('dbt', ['dbt', 'dialectic', 'wise mind', 'emotion mind', 'reasonable mind', 'radical acceptance', 'distress tolerance', 'interpersonal effectiveness', 'dear man', 'emotional dysregulation', 'validation', 'both/and']);
                     
                     const hasAnyBadge = insights.depth_score && insights.depth_score >= 6 || showBuddhist || showFreudian || showJungian || showHermetic || showVedanta || showTaoist || showAttachment || showIFS || showCBT || showDBT;
                     

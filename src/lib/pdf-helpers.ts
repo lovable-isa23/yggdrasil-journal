@@ -230,19 +230,12 @@ export const getFrameworkName = (framework: string): string => {
     'freudian': 'Freudian',
     'jungian': 'Jungian Psychology',
     'hermetic': 'Hermeticism',
-    'hermeticism': 'Hermeticism',
     'advaita': 'Advaita Vedanta',
-    'advaita_vedanta': 'Advaita Vedanta',
     'taoist': 'Taoism',
-    'taoism': 'Taoism',
     'attachment': 'Attachment Theory',
-    'attachment_theory': 'Attachment Theory',
     'ifs': 'IFS',
-    'internal_family_systems': 'IFS',
     'cbt': 'CBT',
-    'cognitive_behavioral': 'CBT',
     'dbt': 'DBT',
-    'dialectical': 'DBT',
   };
   return names[framework.toLowerCase()] || framework;
 };
