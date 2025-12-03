@@ -47,6 +47,7 @@ serve(async (req) => {
       
       console.log("Processing checkout session:", session.id);
       console.log("Customer email:", session.customer_email);
+      console.log("Session metadata:", session.metadata);
 
       const supabaseAdmin = createClient(
         Deno.env.get("SUPABASE_URL") ?? "",
@@ -54,23 +55,44 @@ serve(async (req) => {
         { auth: { persistSession: false } }
       );
 
-      // Check if user already exists with this email
-      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-      const existingUser = existingUsers?.users.find(
-        u => u.email === session.customer_email
-      );
+      // First, check if we have user_id in metadata (from in-app checkout)
+      const metadataUserId = session.metadata?.user_id;
+      
+      // Check if user already exists with this email or user_id from metadata
+      let existingUserId: string | null = null;
+      
+      if (metadataUserId) {
+        // User ID provided in metadata - this is from an existing logged-in user
+        existingUserId = metadataUserId;
+        console.log("User ID from metadata:", existingUserId);
+      } else {
+        // Fallback to email lookup
+        const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+        const existingUser = existingUsers?.users.find(
+          u => u.email === session.customer_email
+        );
+        if (existingUser) {
+          existingUserId = existingUser.id;
+        }
+      }
 
-      if (existingUser) {
-        console.log("User already exists:", existingUser.id);
+      if (existingUserId) {
+        console.log("Updating existing user:", existingUserId);
         
         // Update or insert beta_users record
-        await supabaseAdmin.from("beta_users").upsert({
-          user_id: existingUser.id,
+        const { error: upsertError } = await supabaseAdmin.from("beta_users").upsert({
+          user_id: existingUserId,
           stripe_customer_id: session.customer as string,
           stripe_checkout_session_id: session.id,
           payment_amount: session.amount_total,
           payment_status: "completed",
-        });
+        }, { onConflict: 'user_id' });
+        
+        if (upsertError) {
+          console.error("Error upserting beta_users:", upsertError);
+        } else {
+          console.log("Successfully updated beta_users for user:", existingUserId);
+        }
 
         return new Response(
           JSON.stringify({ message: "User already exists, updated payment info" }),

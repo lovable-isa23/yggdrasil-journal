@@ -50,3 +50,9 @@ verify_jwt = true
 
 [functions.demo-parse]
 verify_jwt = false
+
+[functions.check-trial-status]
+verify_jwt = true
+
+[functions.create-checkout]
+verify_jwt = true

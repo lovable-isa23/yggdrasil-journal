@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { GlobalLoadingBar } from "@/components/GlobalLoadingBar";
 import { YggiChat } from "@/components/YggiChat";
+import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
+import { TrialBadge } from "@/components/TrialBadge";
 import { lazy, Suspense } from "react";
 
 // Lazy load all routes for code splitting
@@ -20,6 +22,8 @@ const Insights = lazy(() => import("./pages/Insights"));
 const ImportHistory = lazy(() => import("./pages/ImportHistory"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Goals = lazy(() => import("./pages/Goals"));
+const TrialExpired = lazy(() => import("./pages/TrialExpired"));
+const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -31,25 +35,30 @@ const App = () => (
       <Sonner />
       <GlobalLoadingBar />
       <BrowserRouter>
-        <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/waitlist" element={<Waitlist />} />
-            <Route path="/beta-welcome" element={<BetaWelcome />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/update-password" element={<UpdatePassword />} />
-            <Route path="/journal" element={<Journal />} />
-            <Route path="/insights" element={<Insights />} />
-            <Route path="/import-history" element={<ImportHistory />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/goals" element={<Goals />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
-        <YggiChat />
+        <SubscriptionProvider>
+          <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/waitlist" element={<Waitlist />} />
+              <Route path="/beta-welcome" element={<BetaWelcome />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/update-password" element={<UpdatePassword />} />
+              <Route path="/journal" element={<Journal />} />
+              <Route path="/insights" element={<Insights />} />
+              <Route path="/import-history" element={<ImportHistory />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/goals" element={<Goals />} />
+              <Route path="/trial-expired" element={<TrialExpired />} />
+              <Route path="/payment-success" element={<PaymentSuccess />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+          <YggiChat />
+          <TrialBadge />
+        </SubscriptionProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

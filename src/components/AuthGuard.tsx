@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -12,6 +13,8 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { hasAccess, isLoading: subscriptionLoading } = useSubscription();
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -39,7 +42,17 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
     }
   }, [user, loading, navigate]);
 
-  if (loading) {
+  // Check subscription access after auth is confirmed
+  useEffect(() => {
+    if (!loading && user && !subscriptionLoading && !hasAccess) {
+      // Don't redirect if already on trial-expired or payment pages
+      if (location.pathname !== "/trial-expired" && location.pathname !== "/payment-success") {
+        navigate("/trial-expired");
+      }
+    }
+  }, [user, loading, hasAccess, subscriptionLoading, navigate, location.pathname]);
+
+  if (loading || subscriptionLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
@@ -51,6 +64,11 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
   }
 
   if (!user) {
+    return null;
+  }
+
+  // Don't block if user doesn't have access - let the redirect happen
+  if (!hasAccess && location.pathname !== "/trial-expired" && location.pathname !== "/payment-success") {
     return null;
   }
 
