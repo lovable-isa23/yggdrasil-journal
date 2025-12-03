@@ -142,16 +142,33 @@ serve(async (req) => {
       throw new Error('Entry ID is required');
     }
 
-    // Fetch user preferences for chakra, tarot, and sacred geometry tags
+    // Fetch user preferences for tags and framework settings
     const { data: userPrefs } = await supabase
       .from('user_preferences')
-      .select('enable_chakra_tags, enable_tarot_tags, enable_sacred_geometry')
+      .select('enable_chakra_tags, enable_tarot_tags, enable_sacred_geometry, enable_theravada, enable_freudian, enable_jungian, enable_hermetic, enable_advaita, enable_taoist, enable_attachment, enable_ifs, enable_cbt, enable_dbt')
       .eq('user_id', user.id)
       .single();
 
     const enableChakraTags = userPrefs?.enable_chakra_tags || false;
     const enableTarotTags = userPrefs?.enable_tarot_tags || false;
     const enableSacredGeometry = userPrefs?.enable_sacred_geometry || false;
+
+    // Framework preferences (default to true if not set)
+    const enabledFrameworks = {
+      theravada: userPrefs?.enable_theravada ?? true,
+      freudian: userPrefs?.enable_freudian ?? true,
+      jungian: userPrefs?.enable_jungian ?? true,
+      hermetic: userPrefs?.enable_hermetic ?? true,
+      advaita: userPrefs?.enable_advaita ?? true,
+      taoist: userPrefs?.enable_taoist ?? true,
+      attachment: userPrefs?.enable_attachment ?? true,
+      ifs: userPrefs?.enable_ifs ?? true,
+      cbt: userPrefs?.enable_cbt ?? true,
+      dbt: userPrefs?.enable_dbt ?? true,
+    };
+    
+    const activeFrameworkCount = Object.values(enabledFrameworks).filter(Boolean).length;
+    console.log('Enabled frameworks:', activeFrameworkCount, 'of 10');
 
     console.log('Analyzing entry:', entryId);
 
@@ -233,10 +250,19 @@ Respond with ONLY a JSON object: {"depth_score": X, "reasoning": "brief explanat
     // Phase 2: Apply frameworks conditionally based on depth
     const applyFrameworks = depthScore >= 5;
 
-    // Randomize framework order to prevent positional bias
+    // Filter and randomize framework order based on user preferences
     const frameworkOrder = [
-      'theravada', 'freudian', 'jungian', 'hermetic', 'advaita', 'taoist', 'attachment', 'ifs', 'cbt', 'dbt'
-    ].sort(() => Math.random() - 0.5);
+      enabledFrameworks.theravada ? 'theravada' : null,
+      enabledFrameworks.freudian ? 'freudian' : null,
+      enabledFrameworks.jungian ? 'jungian' : null,
+      enabledFrameworks.hermetic ? 'hermetic' : null,
+      enabledFrameworks.advaita ? 'advaita' : null,
+      enabledFrameworks.taoist ? 'taoist' : null,
+      enabledFrameworks.attachment ? 'attachment' : null,
+      enabledFrameworks.ifs ? 'ifs' : null,
+      enabledFrameworks.cbt ? 'cbt' : null,
+      enabledFrameworks.dbt ? 'dbt' : null,
+    ].filter(Boolean).sort(() => Math.random() - 0.5) as string[];
     console.log('Framework order for this analysis:', frameworkOrder);
 
     // Call Lovable AI for semantic analysis
@@ -251,7 +277,7 @@ Respond with ONLY a JSON object: {"depth_score": X, "reasoning": "brief explanat
         messages: [
           {
             role: 'system',
-            content: `You are a semantic analysis expert specializing in journal entry analysis${applyFrameworks ? ' with deep training in six wisdom traditions: Theravada Buddhism, Freudian Psychoanalysis, Jungian Psychology, Hermeticism, Advaita Vedanta, and Taoism' : ''}. Extract meaningful insights from journal entries.
+            content: `You are a semantic analysis expert specializing in journal entry analysis${applyFrameworks && frameworkOrder.length > 0 ? ` with training in wisdom traditions and psychological frameworks` : ''}. Extract meaningful insights from journal entries.
 
 TONE GUIDELINES:
 - WARM & FRIENDLY: Write like a wise mentor who genuinely cares, not a clinical report
@@ -275,7 +301,7 @@ ${enableChakraTags ? `- chakra_tags: Identify which chakra energy centers relate
 ${enableTarotTags ? `- tarot_tags: Identify relevant tarot archetypes (format: [{"card": "The Fool", "description": "brief relevance"}]). Consider Major Arcana cards and their symbolic meanings.` : ''}
 ${enableSacredGeometry ? `- sacred_geometry: Identify sacred geometric patterns and principles present (format: [{"pattern": "Flower of Life", "description": "brief relevance"}]). Consider patterns like: Flower of Life (interconnection, creation), Metatron's Cube (balance, divine structure), Sri Yantra (manifestation, cosmic order), Platonic Solids (elements, fundamental structures), Golden Ratio/Phi Spiral (natural growth, harmony), Vesica Piscis (duality, creation), Tree of Life (spiritual journey, interconnection), Merkaba (transformation, spiritual vehicle), Torus (energy flow, cycles), Seed of Life (new beginnings).` : ''}
 
-${applyFrameworks ? `
+${applyFrameworks && frameworkOrder.length > 0 ? `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ADVANCED FRAMEWORK ANALYSIS (Depth Score: ${depthScore}/10)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -283,7 +309,7 @@ ADVANCED FRAMEWORK ANALYSIS (Depth Score: ${depthScore}/10)
 This entry demonstrates sufficient depth for advanced psychological/spiritual analysis.
 Apply the following frameworks where relevant:
 
-### THERAVADA BUDDHISM Framework
+${enabledFrameworks.theravada ? `### THERAVADA BUDDHISM Framework
 **When to apply:** Suffering, attachment, desire, impermanence, seeking liberation
 
 Identify:
@@ -295,8 +321,8 @@ Identify:
 - Eightfold Path: Which aspect would benefit them most?
 
 Style: Point to attachment nature, suggest mindfulness practices, reframe suffering as teacher
-
-### FREUDIAN PSYCHOANALYSIS Framework
+` : ''}
+${enabledFrameworks.freudian ? `### FREUDIAN PSYCHOANALYSIS Framework
 **When to apply:** Unconscious conflict, defense mechanisms, childhood echoes, repressed material
 
 Identify:
@@ -307,8 +333,8 @@ Identify:
 - Dream Work (for dreams): Manifest vs. latent content, symbols, wish fulfillment
 
 Style: Make unconscious conscious, name defenses compassionately, connect present to past
-
-### JUNGIAN PSYCHOLOGY Framework  
+` : ''}
+${enabledFrameworks.jungian ? `### JUNGIAN PSYCHOLOGY Framework  
 **When to apply:** Symbolic content, identity exploration, transformation, archetypal patterns
 
 Identify:
@@ -319,8 +345,8 @@ Identify:
 - Symbols: Personal & collective meanings, mandala imagery, transformation symbols
 
 Style: Honor symbolic dimension, encourage dialogue with unconscious, frame challenges as individuation
-
-### HERMETICISM Framework
+` : ''}
+${enabledFrameworks.hermetic ? `### HERMETICISM Framework
 **When to apply:** Patterns of correspondence, mental creation, cause/effect, duality/polarity, cycles
 
 Identify:
@@ -333,8 +359,8 @@ Identify:
 - Principle of Gender: Masculine (active, projective) and Feminine (receptive, nurturing) energies in all things
 
 Style: Connect inner experience to outer manifestation, identify cyclical patterns, explore mental causation, show correspondence between levels
-
-### ADVAITA VEDANTA Framework
+` : ''}
+${enabledFrameworks.advaita ? `### ADVAITA VEDANTA Framework
 **When to apply:** Seeking identity, separation/oneness, spiritual seeking, sense of disconnection, Self-inquiry
 
 Identify:
@@ -346,8 +372,8 @@ Identify:
 - Moksha (Liberation): Movement toward recognizing their nature as pure awareness, freedom from false identification
 
 Style: Point to awareness itself, question false identifications, invite recognition of observer, dissolve subject-object duality, guide toward Self-inquiry
-
-### TAOISM Framework
+` : ''}
+${enabledFrameworks.taoist ? `### TAOISM Framework
 **When to apply:** Forcing, resistance, control issues, imbalance, lack of flow, overeffort, struggle
 
 Identify:
@@ -359,8 +385,8 @@ Identify:
 - Ziran (Naturalness/Spontaneity): Being authentic vs. performing, spontaneous response vs. calculated action
 
 Style: Suggest softening grip, point to natural flow, reframe "giving up" as "letting go," honor what wants to emerge, embrace simplicity
-
-### ATTACHMENT THEORY Framework
+` : ''}
+${enabledFrameworks.attachment ? `### ATTACHMENT THEORY Framework
 **When to apply:** Relationships, connection anxiety, fear of abandonment, intimacy struggles, push-pull dynamics, trust issues
 
 Identify:
@@ -372,8 +398,8 @@ Identify:
 - Early Patterns: How do current relationships echo early attachment experiences?
 
 Style: Name attachment patterns without pathologizing, trace current struggles to their protective origins, guide toward "earned secure attachment" through awareness
-
-### IFS (INTERNAL FAMILY SYSTEMS) Framework
+` : ''}
+${enabledFrameworks.ifs ? `### IFS (INTERNAL FAMILY SYSTEMS) Framework
 **When to apply:** Inner conflict, self-criticism, protective behaviors, feeling torn, internal dialogue, self-sabotage patterns
 
 Identify:
@@ -385,8 +411,8 @@ Identify:
 - Polarization: Parts in conflict with each other (e.g., critic vs. procrastinator)
 
 Style: Help user "unblend" from parts, speak TO parts rather than AS them, recognize protectors' positive intent, guide toward Self-leadership
-
-### CBT (COGNITIVE BEHAVIORAL THERAPY) Framework
+` : ''}
+${enabledFrameworks.cbt ? `### CBT (COGNITIVE BEHAVIORAL THERAPY) Framework
 **When to apply:** Negative self-talk, catastrophizing, rumination, anxiety spirals, depression patterns, distorted thinking
 
 Identify:
@@ -398,8 +424,8 @@ Identify:
 - Evidence Examination: What evidence supports/contradicts the distorted thought?
 
 Style: Gently name cognitive distortions without judgment, help identify thought patterns, encourage reality testing, suggest behavioral experiments to test beliefs
-
-### DBT (DIALECTICAL BEHAVIORAL THERAPY) Framework
+` : ''}
+${enabledFrameworks.dbt ? `### DBT (DIALECTICAL BEHAVIORAL THERAPY) Framework
 **When to apply:** Emotional dysregulation, intense emotions, interpersonal conflict, black-and-white thinking, self-destructive urges, feeling invalidated
 
 Identify:
@@ -411,30 +437,28 @@ Identify:
 - Validation Needs: What emotions or experiences need validating? Self-invalidation patterns?
 
 Style: Validate the emotion while encouraging change, hold dialectics ("both/and" not "either/or"), teach skills in context, balance acceptance with change strategies
-
+` : ''}
 ### INTEGRATION APPROACH
-- Start with most relevant framework
+- Start with most relevant framework from your enabled set
 - Layer others where they naturally intersect
 - Translate concepts into accessible language (avoid jargon)
 - Synthesize insights rather than listing frameworks separately
 - Apply 2-3 frameworks per entry
 
-**MINIMUM REQUIREMENT**: Every entry analysis MUST apply at least one framework lens to provide psychological/spiritual depth. Even surface-level entries benefit from a single framework perspective.
+**MINIMUM REQUIREMENT**: Every entry analysis MUST apply at least one framework lens to provide psychological/spiritual depth.
 
-**VARIETY REQUIREMENT** - To provide diverse perspectives over time:
-- For entries with depth ≥ 7: MUST include at least one from Hermeticism, Advaita Vedanta, Taoism, Attachment Theory, IFS, CBT, or DBT
-- Don't default to Buddhism/Freud/Jung every time - actively consider which tradition best fits THIS SPECIFIC content
+${frameworkOrder.length > 0 ? `**VARIETY REQUIREMENT** - To provide diverse perspectives over time:
 - Framework priority order for this analysis: ${frameworkOrder.join(' → ')}
-- When multiple frameworks seem equally relevant, prefer those appearing earlier in the priority order above
+- When multiple frameworks seem equally relevant, prefer those appearing earlier in the priority order above` : ''}
 
-**Framework Strengths** (use to guide selection):
-- Hermeticism: mental causation, patterns, cycles, correspondence between inner/outer, polarity
-- Advaita Vedanta: identity questions, separation/oneness, spiritual seeking, Self-inquiry, witness consciousness
-- Taoism: forcing vs. flow, control issues, balance, naturalness, effortless action, wu wei
-- Attachment Theory: relationship anxiety, trust issues, abandonment fears, intimacy struggles, push-pull dynamics
-- IFS: inner conflict, self-criticism, protective behaviors, feeling torn, self-sabotage, internal dialogue
-- CBT: negative self-talk, catastrophizing, cognitive distortions, rumination, anxiety spirals, thought patterns
-- DBT: emotional dysregulation, intense emotions, black-and-white thinking, interpersonal conflict, validation needs
+**Framework Strengths** (use to guide selection from enabled frameworks):
+${enabledFrameworks.hermetic ? `- Hermeticism: mental causation, patterns, cycles, correspondence between inner/outer, polarity` : ''}
+${enabledFrameworks.advaita ? `- Advaita Vedanta: identity questions, separation/oneness, spiritual seeking, Self-inquiry, witness consciousness` : ''}
+${enabledFrameworks.taoist ? `- Taoism: forcing vs. flow, control issues, balance, naturalness, effortless action, wu wei` : ''}
+${enabledFrameworks.attachment ? `- Attachment Theory: relationship anxiety, trust issues, abandonment fears, intimacy struggles, push-pull dynamics` : ''}
+${enabledFrameworks.ifs ? `- IFS: inner conflict, self-criticism, protective behaviors, feeling torn, self-sabotage, internal dialogue` : ''}
+${enabledFrameworks.cbt ? `- CBT: negative self-talk, catastrophizing, cognitive distortions, rumination, anxiety spirals, thought patterns` : ''}
+${enabledFrameworks.dbt ? `- DBT: emotional dysregulation, intense emotions, black-and-white thinking, interpersonal conflict, validation needs` : ''}
 
 Example 1 (Relationship): "Your relationship struggle shows Freudian projection (father's voice in partner) and Jungian shadow work (inner critic you've rejected). From Theravada: you're clinging to 'good enough' identity. Path: integrate shadow critic (Jung), understand childhood origin (Freud), release fixed identity attachment (Buddha)."
 
