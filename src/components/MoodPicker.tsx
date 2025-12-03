@@ -36,13 +36,6 @@ const MOOD_OPTIONS: MoodOption[] = [
     borderColor: 'border-amber-400',
   },
   {
-    value: 'challenge',
-    label: 'Challenge',
-    icon: '⚡',
-    gradient: 'from-orange-100 to-amber-50',
-    borderColor: 'border-orange-400',
-  },
-  {
     value: 'intention',
     label: 'Intention',
     icon: '🎯',

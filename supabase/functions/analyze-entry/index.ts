@@ -507,23 +507,13 @@ ${moodType === 'gratitude' ? `
 - Habit formation guidance for sustained practice
 ` : ''}
 
-${moodType === 'challenge' ? `
-⚡ CHALLENGE ENTRY - Confronting obstacles:
-- PRIORITY: Identify maladaptive behaviors, bad habits, negative thought patterns
-- Name cognitive distortions clearly (catastrophizing, black-and-white thinking, mind-reading, overgeneralization, etc.)
-- Self-sabotage patterns and their protective function
-- DBT/CBT-informed coping strategies (opposite action, wise mind, check the facts)
-- Reframe: Alternative perspectives on the situation
-- Concrete action steps for change
-` : ''}
-
-${moodType === 'celebration' ? `
-🎉 CELEBRATION ENTRY - Integrating success:
-- Acknowledge growth and real progress made
-- How to integrate this success into self-concept
-- Build on strengths revealed in this achievement
-- Avoid toxic positivity - genuine acknowledgment
-- Next-level aspirations and expansion opportunities
+${moodType === 'intention' ? `
+🎯 INTENTION ENTRY - Setting direction:
+- Acknowledge the intention and its deeper meaning
+- Connect to core values and life purpose
+- Identify potential obstacles and how to address them
+- Concrete first steps to move toward the intention
+- How to maintain motivation and track progress
 ` : ''}
 
 ${moodType === 'general' ? `
@@ -545,6 +535,11 @@ Your interpretation must:
 ${applyFrameworks ? '7. Use framework concepts naturally - translate technical terms, illuminate without impressing' : ''}
 
 IMPORTANT: For safety_concerns, only flag true if there is genuine risk language (e.g., "I want to end my life", "not worth living", "plan to hurt myself", "everyone would be better off without me"). Do not flag general sadness, stress, or normal difficult emotions.
+
+CRITICAL - CANONICAL FRAMEWORK KEYS:
+When specifying frameworks_applied in your JSON response, use ONLY these exact canonical keys:
+theravada, freudian, jungian, hermetic, advaita, taoist, attachment, ifs, cbt, dbt
+Never use variations like "taoism", "hermeticism", "advaita_vedanta", "attachment_theory", etc.
 
 CRITICAL JSON RULES:
 - Return ONLY valid JSON - no markdown, no code blocks, no explanations
