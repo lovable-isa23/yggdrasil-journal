@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,17 +8,24 @@ import { useSubscription } from "@/contexts/SubscriptionContext";
 
 const TrialExpired = () => {
   const navigate = useNavigate();
-  const { startCheckout, checkStatus } = useSubscription();
-  const [isLoading, setIsLoading] = useState(false);
+  const { startCheckout, checkStatus, hasAccess, isLoading: subscriptionLoading } = useSubscription();
+  const [isButtonLoading, setIsButtonLoading] = useState(false);
+
+  // Redirect users who have access away from this page
+  useEffect(() => {
+    if (!subscriptionLoading && hasAccess) {
+      navigate("/journal");
+    }
+  }, [hasAccess, subscriptionLoading, navigate]);
 
   const handleUpgrade = async () => {
-    setIsLoading(true);
+    setIsButtonLoading(true);
     try {
       await startCheckout();
     } catch (error) {
       console.error("Checkout error:", error);
     } finally {
-      setIsLoading(false);
+      setIsButtonLoading(false);
     }
   };
 
@@ -28,9 +35,9 @@ const TrialExpired = () => {
   };
 
   const handleRefresh = async () => {
-    setIsLoading(true);
+    setIsButtonLoading(true);
     await checkStatus();
-    setIsLoading(false);
+    setIsButtonLoading(false);
   };
 
   return (
@@ -65,7 +72,7 @@ const TrialExpired = () => {
               </li>
               <li className="flex items-start gap-2">
                 <Leaf className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                <span>Pattern insights across 6 spiritual frameworks</span>
+                <span>Pattern insights across 10 psychological and spiritual lenses</span>
               </li>
               <li className="flex items-start gap-2">
                 <Leaf className="w-4 h-4 text-primary mt-0.5 shrink-0" />
@@ -88,9 +95,9 @@ const TrialExpired = () => {
               onClick={handleUpgrade} 
               className="w-full" 
               size="lg"
-              disabled={isLoading}
+              disabled={isButtonLoading}
             >
-              {isLoading ? (
+              {isButtonLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Loading...
@@ -108,7 +115,7 @@ const TrialExpired = () => {
                 variant="outline" 
                 onClick={handleRefresh}
                 className="flex-1"
-                disabled={isLoading}
+                disabled={isButtonLoading}
               >
                 Already paid? Refresh
               </Button>
