@@ -760,9 +760,19 @@ export type Database = {
         Row: {
           created_at: string
           dark_mode: boolean | null
+          enable_advaita: boolean | null
+          enable_attachment: boolean | null
+          enable_cbt: boolean | null
           enable_chakra_tags: boolean | null
+          enable_dbt: boolean | null
+          enable_freudian: boolean | null
+          enable_hermetic: boolean | null
+          enable_ifs: boolean | null
+          enable_jungian: boolean | null
           enable_sacred_geometry: boolean | null
+          enable_taoist: boolean | null
           enable_tarot_tags: boolean | null
+          enable_theravada: boolean | null
           id: string
           updated_at: string
           user_id: string
@@ -770,9 +780,19 @@ export type Database = {
         Insert: {
           created_at?: string
           dark_mode?: boolean | null
+          enable_advaita?: boolean | null
+          enable_attachment?: boolean | null
+          enable_cbt?: boolean | null
           enable_chakra_tags?: boolean | null
+          enable_dbt?: boolean | null
+          enable_freudian?: boolean | null
+          enable_hermetic?: boolean | null
+          enable_ifs?: boolean | null
+          enable_jungian?: boolean | null
           enable_sacred_geometry?: boolean | null
+          enable_taoist?: boolean | null
           enable_tarot_tags?: boolean | null
+          enable_theravada?: boolean | null
           id?: string
           updated_at?: string
           user_id: string
@@ -780,9 +800,19 @@ export type Database = {
         Update: {
           created_at?: string
           dark_mode?: boolean | null
+          enable_advaita?: boolean | null
+          enable_attachment?: boolean | null
+          enable_cbt?: boolean | null
           enable_chakra_tags?: boolean | null
+          enable_dbt?: boolean | null
+          enable_freudian?: boolean | null
+          enable_hermetic?: boolean | null
+          enable_ifs?: boolean | null
+          enable_jungian?: boolean | null
           enable_sacred_geometry?: boolean | null
+          enable_taoist?: boolean | null
           enable_tarot_tags?: boolean | null
+          enable_theravada?: boolean | null
           id?: string
           updated_at?: string
           user_id?: string
