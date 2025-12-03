@@ -310,8 +310,12 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
                       ['attachment', 'secure base', 'anxious attachment', 'avoidant', 'internal working model', 'attachment style', 'attachment pattern', 'protest behavior', 'hyperactivat', 'deactivat'].some(k => mainInsight.includes(k.toLowerCase()));
                     const showIFS = (frameworksApplied.includes('ifs') || frameworksApplied.includes('internal_family_systems')) &&
                       ['ifs', 'internal family', 'parts', 'exile', 'manager', 'firefighter', 'self-leadership', 'protector', 'part of me', 'inner part'].some(k => mainInsight.includes(k.toLowerCase()));
+                    const showCBT = (frameworksApplied.includes('cbt') || frameworksApplied.includes('cognitive_behavioral')) &&
+                      ['cbt', 'cognitive behavioral', 'cognitive distortion', 'automatic thought', 'core belief', 'all-or-nothing', 'catastrophiz', 'mind reading', 'fortune telling', 'should statement', 'labeling', 'filtering', 'overgeneraliz', 'cognitive triangle'].some(k => mainInsight.includes(k.toLowerCase()));
+                    const showDBT = (frameworksApplied.includes('dbt') || frameworksApplied.includes('dialectical')) &&
+                      ['dbt', 'dialectic', 'wise mind', 'emotion mind', 'reasonable mind', 'radical acceptance', 'distress tolerance', 'interpersonal effectiveness', 'dear man', 'emotional dysregulation', 'validation', 'both/and'].some(k => mainInsight.includes(k.toLowerCase()));
                     
-                    const hasAnyBadge = insights.depth_score && insights.depth_score >= 6 || showBuddhist || showFreudian || showJungian || showHermetic || showVedanta || showTaoist || showAttachment || showIFS;
+                    const hasAnyBadge = insights.depth_score && insights.depth_score >= 6 || showBuddhist || showFreudian || showJungian || showHermetic || showVedanta || showTaoist || showAttachment || showIFS || showCBT || showDBT;
                     
                     if (!hasAnyBadge) return null;
                     
@@ -328,6 +332,8 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
                         {showTaoist && <Badge variant="outline" className="text-xs">☯️ Taoist</Badge>}
                         {showAttachment && <Badge variant="outline" className="text-xs">💕 Attachment</Badge>}
                         {showIFS && <Badge variant="outline" className="text-xs">🎭 IFS</Badge>}
+                        {showCBT && <Badge variant="outline" className="text-xs">💭 CBT</Badge>}
+                        {showDBT && <Badge variant="outline" className="text-xs">⚖️ DBT</Badge>}
                       </div>
                     );
                   })()}

@@ -235,7 +235,7 @@ Respond with ONLY a JSON object: {"depth_score": X, "reasoning": "brief explanat
 
     // Randomize framework order to prevent positional bias
     const frameworkOrder = [
-      'theravada', 'freudian', 'jungian', 'hermetic', 'advaita', 'taoist', 'attachment', 'ifs'
+      'theravada', 'freudian', 'jungian', 'hermetic', 'advaita', 'taoist', 'attachment', 'ifs', 'cbt', 'dbt'
     ].sort(() => Math.random() - 0.5);
     console.log('Framework order for this analysis:', frameworkOrder);
 
@@ -386,6 +386,32 @@ Identify:
 
 Style: Help user "unblend" from parts, speak TO parts rather than AS them, recognize protectors' positive intent, guide toward Self-leadership
 
+### CBT (COGNITIVE BEHAVIORAL THERAPY) Framework
+**When to apply:** Negative self-talk, catastrophizing, rumination, anxiety spirals, depression patterns, distorted thinking
+
+Identify:
+- Cognitive Distortions: All-or-nothing thinking, catastrophizing, mind reading, fortune telling, emotional reasoning, "should" statements, labeling, personalization, filtering (focusing on negatives), discounting positives, overgeneralization, magnification/minimization
+- Automatic Thoughts: What's the immediate thought triggered by the situation? The "hot thought"
+- Core Beliefs: Deeper beliefs about self ("I'm unlovable"), others ("People can't be trusted"), world ("Life is unfair")
+- Behavioral Patterns: Avoidance, safety behaviors, checking, reassurance-seeking
+- Cognitive Triangle: How thoughts → feelings → behaviors interact and reinforce each other
+- Evidence Examination: What evidence supports/contradicts the distorted thought?
+
+Style: Gently name cognitive distortions without judgment, help identify thought patterns, encourage reality testing, suggest behavioral experiments to test beliefs
+
+### DBT (DIALECTICAL BEHAVIORAL THERAPY) Framework
+**When to apply:** Emotional dysregulation, intense emotions, interpersonal conflict, black-and-white thinking, self-destructive urges, feeling invalidated
+
+Identify:
+- Dialectics: Where is there black-and-white thinking? What opposites can both be true? (e.g., "I'm doing my best AND I need to do better")
+- Emotion Regulation: Identify primary emotion vs. secondary emotions, emotional vulnerability factors (HALT: Hungry, Angry, Lonely, Tired)
+- Distress Tolerance: Need for crisis survival skills? Radical acceptance opportunities?
+- Interpersonal Effectiveness: DEAR MAN (Describe, Express, Assert, Reinforce, Mindful, Appear confident, Negotiate), GIVE (Gentle, Interested, Validate, Easy manner), FAST (Fair, no Apologies, Stick to values, Truthful)
+- Wise Mind: Are they in Emotion Mind (reactive) or Reasonable Mind (detached)? How to access Wise Mind (integration of both)?
+- Validation Needs: What emotions or experiences need validating? Self-invalidation patterns?
+
+Style: Validate the emotion while encouraging change, hold dialectics ("both/and" not "either/or"), teach skills in context, balance acceptance with change strategies
+
 ### INTEGRATION APPROACH
 - Start with most relevant framework
 - Layer others where they naturally intersect
@@ -396,7 +422,7 @@ Style: Help user "unblend" from parts, speak TO parts rather than AS them, recog
 **MINIMUM REQUIREMENT**: Every entry analysis MUST apply at least one framework lens to provide psychological/spiritual depth. Even surface-level entries benefit from a single framework perspective.
 
 **VARIETY REQUIREMENT** - To provide diverse perspectives over time:
-- For entries with depth ≥ 7: MUST include at least one from Hermeticism, Advaita Vedanta, Taoism, Attachment Theory, or IFS
+- For entries with depth ≥ 7: MUST include at least one from Hermeticism, Advaita Vedanta, Taoism, Attachment Theory, IFS, CBT, or DBT
 - Don't default to Buddhism/Freud/Jung every time - actively consider which tradition best fits THIS SPECIFIC content
 - Framework priority order for this analysis: ${frameworkOrder.join(' → ')}
 - When multiple frameworks seem equally relevant, prefer those appearing earlier in the priority order above
@@ -407,6 +433,8 @@ Style: Help user "unblend" from parts, speak TO parts rather than AS them, recog
 - Taoism: forcing vs. flow, control issues, balance, naturalness, effortless action, wu wei
 - Attachment Theory: relationship anxiety, trust issues, abandonment fears, intimacy struggles, push-pull dynamics
 - IFS: inner conflict, self-criticism, protective behaviors, feeling torn, self-sabotage, internal dialogue
+- CBT: negative self-talk, catastrophizing, cognitive distortions, rumination, anxiety spirals, thought patterns
+- DBT: emotional dysregulation, intense emotions, black-and-white thinking, interpersonal conflict, validation needs
 
 Example 1 (Relationship): "Your relationship struggle shows Freudian projection (father's voice in partner) and Jungian shadow work (inner critic you've rejected). From Theravada: you're clinging to 'good enough' identity. Path: integrate shadow critic (Jung), understand childhood origin (Freud), release fixed identity attachment (Buddha)."
 
@@ -417,6 +445,10 @@ Example 3 (Identity Crisis): "The roles you're clinging to—successful professi
 Example 4 (Relationship Anxiety): "This anxiety is your attachment system activating—specifically an anxious-preoccupied pattern (Attachment Theory). When you sense distance, your protest behaviors kick in: texting repeatedly, seeking reassurance, hypervigilance for signs of rejection. There's also a Critic Manager part (IFS) telling you 'if you were better, they'd be closer.' Path: Notice when your attachment alarm goes off, practice self-soothing instead of seeking external reassurance, get curious about the Critic's protective intent."
 
 Example 5 (Inner Conflict): "You're experiencing a classic IFS polarization: one part wants to take the risk and pursue the opportunity, another part is fiercely protecting you from potential failure and rejection. That protective part has good reasons—it remembers past disappointments. From a Jungian lens, the risk-taker might be your Hero archetype calling for individuation. Path: Instead of letting these parts battle, can you get curious about what each needs? What would both parts need to feel safe enough to move forward?"
+
+Example 6 (Anxiety Spiral): "You're in a classic CBT catastrophizing spiral—that cognitive distortion where your mind jumps from 'one thing went wrong' to 'everything will fall apart.' Notice the thought chain: 'I made a mistake' → 'They'll think I'm incompetent' → 'I'll lose my job' → 'I'll never recover.' That's fortune-telling and mind-reading stacked together. Your Emotion Mind (DBT) has taken over—this feels absolutely real, but Wise Mind knows one mistake rarely defines a career. Path: Reality test the hot thought—what's the actual evidence? What's happened before when you made mistakes?"
+
+Example 7 (Emotional Intensity): "The dialectic here (DBT) is that you CAN feel devastated AND also know you'll survive this—both truths coexist. Your all-or-nothing thinking (CBT cognitive distortion) says 'if this relationship ended, I'm completely unlovable.' That's labeling and overgeneralization working together. You're in Emotion Mind right now—valid, but not the whole picture. Path: Practice radical acceptance (DBT)—not approval of what happened, but ending the internal war with reality. Ask: What would Wise Mind say about this?"
 ` : ''}
 
 INTERPRETATION INSTRUCTIONS:
