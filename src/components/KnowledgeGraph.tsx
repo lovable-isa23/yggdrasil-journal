@@ -413,7 +413,7 @@ export const KnowledgeGraph = () => {
 
     // Total node count insight
     if (nodes.length > 3) {
-      insights.push(`${nodes.length} ${activeTab} are interconnected in your journal`);
+      insights.push(`${nodes.length} ${activeTab === 'all' ? 'nodes' : activeTab} are interconnected in your journal`);
     }
     
     setConnectionInsights(insights.slice(0, 4));
@@ -455,7 +455,7 @@ export const KnowledgeGraph = () => {
     
     // Get actual position from D3 simulation (nodes are mutated by D3)
     const svg = d3.select(svgRef.current);
-    const nodeSelection = svg.selectAll<SVGGElement, GraphNode>("g")
+    const nodeSelection = svg.selectAll<SVGCircleElement, GraphNode>("circle")
       .filter((d: GraphNode) => d.id === largestNode.id);
     
     if (nodeSelection.empty()) return;
@@ -686,7 +686,7 @@ export const KnowledgeGraph = () => {
       .attr("dy", "0.35em")
       .attr("font-size", (d) => Math.max(8, Math.min(12, d.value / 2)) + "px")
       .attr("font-weight", "600")
-      .attr("fill", "hsl(var(--background))")
+      .attr("fill", "#8B6F47")
       .attr("pointer-events", "none");
 
     // Add hover and click effects

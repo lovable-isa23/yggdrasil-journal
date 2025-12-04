@@ -229,35 +229,12 @@ export const JourneyTimeline = ({ goalId, refreshTrigger }: JourneyTimelineProps
   return (
     <>
       <div className="space-y-4 w-full max-w-full overflow-hidden">
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-primary" />
-            <h4 className="font-semibold">Journey Timeline</h4>
-            <Badge variant="secondary" className="text-xs">
-              {events.length} events
-            </Badge>
-          </div>
-          
-          {hasMore && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="gap-1 text-xs"
-            >
-              {isExpanded ? (
-                <>
-                  <ChevronUp className="h-4 w-4" />
-                  Show less
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="h-4 w-4" />
-                  Show all {events.length}
-                </>
-              )}
-            </Button>
-          )}
+        <div className="flex items-center gap-2">
+          <Calendar className="h-5 w-5 text-primary" />
+          <h4 className="font-semibold">Journey Timeline</h4>
+          <Badge variant="secondary" className="text-xs">
+            {events.length} events
+          </Badge>
         </div>
         
         {isExpanded && hasMore ? (
@@ -268,10 +245,25 @@ export const JourneyTimeline = ({ goalId, refreshTrigger }: JourneyTimelineProps
           renderTimelineContent()
         )}
 
-        {!isExpanded && hasMore && (
-          <p className="text-sm text-muted-foreground text-center">
-            +{events.length - MAX_VISIBLE_EVENTS} more events
-          </p>
+        {hasMore && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="gap-1 text-xs w-full justify-center"
+          >
+            {isExpanded ? (
+              <>
+                <ChevronUp className="h-4 w-4" />
+                Show less
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-4 w-4" />
+                Show all {events.length}
+              </>
+            )}
+          </Button>
         )}
       </div>
 

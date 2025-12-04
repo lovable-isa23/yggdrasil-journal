@@ -382,11 +382,11 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
                           🔍 Patterns to Notice
                         </AccordionTrigger>
                         <AccordionContent className="pt-2 pb-3">
-                          <ul className="space-y-1 text-sm">
+                          <ul className="space-y-2 text-sm">
                             {insights.interpretation.patterns_identified.map((pattern, idx) => (
                               <li key={idx} className="flex items-start gap-2">
-                                <span className="text-primary mt-1">•</span>
-                                <span className="prose prose-sm max-w-none dark:prose-invert"><ReactMarkdown>{pattern}</ReactMarkdown></span>
+                                <span className="text-primary mt-1 flex-shrink-0">•</span>
+                                <div className="prose prose-sm max-w-none dark:prose-invert [&>p]:m-0 [&>ul]:mt-1 [&>ol]:mt-1"><ReactMarkdown>{pattern}</ReactMarkdown></div>
                               </li>
                             ))}
                           </ul>
@@ -405,8 +405,8 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
                           <ul className="space-y-2 text-sm">
                             {insights.interpretation.questions.map((q, idx) => (
                               <li key={idx} className="flex items-start gap-2">
-                                <span className="text-primary font-medium">Q{idx + 1}:</span>
-                                <span className="italic prose prose-sm max-w-none dark:prose-invert"><ReactMarkdown>{q}</ReactMarkdown></span>
+                                <span className="text-primary font-medium flex-shrink-0">Q{idx + 1}:</span>
+                                <div className="italic prose prose-sm max-w-none dark:prose-invert [&>p]:m-0 [&>ul]:mt-1 [&>ol]:mt-1"><ReactMarkdown>{q}</ReactMarkdown></div>
                               </li>
                             ))}
                           </ul>
@@ -422,11 +422,11 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
                           ✓ Action Steps
                         </AccordionTrigger>
                         <AccordionContent className="pt-2 pb-3">
-                          <ul className="space-y-1 text-sm">
+                          <ul className="space-y-2 text-sm">
                             {insights.interpretation.action_items.map((action, idx) => (
                               <li key={idx} className="flex items-start gap-2">
-                                <span className="text-primary">→</span>
-                                <span className="prose prose-sm max-w-none dark:prose-invert"><ReactMarkdown>{action}</ReactMarkdown></span>
+                                <span className="text-primary flex-shrink-0">→</span>
+                                <div className="prose prose-sm max-w-none dark:prose-invert [&>p]:m-0 [&>ul]:mt-1 [&>ol]:mt-1"><ReactMarkdown>{action}</ReactMarkdown></div>
                               </li>
                             ))}
                           </ul>
