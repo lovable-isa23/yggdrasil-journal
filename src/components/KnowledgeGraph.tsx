@@ -3,7 +3,7 @@ import * as d3 from "d3";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { Loader2, Calendar, FileText, Maximize2, Download, Image as ImageIcon, FileDown, Network, Lightbulb } from "lucide-react";
+import { Loader2, Calendar, FileText, Maximize2, Download, Image as ImageIcon, FileDown, Network, Lightbulb, Target, RefreshCw } from "lucide-react";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
@@ -32,6 +32,7 @@ interface GraphLink {
   source: GraphNode | string;
   target: GraphNode | string;
   value: number;
+  isAIStrength: boolean;
 }
 
 export const KnowledgeGraph = () => {
@@ -55,6 +56,7 @@ export const KnowledgeGraph = () => {
   const graphContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const [connectionInsights, setConnectionInsights] = useState<string[]>([]);
+  const [refreshingAnalysis, setRefreshingAnalysis] = useState(false);
 
   useEffect(() => {
     fetchGraphData();
@@ -122,7 +124,7 @@ export const KnowledgeGraph = () => {
   const buildGraph = (insights: any[]) => {
     const itemFreq = new Map<string, number>();
     const itemEntries = new Map<string, Set<string>>();
-    const connections = new Map<string, { entryIds: Set<string>; strength: number }>();
+    const connections = new Map<string, { entryIds: Set<string>; strength: number; isAIStrength: boolean }>();
     const itemDisplayNames = new Map<string, string>(); // Track original display names
 
     // Extract only the items for the current tab type
@@ -159,9 +161,14 @@ export const KnowledgeGraph = () => {
         items.slice(i + 1).forEach((item2) => {
           const key = [item1.toLowerCase(), item2.toLowerCase()].sort().join("||");
           if (!connections.has(key)) {
-            connections.set(key, { entryIds: new Set(), strength: 1 });
+            connections.set(key, { entryIds: new Set(), strength: 1, isAIStrength: false });
           }
-          connections.get(key)!.entryIds.add(insight.entry_id);
+          const conn = connections.get(key)!;
+          conn.entryIds.add(insight.entry_id);
+          // Update fallback strength based on co-occurrence count
+          if (!conn.isAIStrength) {
+            conn.strength = conn.entryIds.size;
+          }
         });
       });
       
@@ -179,11 +186,13 @@ export const KnowledgeGraph = () => {
       if (connections.has(key)) {
         const conn = connections.get(key)!;
         conn.strength = rel.strength; // Use AI-determined strength
+        conn.isAIStrength = true;
       } else {
         // Add cross-entry relationships discovered by AI
         connections.set(key, {
           entryIds: new Set(rel.entry_ids || []),
-          strength: rel.strength
+          strength: rel.strength,
+          isAIStrength: true
         });
       }
     });
@@ -233,6 +242,7 @@ export const KnowledgeGraph = () => {
           source: sourceNode,
           target: targetNode,
           value: strength,
+          isAIStrength: connData.isAIStrength,
         });
       }
     });
@@ -322,6 +332,50 @@ export const KnowledgeGraph = () => {
       zoomRef.current.transform,
       d3.zoomIdentity.translate(translateX, translateY).scale(scale)
     );
+  };
+
+  const handleCenterOnLargest = () => {
+    if (!svgRef.current || !zoomRef.current || graphData.nodes.length === 0) return;
+    
+    const largestNode = graphData.nodes.reduce((max, node) => 
+      node.value > max.value ? node : max, graphData.nodes[0]);
+    
+    if (!largestNode.x || !largestNode.y) return;
+    
+    const svg = d3.select(svgRef.current);
+    const width = 800;
+    const height = 600;
+    
+    svg.transition().duration(750).call(
+      zoomRef.current.transform,
+      d3.zoomIdentity.translate(width / 2 - largestNode.x, height / 2 - largestNode.y).scale(1.5)
+    );
+  };
+
+  const handleRefreshAnalysis = async () => {
+    setRefreshingAnalysis(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("analyze-patterns");
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Analysis complete",
+        description: "Pattern analysis has been refreshed with AI-determined strengths",
+      });
+      
+      // Refetch the data to get updated relationships
+      await fetchGraphData();
+    } catch (error) {
+      console.error("Error refreshing analysis:", error);
+      toast({
+        title: "Analysis failed",
+        description: "Failed to refresh pattern analysis. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setRefreshingAnalysis(false);
+    }
   };
 
   const exportAsPNG = async () => {
@@ -436,9 +490,10 @@ export const KnowledgeGraph = () => {
       .selectAll("line")
       .data(graphData.links)
       .join("line")
-      .attr("stroke", "hsl(var(--border))")
-      .attr("stroke-opacity", 0.6)
-      .attr("stroke-width", (d: any) => Math.sqrt(d.value));
+      .attr("stroke", (d: GraphLink) => d.isAIStrength ? "hsl(var(--border))" : "hsl(var(--muted-foreground))")
+      .attr("stroke-opacity", (d: GraphLink) => d.isAIStrength ? 0.6 : 0.35)
+      .attr("stroke-width", (d: any) => Math.sqrt(d.value))
+      .attr("stroke-dasharray", (d: GraphLink) => d.isAIStrength ? "none" : "4,4");
 
     const node = g
       .append("g")
@@ -513,6 +568,9 @@ export const KnowledgeGraph = () => {
       node.attr("transform", (d) => `translate(${d.x},${d.y})`);
     });
   };
+
+  // Check if there are any fallback connections
+  const hasFallbackConnections = graphData.links.some(link => !link.isAIStrength);
 
   if (loading) {
     return (
@@ -612,13 +670,25 @@ export const KnowledgeGraph = () => {
                       className="w-full"
                       aria-label="Filter connections by minimum strength"
                     />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Increase this if there are too many nodes to navigate
+                    </p>
                     {graphData.nodes.length === 0 && minStrength > 1 && (
                       <p className="text-xs text-muted-foreground mt-1">
                         Try lowering the filter to see more connections
                       </p>
                     )}
                   </div>
-                  <div className="flex gap-2 w-full sm:w-auto">
+                  <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCenterOnLargest}
+                      className="gap-2"
+                    >
+                      <Target className="h-4 w-4" />
+                      Center Largest
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
@@ -648,6 +718,27 @@ export const KnowledgeGraph = () => {
                     </DropdownMenu>
                   </div>
                 </div>
+
+                {/* Fallback connections notice */}
+                {hasFallbackConnections && (
+                  <div className="flex items-center justify-between p-3 mb-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                    <div className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400">
+                      <span className="inline-block w-6 border-t-2 border-dashed border-amber-500" />
+                      <span>Dashed lines = co-occurrence only (no AI analysis)</span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRefreshAnalysis}
+                      disabled={refreshingAnalysis}
+                      className="gap-2 text-amber-700 dark:text-amber-400 border-amber-500/50 hover:bg-amber-500/10"
+                    >
+                      <RefreshCw className={`h-4 w-4 ${refreshingAnalysis ? 'animate-spin' : ''}`} />
+                      {refreshingAnalysis ? 'Analyzing...' : 'Refresh Analysis'}
+                    </Button>
+                  </div>
+                )}
+
                 {graphData.nodes.length === 0 && !loading ? (
                   <div className="flex justify-center items-center h-[600px] bg-muted/20 rounded-lg border mt-4">
                     <div className="text-center p-8">
@@ -725,15 +816,27 @@ export const KnowledgeGraph = () => {
                           const targetId = typeof link.target === 'object' ? link.target.id : link.target;
                           const connectedId = sourceId === selectedNode.id ? targetId : sourceId;
                           const connectedNode = graphData.nodes.find(n => n.id === connectedId);
-                          return { node: connectedNode, strength: link.value };
+                          return { node: connectedNode, strength: link.value, isAIStrength: link.isAIStrength };
                         })
-                        .filter(item => item.node);
+                        .filter(item => item.node)
+                        .sort((a, b) => {
+                          // Sort by strength descending, then alphabetically by name
+                          if (b.strength !== a.strength) return b.strength - a.strength;
+                          return a.node!.name.localeCompare(b.node!.name);
+                        });
 
                       return connectedNodes.length > 0 ? (
-                        connectedNodes.map(({ node, strength }: any) => (
+                        connectedNodes.map(({ node, strength, isAIStrength }: any) => (
                           <div key={node.id} className="flex items-center justify-between p-2 rounded-md bg-accent/30">
                             <span className="font-medium">{node.name}</span>
-                            <Badge variant="outline">Strength: {strength}</Badge>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline">Strength: {strength}</Badge>
+                              {!isAIStrength && (
+                                <Badge variant="outline" className="text-xs text-amber-600 dark:text-amber-400 border-amber-500/50">
+                                  fallback
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                         ))
                       ) : (
