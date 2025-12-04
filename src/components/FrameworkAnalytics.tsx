@@ -433,17 +433,16 @@ export const FrameworkAnalytics = () => {
                           }}
                         />
                         {Object.entries(FRAMEWORK_CONFIG).map(([fw, config]) => (
-                          visibleFrameworks.has(fw) && (
-                            <Line
-                              key={fw}
-                              type="monotone"
-                              dataKey={fw}
-                              stroke={config.color}
-                              strokeWidth={2}
-                              dot={{ r: 3 }}
-                              activeDot={{ r: 5 }}
-                            />
-                          )
+                          <Line
+                            key={fw}
+                            type="monotone"
+                            dataKey={fw}
+                            stroke={config.color}
+                            strokeWidth={visibleFrameworks.has(fw) ? 2 : 0}
+                            dot={visibleFrameworks.has(fw) ? { r: 3 } : false}
+                            activeDot={visibleFrameworks.has(fw) ? { r: 5 } : false}
+                            hide={!visibleFrameworks.has(fw)}
+                          />
                         ))}
                       </LineChart>
                     </ResponsiveContainer>

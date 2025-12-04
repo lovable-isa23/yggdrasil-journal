@@ -683,10 +683,10 @@ export const KnowledgeGraph = () => {
       .append("text")
       .text((d) => d.name)
       .attr("text-anchor", "middle")
-      .attr("dy", (d) => -(d.value + 8))
-      .attr("font-size", "12px")
-      .attr("font-weight", "500")
-      .attr("fill", "hsl(var(--foreground))")
+      .attr("dy", "0.35em")
+      .attr("font-size", (d) => Math.max(8, Math.min(12, d.value / 2)) + "px")
+      .attr("font-weight", "600")
+      .attr("fill", "hsl(var(--background))")
       .attr("pointer-events", "none");
 
     // Add hover and click effects
