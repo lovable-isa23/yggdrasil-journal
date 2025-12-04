@@ -3,7 +3,7 @@ import * as d3 from "d3";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { Loader2, Calendar, FileText, Maximize2, Download, Image as ImageIcon, FileDown, Network, Lightbulb, Target, RefreshCw } from "lucide-react";
+import { Loader2, Calendar, FileText, Maximize2, Download, Image as ImageIcon, FileDown, Network, Lightbulb, Target, RefreshCw, Search } from "lucide-react";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
@@ -15,6 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { useDataSufficiency } from "@/hooks/use-data-sufficiency";
 import { InsufficientDataPrompt } from "@/components/InsufficientDataPrompt";
+import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "./ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 interface GraphNode extends d3.SimulationNodeDatum {
   id: string;
@@ -58,6 +60,9 @@ export const KnowledgeGraph = () => {
   const { toast } = useToast();
   const [connectionInsights, setConnectionInsights] = useState<string[]>([]);
   const [refreshingAnalysis, setRefreshingAnalysis] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [allNodeNames, setAllNodeNames] = useState<{ name: string; type: string }[]>([]);
 
   useEffect(() => {
     fetchGraphData();
@@ -174,6 +179,13 @@ export const KnowledgeGraph = () => {
       themes: allThemes.size,
       keywords: allKeywords.size
     });
+
+    // Collect all node names for search (before filtering)
+    const searchableNodes: { name: string; type: string }[] = [];
+    allEntities.forEach(item => searchableNodes.push({ name: item, type: "entity" }));
+    allThemes.forEach(item => searchableNodes.push({ name: item, type: "theme" }));
+    allKeywords.forEach(item => searchableNodes.push({ name: item, type: "keyword" }));
+    setAllNodeNames(searchableNodes);
 
     // Helper to split items containing "and" or "&"
     const splitItem = (item: string): string[] => {
@@ -459,6 +471,41 @@ export const KnowledgeGraph = () => {
       d3.zoomIdentity.translate(width / 2 - nodeData.x, height / 2 - nodeData.y).scale(1.5)
     );
   };
+
+  const handleSearchSelect = (nodeName: string) => {
+    // Find the node in current graphData
+    const node = graphData.nodes.find(n => n.id === nodeName.toLowerCase());
+    
+    if (node && node.x !== undefined && node.y !== undefined && svgRef.current && zoomRef.current) {
+      const svg = d3.select(svgRef.current);
+      const width = 800;
+      const height = 600;
+      
+      // Center and zoom on the node
+      svg.transition().duration(750).call(
+        zoomRef.current.transform,
+        d3.zoomIdentity.translate(width / 2 - node.x, height / 2 - node.y).scale(1.5)
+      );
+      
+      // Open the node details
+      setSelectedNode(node);
+      setIsSheetOpen(true);
+    } else {
+      // Node not in current filtered view
+      toast({
+        title: "Node not visible",
+        description: "This item may be filtered out. Try lowering the connection strength filter or changing tabs.",
+        variant: "default"
+      });
+    }
+    
+    setSearchOpen(false);
+    setSearchQuery("");
+  };
+
+  const filteredSearchNodes = allNodeNames.filter(node =>
+    node.name.toLowerCase().includes(searchQuery.toLowerCase())
+  ).slice(0, 20);
 
   const handleRefreshAnalysis = async () => {
     setRefreshingAnalysis(true);
@@ -761,6 +808,83 @@ export const KnowledgeGraph = () => {
             </TabsList>
             <TabsContent value={activeTab}>
               <div className="relative w-full bg-background/50 rounded-lg border p-2 sm:p-4 overflow-hidden">
+              {/* Search */}
+                <div className="mb-4">
+                  <Popover open={searchOpen} onOpenChange={setSearchOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={searchOpen}
+                        className="w-full justify-start text-muted-foreground"
+                      >
+                        <Search className="mr-2 h-4 w-4" />
+                        {searchQuery || "Search nodes..."}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0" align="start">
+                      <Command>
+                        <CommandInput
+                          placeholder="Search entities, themes, keywords..."
+                          value={searchQuery}
+                          onValueChange={setSearchQuery}
+                        />
+                        <CommandList>
+                          <CommandEmpty>No results found.</CommandEmpty>
+                          {filteredSearchNodes.filter(n => n.type === "entity").length > 0 && (
+                            <CommandGroup heading="Entities">
+                              {filteredSearchNodes
+                                .filter(n => n.type === "entity")
+                                .map(node => (
+                                  <CommandItem
+                                    key={`entity-${node.name}`}
+                                    value={node.name}
+                                    onSelect={() => handleSearchSelect(node.name)}
+                                  >
+                                    <span className="w-2 h-2 rounded-full bg-[#8B5CF6] mr-2" />
+                                    {node.name}
+                                  </CommandItem>
+                                ))}
+                            </CommandGroup>
+                          )}
+                          {filteredSearchNodes.filter(n => n.type === "theme").length > 0 && (
+                            <CommandGroup heading="Themes">
+                              {filteredSearchNodes
+                                .filter(n => n.type === "theme")
+                                .map(node => (
+                                  <CommandItem
+                                    key={`theme-${node.name}`}
+                                    value={node.name}
+                                    onSelect={() => handleSearchSelect(node.name)}
+                                  >
+                                    <span className="w-2 h-2 rounded-full bg-[#10B981] mr-2" />
+                                    {node.name}
+                                  </CommandItem>
+                                ))}
+                            </CommandGroup>
+                          )}
+                          {filteredSearchNodes.filter(n => n.type === "keyword").length > 0 && (
+                            <CommandGroup heading="Keywords">
+                              {filteredSearchNodes
+                                .filter(n => n.type === "keyword")
+                                .map(node => (
+                                  <CommandItem
+                                    key={`keyword-${node.name}`}
+                                    value={node.name}
+                                    onSelect={() => handleSearchSelect(node.name)}
+                                  >
+                                    <span className="w-2 h-2 rounded-full bg-[#F59E0B] mr-2" />
+                                    {node.name}
+                                  </CommandItem>
+                                ))}
+                            </CommandGroup>
+                          )}
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
                   <div className="w-full sm:flex-1 sm:min-w-[200px]">
                     <div className="flex items-center justify-between mb-2">

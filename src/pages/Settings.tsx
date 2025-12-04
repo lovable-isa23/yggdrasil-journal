@@ -6,10 +6,11 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Moon, Sun, Smartphone, Monitor } from "lucide-react";
+import { ArrowLeft, Moon, Sun, Smartphone, Monitor, RefreshCw, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Progress } from "@/components/ui/progress";
 
 interface Preferences {
   enable_chakra_tags: boolean;
@@ -73,6 +74,9 @@ const Settings = () => {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [reanalyzing, setReanalyzing] = useState(false);
+  const [reanalyzeProgress, setReanalyzeProgress] = useState(0);
+  const [reanalyzeTotalEntries, setReanalyzeTotalEntries] = useState(0);
 
   useEffect(() => {
     loadPreferences();
@@ -172,6 +176,60 @@ const Settings = () => {
   };
 
   const enabledCount = ALL_FRAMEWORK_KEYS.filter(key => preferences[key]).length;
+
+  const handleReanalyzeAll = async () => {
+    setReanalyzing(true);
+    setReanalyzeProgress(0);
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('Not authenticated');
+        setReanalyzing(false);
+        return;
+      }
+
+      // Fetch all journal entries
+      const { data: entries, error } = await supabase
+        .from('journal_entries')
+        .select('id')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      if (!entries?.length) {
+        toast.error('No entries to analyze');
+        setReanalyzing(false);
+        return;
+      }
+      
+      setReanalyzeTotalEntries(entries.length);
+      
+      // Analyze each entry sequentially (to respect rate limits)
+      for (let i = 0; i < entries.length; i++) {
+        setReanalyzeProgress(i + 1);
+        try {
+          await supabase.functions.invoke('analyze-entry', {
+            body: { entryId: entries[i].id }
+          });
+          // Small delay between requests to respect rate limits
+          await new Promise(resolve => setTimeout(resolve, 800));
+        } catch (err) {
+          console.error(`Failed to analyze entry ${entries[i].id}:`, err);
+        }
+      }
+      
+      toast.success('All entries re-analyzed with updated framework requirements!');
+    } catch (error) {
+      console.error('Error re-analyzing entries:', error);
+      toast.error('Failed to re-analyze entries');
+    } finally {
+      setReanalyzing(false);
+      setReanalyzeProgress(0);
+      setReanalyzeTotalEntries(0);
+    }
+  };
 
   return (
     <AuthGuard>
@@ -430,6 +488,50 @@ const Settings = () => {
                     />
                   </div>
                 </div>
+              </Card>
+
+              {/* Data Management */}
+              <Card className="p-6">
+                <h2 className="text-xl font-bold mb-4">Data Management</h2>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Re-analyze your journal entries to apply updated framework requirements (2-5 frameworks per entry)
+                </p>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="space-y-1 flex-1">
+                    <Label className="text-base font-medium flex items-center gap-2">
+                      <RefreshCw className="h-4 w-4" />
+                      Re-analyze All Entries
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Apply the new 2-5 framework requirement to all existing entries
+                    </p>
+                  </div>
+                  <Button
+                    onClick={handleReanalyzeAll}
+                    disabled={reanalyzing || saving}
+                    className="gap-2"
+                  >
+                    {reanalyzing ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Analyzing {reanalyzeProgress}/{reanalyzeTotalEntries}
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-4 w-4" />
+                        Re-analyze
+                      </>
+                    )}
+                  </Button>
+                </div>
+                {reanalyzing && (
+                  <div className="mt-4 space-y-2">
+                    <Progress value={(reanalyzeProgress / reanalyzeTotalEntries) * 100} className="w-full" />
+                    <p className="text-xs text-muted-foreground text-center">
+                      This may take a few minutes. Please don't close this page.
+                    </p>
+                  </div>
+                )}
               </Card>
 
               {/* Install App */}
