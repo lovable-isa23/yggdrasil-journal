@@ -57,7 +57,7 @@ interface MoodPickerProps {
 }
 
 export function MoodPicker({ currentMood, onMoodChange }: MoodPickerProps) {
-  const selectedMood = MOOD_OPTIONS.find(m => m.value === currentMood) || MOOD_OPTIONS[5];
+  const selectedMood = MOOD_OPTIONS.find(m => m.value === currentMood) || MOOD_OPTIONS[4];
 
   return (
     <Popover>
