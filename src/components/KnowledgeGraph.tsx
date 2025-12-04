@@ -38,6 +38,7 @@ interface GraphLink {
 export const KnowledgeGraph = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"all" | "entities" | "themes" | "keywords">("all");
+  const [totalCounts, setTotalCounts] = useState({ entities: 0, themes: 0, keywords: 0 });
   const svgRef = useRef<SVGSVGElement>(null);
   const [graphData, setGraphData] = useState<{ nodes: GraphNode[]; links: GraphLink[] }>({
     nodes: [],
@@ -128,6 +129,11 @@ export const KnowledgeGraph = () => {
     const connections = new Map<string, { entryIds: Set<string>; strength: number; isAIStrength: boolean }>();
     const itemDisplayNames = new Map<string, string>();
 
+    // Track total counts for each category (before filtering)
+    const allEntities = new Set<string>();
+    const allThemes = new Set<string>();
+    const allKeywords = new Set<string>();
+
     // Build a map of AI relationships first (these are the priority)
     const aiRelationshipMap = new Map<string, { strength: number; entryIds: string[] }>();
     relationships.forEach((rel) => {
@@ -144,6 +150,30 @@ export const KnowledgeGraph = () => {
       theme: "#10B981",    // Emerald
       keyword: "#F59E0B",  // Amber
     };
+
+    // Count all items in each category before any filtering
+    insights.forEach((insight) => {
+      const splitItem = (item: string): string[] => {
+        return item.split(/\s+(?:and|&)\s+/i).map(s => s.trim()).filter(s => s.length > 0);
+      };
+      
+      (insight.entities || []).forEach((item: string) => {
+        splitItem(item).forEach(subItem => allEntities.add(subItem.toLowerCase()));
+      });
+      (insight.themes || []).forEach((item: string) => {
+        splitItem(item).forEach(subItem => allThemes.add(subItem.toLowerCase()));
+      });
+      (insight.keywords || []).forEach((item: string) => {
+        splitItem(item).forEach(subItem => allKeywords.add(subItem.toLowerCase()));
+      });
+    });
+
+    // Update total counts state
+    setTotalCounts({
+      entities: allEntities.size,
+      themes: allThemes.size,
+      keywords: allKeywords.size
+    });
 
     // Helper to split items containing "and" or "&"
     const splitItem = (item: string): string[] => {
@@ -712,10 +742,22 @@ export const KnowledgeGraph = () => {
         <CardContent>
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
             <TabsList className="grid w-full grid-cols-4 mb-4">
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="entities">Entities</TabsTrigger>
-              <TabsTrigger value="themes">Themes</TabsTrigger>
-              <TabsTrigger value="keywords">Keywords</TabsTrigger>
+              <TabsTrigger value="all" className="gap-1.5">
+                All
+                <Badge variant="secondary" className="ml-1 text-xs px-1.5 py-0">{totalCounts.entities + totalCounts.themes + totalCounts.keywords}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="entities" className="gap-1.5">
+                Entities
+                <Badge variant="secondary" className="ml-1 text-xs px-1.5 py-0">{totalCounts.entities}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="themes" className="gap-1.5">
+                Themes
+                <Badge variant="secondary" className="ml-1 text-xs px-1.5 py-0">{totalCounts.themes}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="keywords" className="gap-1.5">
+                Keywords
+                <Badge variant="secondary" className="ml-1 text-xs px-1.5 py-0">{totalCounts.keywords}</Badge>
+              </TabsTrigger>
             </TabsList>
             <TabsContent value={activeTab}>
               <div className="relative w-full bg-background/50 rounded-lg border p-2 sm:p-4 overflow-hidden">

@@ -151,7 +151,9 @@ const Insights = () => {
                 <h3 className="text-2xl font-bold">Visualizations</h3>
               </div>
               <div className="grid gap-6">
+                {/* TimelineVisualization temporarily hidden
                 <TimelineVisualization />
+                */}
                 <KnowledgeGraph />
               </div>
             </section>

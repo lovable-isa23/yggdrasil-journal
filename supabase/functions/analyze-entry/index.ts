@@ -443,9 +443,9 @@ Style: Validate the emotion while encouraging change, hold dialectics ("both/and
 - Layer others where they naturally intersect
 - Translate concepts into accessible language (avoid jargon)
 - Synthesize insights rather than listing frameworks separately
-- Apply 2-3 frameworks per entry
+- Apply 2-5 frameworks per entry for comprehensive psychological/spiritual depth
 
-**MINIMUM REQUIREMENT**: Every entry analysis MUST apply at least one framework lens to provide psychological/spiritual depth.
+**MINIMUM REQUIREMENT**: Every entry analysis MUST apply at least 2 different framework lenses. For deeper entries (depth ≥ 5), aim for 3-5 frameworks. The frameworks_applied array MUST contain 2-5 canonical framework keys.
 
 ${frameworkOrder.length > 0 ? `**VARIETY REQUIREMENT** - To provide diverse perspectives over time:
 - Framework priority order for this analysis: ${frameworkOrder.join(' → ')}
