@@ -55,7 +55,7 @@ const normalizeFramework = (fw: string): string | null => {
 
 interface InsightData {
   id: string;
-  created_at: string;
+  entry_date: string;
   frameworks_applied: string[] | null;
 }
 
@@ -87,17 +87,29 @@ export const FrameworkAnalytics = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Join with journal_entries to get entry_date
       const { data, error } = await supabase
         .from('entry_insights')
-        .select('id, created_at, frameworks_applied')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: true });
+        .select(`
+          id, 
+          frameworks_applied,
+          journal_entries!inner(entry_date)
+        `)
+        .eq('user_id', user.id);
 
       if (error) throw error;
-      setInsights((data || []).map(d => ({
-        ...d,
+      
+      // Transform data to flatten entry_date
+      const transformed = (data || []).map(d => ({
+        id: d.id,
+        entry_date: (d.journal_entries as any)?.entry_date || '',
         frameworks_applied: (d.frameworks_applied as string[] | null) || null,
-      })));
+      })).filter(d => d.entry_date); // Filter out any without entry_date
+      
+      // Sort by entry_date
+      transformed.sort((a, b) => a.entry_date.localeCompare(b.entry_date));
+      
+      setInsights(transformed);
     } catch (error) {
       console.error('Error fetching insights:', error);
     } finally {
@@ -105,10 +117,22 @@ export const FrameworkAnalytics = () => {
     }
   };
 
+  // Calculate data date range for display
+  const dataDateRange = useMemo(() => {
+    if (insights.length === 0) return null;
+    const dates = insights.map(i => i.entry_date).sort();
+    return {
+      earliest: dates[0],
+      latest: dates[dates.length - 1],
+    };
+  }, [insights]);
+
   const filteredInsights = useMemo(() => {
     if (!dateRange.from || !dateRange.to) return insights;
     return insights.filter(insight => {
-      const date = new Date(insight.created_at);
+      // Parse entry_date as local date (YYYY-MM-DD format)
+      const [year, month, day] = insight.entry_date.split('-').map(Number);
+      const date = new Date(year, month - 1, day, 12, 0, 0); // noon to avoid timezone issues
       return date >= dateRange.from! && date <= dateRange.to!;
     });
   }, [insights, dateRange]);
@@ -141,7 +165,8 @@ export const FrameworkAnalytics = () => {
     const monthlyData = new Map<string, { total: number; frameworks: Map<string, number> }>();
 
     filteredInsights.forEach(insight => {
-      const month = format(new Date(insight.created_at), 'yyyy-MM');
+      // Use entry_date for grouping
+      const month = insight.entry_date.substring(0, 7); // YYYY-MM
       if (!monthlyData.has(month)) {
         monthlyData.set(month, { total: 0, frameworks: new Map() });
       }
@@ -218,9 +243,16 @@ export const FrameworkAnalytics = () => {
             <div>
               <CardTitle className="text-lg flex items-center gap-2">
                 <BarChart3 className="h-5 w-5" />
-                Framework Usage
+                Framework Analytics
               </CardTitle>
-              <CardDescription>Which lenses are applied to your entries</CardDescription>
+              <CardDescription>
+                Which lenses are applied to your entries
+                {dataDateRange && (
+                  <span className="block text-xs mt-1">
+                    Your entries span {format(parseISO(dataDateRange.earliest), 'MMM yyyy')} - {format(parseISO(dataDateRange.latest), 'MMM yyyy')}
+                  </span>
+                )}
+              </CardDescription>
             </div>
             <div className="flex flex-wrap gap-2 items-center">
               <Popover>
@@ -251,141 +283,166 @@ export const FrameworkAnalytics = () => {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {filteredInsights.length === 0 ? (
+      </Card>
+
+      {filteredInsights.length === 0 ? (
+        <Card>
+          <CardContent className="p-6">
             <div className="text-center text-muted-foreground py-8">
               No analyzed entries in this date range
             </div>
-          ) : (
-            <>
-              {/* Usage Distribution */}
-              <div className="space-y-6">
-                {/* Spiritual */}
-                <div>
-                  <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
-                    🕉️ Spiritual Traditions
-                  </h4>
-                  <div className="space-y-2">
-                    {groupedStats.spiritual.map(stat => (
-                      <div key={stat.id} className="flex items-center gap-3">
-                        <span className="w-6 text-center">{stat.icon}</span>
-                        <span className="w-32 text-sm truncate">{stat.name}</span>
-                        <div className="flex-1 h-4 bg-muted rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-primary/70 rounded-full transition-all duration-500"
-                            style={{ width: `${stat.percentage}%` }}
-                          />
-                        </div>
-                        <span className="w-14 text-sm text-muted-foreground text-right">{stat.percentage.toFixed(0)}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Depth Psychology */}
-                <div>
-                  <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
-                    🧠 Depth Psychology
-                  </h4>
-                  <div className="space-y-2">
-                    {groupedStats.depth.map(stat => (
-                      <div key={stat.id} className="flex items-center gap-3">
-                        <span className="w-6 text-center">{stat.icon}</span>
-                        <span className="w-32 text-sm truncate">{stat.name}</span>
-                        <div className="flex-1 h-4 bg-muted rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-blue-500/70 rounded-full transition-all duration-500"
-                            style={{ width: `${stat.percentage}%` }}
-                          />
-                        </div>
-                        <span className="w-14 text-sm text-muted-foreground text-right">{stat.percentage.toFixed(0)}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Modern Psychology */}
-                <div>
-                  <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
-                    💭 Modern Psychology
-                  </h4>
-                  <div className="space-y-2">
-                    {groupedStats.modern.map(stat => (
-                      <div key={stat.id} className="flex items-center gap-3">
-                        <span className="w-6 text-center">{stat.icon}</span>
-                        <span className="w-32 text-sm truncate">{stat.name}</span>
-                        <div className="flex-1 h-4 bg-muted rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-emerald-500/70 rounded-full transition-all duration-500"
-                            style={{ width: `${stat.percentage}%` }}
-                          />
-                        </div>
-                        <span className="w-14 text-sm text-muted-foreground text-right">{stat.percentage.toFixed(0)}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Trends Over Time */}
-      {monthlyTrends.length > 1 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Framework Trends Over Time
-            </CardTitle>
-            <CardDescription>How framework usage has changed month by month (% of entries)</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={monthlyTrends} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="month" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                  <YAxis 
-                    domain={[0, 100]} 
-                    tickFormatter={(v) => `${v}%`} 
-                    className="text-xs" 
-                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--background))', 
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px'
-                    }}
-                    formatter={(value: number) => [`${value}%`, '']}
-                  />
-                  <Legend 
-                    onClick={(e) => toggleFramework(e.dataKey as string)}
-                    wrapperStyle={{ cursor: 'pointer' }}
-                  />
-                  {Object.entries(FRAMEWORK_CONFIG).map(([key, config]) => (
-                    <Line
-                      key={key}
-                      type="monotone"
-                      dataKey={key}
-                      name={`${config.icon} ${config.name}`}
-                      stroke={config.color}
-                      strokeWidth={visibleFrameworks.has(key) ? 2 : 0}
-                      dot={visibleFrameworks.has(key) ? { r: 3 } : false}
-                      activeDot={visibleFrameworks.has(key) ? { r: 5 } : false}
-                      hide={!visibleFrameworks.has(key)}
-                    />
-                  ))}
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-            <p className="text-xs text-muted-foreground text-center mt-2">
-              Click legend items to show/hide frameworks
-            </p>
           </CardContent>
         </Card>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Usage Distribution */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Usage Distribution</CardTitle>
+              <CardDescription className="text-xs">
+                {filteredInsights.length} analyzed entries
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              {/* Spiritual */}
+              <div>
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-2">
+                  🕉️ Spiritual Traditions
+                </h4>
+                <div className="space-y-1.5">
+                  {groupedStats.spiritual.map(stat => (
+                    <div key={stat.id} className="flex items-center gap-2">
+                      <span className="w-5 text-center text-sm">{stat.icon}</span>
+                      <span className="w-28 text-xs truncate">{stat.name}</span>
+                      <div className="flex-1 h-3 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-primary/70 rounded-full transition-all duration-500"
+                          style={{ width: `${stat.percentage}%` }}
+                        />
+                      </div>
+                      <span className="w-10 text-xs text-muted-foreground text-right">{stat.percentage.toFixed(0)}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Depth Psychology */}
+              <div>
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-2">
+                  🧠 Depth Psychology
+                </h4>
+                <div className="space-y-1.5">
+                  {groupedStats.depth.map(stat => (
+                    <div key={stat.id} className="flex items-center gap-2">
+                      <span className="w-5 text-center text-sm">{stat.icon}</span>
+                      <span className="w-28 text-xs truncate">{stat.name}</span>
+                      <div className="flex-1 h-3 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-blue-500/70 rounded-full transition-all duration-500"
+                          style={{ width: `${stat.percentage}%` }}
+                        />
+                      </div>
+                      <span className="w-10 text-xs text-muted-foreground text-right">{stat.percentage.toFixed(0)}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Modern Psychology */}
+              <div>
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-2">
+                  💭 Modern Psychology
+                </h4>
+                <div className="space-y-1.5">
+                  {groupedStats.modern.map(stat => (
+                    <div key={stat.id} className="flex items-center gap-2">
+                      <span className="w-5 text-center text-sm">{stat.icon}</span>
+                      <span className="w-28 text-xs truncate">{stat.name}</span>
+                      <div className="flex-1 h-3 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-emerald-500/70 rounded-full transition-all duration-500"
+                          style={{ width: `${stat.percentage}%` }}
+                        />
+                      </div>
+                      <span className="w-10 text-xs text-muted-foreground text-right">{stat.percentage.toFixed(0)}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Trends Over Time */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                Trends Over Time
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Framework usage by month (% of entries)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {monthlyTrends.length > 1 ? (
+                <>
+                  <div className="h-[280px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={monthlyTrends} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                        <XAxis 
+                          dataKey="month" 
+                          className="text-xs" 
+                          tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} 
+                        />
+                        <YAxis 
+                          domain={[0, 100]} 
+                          tickFormatter={(v) => `${v}%`} 
+                          className="text-xs" 
+                          tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+                          width={35}
+                        />
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: 'hsl(var(--background))', 
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: '8px',
+                            fontSize: '12px'
+                          }}
+                          formatter={(value: number) => [`${value}%`, '']}
+                        />
+                        <Legend 
+                          onClick={(e) => toggleFramework(e.dataKey as string)}
+                          wrapperStyle={{ cursor: 'pointer', fontSize: '10px' }}
+                        />
+                        {Object.entries(FRAMEWORK_CONFIG).map(([key, config]) => (
+                          <Line
+                            key={key}
+                            type="monotone"
+                            dataKey={key}
+                            name={`${config.icon} ${config.name}`}
+                            stroke={config.color}
+                            strokeWidth={2}
+                            strokeOpacity={visibleFrameworks.has(key) ? 1 : 0.1}
+                            dot={visibleFrameworks.has(key) ? { r: 2 } : false}
+                            activeDot={visibleFrameworks.has(key) ? { r: 4 } : false}
+                          />
+                        ))}
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <p className="text-xs text-muted-foreground text-center mt-2">
+                    Click legend items to show/hide frameworks
+                  </p>
+                </>
+              ) : (
+                <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">
+                  Need at least 2 months of data for trends
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );
