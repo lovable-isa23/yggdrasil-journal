@@ -78,6 +78,10 @@ const getGeometryIcon = (pattern: string): string => {
   return '🌀'; // Default
 };
 
+const handleChipClick = (name: string, type: 'theme' | 'keyword' | 'entity') => {
+  window.open(`/insights?node=${encodeURIComponent(name)}&type=${type}`, '_blank');
+};
+
 export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) => {
   const [insights, setInsights] = useState<Insights | null>(null);
   const [loading, setLoading] = useState(false);
@@ -470,12 +474,14 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
                 <div className="p-4 break-words">
                   <div className="flex flex-wrap gap-2">
                     {insights.themes.map((theme, idx) => (
-                      <span
+                      <button
                         key={idx}
-                        className="px-3 py-1 rounded-full bg-secondary/20 text-secondary text-xs font-medium"
+                        onClick={() => handleChipClick(theme, 'theme')}
+                        className="px-3 py-1 rounded-full bg-secondary/20 text-secondary text-xs font-medium hover:bg-secondary/30 transition-colors cursor-pointer"
+                        title="Click to view in Knowledge Graph"
                       >
                         {theme}
-                      </span>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -530,12 +536,14 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
                 <div className="p-4 break-words">
                   <div className="flex flex-wrap gap-2">
                     {insights.keywords.map((keyword, idx) => (
-                      <span
+                      <button
                         key={idx}
-                        className="px-2 py-1 rounded bg-muted text-foreground text-xs"
+                        onClick={() => handleChipClick(keyword, 'keyword')}
+                        className="px-2 py-1 rounded bg-muted text-foreground text-xs hover:bg-muted/80 transition-colors cursor-pointer"
+                        title="Click to view in Knowledge Graph"
                       >
                         {keyword}
-                      </span>
+                      </button>
                     ))}
                   </div>
                 </div>

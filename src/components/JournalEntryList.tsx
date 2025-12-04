@@ -637,7 +637,7 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
       </AlertDialog>
 
       <Dialog open={entryToEdit !== null} onOpenChange={(open) => !open && closeEditDialog()}>
-        <DialogContent className="w-[calc(100vw-2rem)] sm:w-full sm:max-w-4xl max-h-[85vh] overflow-y-auto p-4 sm:p-6">
+        <DialogContent className="max-w-none w-[calc(100vw-2rem)] sm:max-w-4xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-lg">
           <DialogHeader>
             <DialogTitle>Edit Journal Entry</DialogTitle>
             <DialogDescription>
