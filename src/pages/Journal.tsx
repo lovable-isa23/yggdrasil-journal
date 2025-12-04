@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AuthGuard } from "@/components/AuthGuard";
 import { JournalEditor } from "@/components/JournalEditor";
 import { JournalEntryList } from "@/components/JournalEntryList";
@@ -7,7 +7,7 @@ import { NPSTooltip } from "@/components/NPSTooltip";
 import { EntryFilters, FilterOptions, SortOption } from "@/components/EntryFilters";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { LogOut, BarChart3, History, Settings as SettingsIcon, Target, BookOpen, FileText } from "lucide-react";
 import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
 
@@ -22,6 +22,10 @@ const Journal = () => {
   const [entryCounts, setEntryCounts] = useState({ total: 0, filtered: 0 });
   const [replyToEntry, setReplyToEntry] = useState<{ id: string; title: string } | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Get filterImportId from navigation state (from Import History "View" button)
+  const filterImportId = (location.state as { filterImportId?: string } | null)?.filterImportId;
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -162,6 +166,7 @@ const Journal = () => {
                 sortOption={sortOption}
                 onEntriesLoaded={handleEntriesLoaded}
                 onReply={handleReply}
+                filterImportId={filterImportId}
               />
             </section>
           </div>

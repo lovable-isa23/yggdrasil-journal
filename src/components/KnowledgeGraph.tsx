@@ -127,6 +127,16 @@ export const KnowledgeGraph = () => {
     const connections = new Map<string, { entryIds: Set<string>; strength: number; isAIStrength: boolean }>();
     const itemDisplayNames = new Map<string, string>(); // Track original display names
 
+    // Build a map of AI relationships first (these are the priority)
+    const aiRelationshipMap = new Map<string, { strength: number; entryIds: string[] }>();
+    relationships.forEach((rel) => {
+      const key = [rel.source_item.toLowerCase(), rel.target_item.toLowerCase()].sort().join("||");
+      aiRelationshipMap.set(key, {
+        strength: rel.strength,
+        entryIds: rel.entry_ids || []
+      });
+    });
+
     // Extract only the items for the current tab type
     insights.forEach((insight) => {
       let items: string[] = [];
@@ -156,18 +166,33 @@ export const KnowledgeGraph = () => {
         itemEntries.get(normalizedItem)?.add(insight.entry_id);
       });
 
-      // Build connections only between items of the same type in the same entry (case-insensitive)
+      // Build connections - prioritize AI relationships, fallback to co-occurrence
       items.forEach((item1, i) => {
         items.slice(i + 1).forEach((item2) => {
           const key = [item1.toLowerCase(), item2.toLowerCase()].sort().join("||");
+          
+          // Check if AI relationship exists for this pair
+          const aiRel = aiRelationshipMap.get(key);
+          
           if (!connections.has(key)) {
-            connections.set(key, { entryIds: new Set(), strength: 1, isAIStrength: false });
-          }
-          const conn = connections.get(key)!;
-          conn.entryIds.add(insight.entry_id);
-          // Update fallback strength based on co-occurrence count
-          if (!conn.isAIStrength) {
-            conn.strength = conn.entryIds.size;
+            if (aiRel) {
+              // Use AI-determined strength (solid lines)
+              connections.set(key, {
+                entryIds: new Set([...aiRel.entryIds, insight.entry_id]),
+                strength: aiRel.strength,
+                isAIStrength: true
+              });
+            } else {
+              // Fallback to co-occurrence (dashed lines)
+              connections.set(key, { entryIds: new Set([insight.entry_id]), strength: 1, isAIStrength: false });
+            }
+          } else {
+            const conn = connections.get(key)!;
+            conn.entryIds.add(insight.entry_id);
+            // Only update fallback strength if not AI-determined
+            if (!conn.isAIStrength) {
+              conn.strength = conn.entryIds.size;
+            }
           }
         });
       });
@@ -180,17 +205,11 @@ export const KnowledgeGraph = () => {
       });
     });
 
-    // Enhance connections with AI-discovered relationship strengths (case-insensitive)
-    relationships.forEach((rel) => {
-      const key = [rel.source_item.toLowerCase(), rel.target_item.toLowerCase()].sort().join("||");
-      if (connections.has(key)) {
-        const conn = connections.get(key)!;
-        conn.strength = rel.strength; // Use AI-determined strength
-        conn.isAIStrength = true;
-      } else {
-        // Add cross-entry relationships discovered by AI
+    // Add any AI relationships that weren't found via co-occurrence
+    aiRelationshipMap.forEach((rel, key) => {
+      if (!connections.has(key)) {
         connections.set(key, {
-          entryIds: new Set(rel.entry_ids || []),
+          entryIds: new Set(rel.entryIds),
           strength: rel.strength,
           isAIStrength: true
         });
@@ -337,18 +356,26 @@ export const KnowledgeGraph = () => {
   const handleCenterOnLargest = () => {
     if (!svgRef.current || !zoomRef.current || graphData.nodes.length === 0) return;
     
+    // Find largest node by value
     const largestNode = graphData.nodes.reduce((max, node) => 
       node.value > max.value ? node : max, graphData.nodes[0]);
     
-    if (!largestNode.x || !largestNode.y) return;
-    
+    // Get actual position from D3 simulation (nodes are mutated by D3)
     const svg = d3.select(svgRef.current);
+    const nodeSelection = svg.selectAll<SVGGElement, GraphNode>("g")
+      .filter((d: GraphNode) => d.id === largestNode.id);
+    
+    if (nodeSelection.empty()) return;
+    
+    const nodeData = nodeSelection.datum() as GraphNode;
+    if (nodeData.x === undefined || nodeData.y === undefined) return;
+    
     const width = 800;
     const height = 600;
     
     svg.transition().duration(750).call(
       zoomRef.current.transform,
-      d3.zoomIdentity.translate(width / 2 - largestNode.x, height / 2 - largestNode.y).scale(1.5)
+      d3.zoomIdentity.translate(width / 2 - nodeData.x, height / 2 - nodeData.y).scale(1.5)
     );
   };
 

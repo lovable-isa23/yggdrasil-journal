@@ -560,7 +560,7 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
           <AccordionItem value="sacred-geometry">
             <AccordionTrigger className="hover:no-underline">
               <div className="flex items-center gap-2 font-semibold text-sm">
-                <span className="text-lg">🔺</span>
+                <span className="text-lg">🌀</span>
                 Sacred Geometry ({insights.sacred_geometry.length})
               </div>
             </AccordionTrigger>
