@@ -52,6 +52,7 @@ interface JournalEntry {
   source_milestone_id?: string;
   linked_goals?: string[];
   linked_entries?: string[];
+  import_batch_id?: string | null;
 }
 
 interface Goal {
@@ -71,6 +72,7 @@ interface JournalEntryListProps {
   sortOption?: 'date-desc' | 'date-asc' | 'word-count-desc' | 'word-count-asc' | 'favorites-first';
   onEntriesLoaded?: (total: number, filtered: number) => void;
   onReply?: (entryId: string, entryTitle: string) => void;
+  filterImportId?: string;
 }
 
 const getPreview = (content: string): string => {
@@ -134,7 +136,7 @@ const getDepthBadge = (depthScore?: number | null) => {
   }
 };
 
-export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntriesLoaded, onReply }: JournalEntryListProps) {
+export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntriesLoaded, onReply, filterImportId }: JournalEntryListProps) {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [openEntries, setOpenEntries] = useState<Set<string>>(new Set());
@@ -283,6 +285,25 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
       onEntriesLoaded(entries.length, filteredAndSortedEntries.length);
     }
   }, [entries.length, filteredAndSortedEntries.length, onEntriesLoaded]);
+
+  // Scroll to entry from import history
+  useEffect(() => {
+    if (filterImportId && entries.length > 0 && !loading) {
+      // Find first entry from this import batch
+      const matchingEntry = entries.find(e => e.import_batch_id === filterImportId);
+      if (matchingEntry) {
+        // Wait for DOM to render then scroll
+        setTimeout(() => {
+          const element = document.getElementById(`entry-${matchingEntry.id}`);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Expand the entry
+            setOpenEntries(prev => new Set([...prev, matchingEntry.id]));
+          }
+        }, 100);
+      }
+    }
+  }, [filterImportId, entries, loading]);
 
   const handleDelete = async (id: string) => {
     try {

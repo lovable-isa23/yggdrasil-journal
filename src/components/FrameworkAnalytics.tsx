@@ -387,7 +387,7 @@ export const FrameworkAnalytics = () => {
               {monthlyTrends.length > 1 ? (
                 <>
                   <div className="h-[280px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer key={Array.from(visibleFrameworks).sort().join(',')} width="100%" height="100%">
                       <LineChart data={monthlyTrends} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                         <XAxis 
