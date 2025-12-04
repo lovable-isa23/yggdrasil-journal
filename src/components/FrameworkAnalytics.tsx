@@ -414,6 +414,18 @@ export const FrameworkAnalytics = () => {
                         <Legend 
                           onClick={(e) => toggleFramework(e.dataKey as string)}
                           wrapperStyle={{ cursor: 'pointer', fontSize: '10px' }}
+                          formatter={(value, entry) => {
+                            const fw = entry.dataKey as string;
+                            const isVisible = visibleFrameworks.has(fw);
+                            return (
+                              <span style={{ 
+                                opacity: isVisible ? 1 : 0.3,
+                                textDecoration: isVisible ? 'none' : 'line-through'
+                              }}>
+                                {value}
+                              </span>
+                            );
+                          }}
                         />
                         {Object.entries(FRAMEWORK_CONFIG).map(([key, config]) => (
                           <Line
