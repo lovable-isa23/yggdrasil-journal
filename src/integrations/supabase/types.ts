@@ -766,10 +766,12 @@ export type Database = {
           enable_chakra_tags: boolean | null
           enable_dbt: boolean | null
           enable_freudian: boolean | null
+          enable_gnostic: boolean | null
           enable_hermetic: boolean | null
           enable_ifs: boolean | null
           enable_jungian: boolean | null
           enable_sacred_geometry: boolean | null
+          enable_stoic: boolean | null
           enable_taoist: boolean | null
           enable_tarot_tags: boolean | null
           enable_theravada: boolean | null
@@ -786,10 +788,12 @@ export type Database = {
           enable_chakra_tags?: boolean | null
           enable_dbt?: boolean | null
           enable_freudian?: boolean | null
+          enable_gnostic?: boolean | null
           enable_hermetic?: boolean | null
           enable_ifs?: boolean | null
           enable_jungian?: boolean | null
           enable_sacred_geometry?: boolean | null
+          enable_stoic?: boolean | null
           enable_taoist?: boolean | null
           enable_tarot_tags?: boolean | null
           enable_theravada?: boolean | null
@@ -806,10 +810,12 @@ export type Database = {
           enable_chakra_tags?: boolean | null
           enable_dbt?: boolean | null
           enable_freudian?: boolean | null
+          enable_gnostic?: boolean | null
           enable_hermetic?: boolean | null
           enable_ifs?: boolean | null
           enable_jungian?: boolean | null
           enable_sacred_geometry?: boolean | null
+          enable_stoic?: boolean | null
           enable_taoist?: boolean | null
           enable_tarot_tags?: boolean | null
           enable_theravada?: boolean | null

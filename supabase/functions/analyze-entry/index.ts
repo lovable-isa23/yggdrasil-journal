@@ -145,7 +145,7 @@ serve(async (req) => {
     // Fetch user preferences for tags and framework settings
     const { data: userPrefs } = await supabase
       .from('user_preferences')
-      .select('enable_chakra_tags, enable_tarot_tags, enable_sacred_geometry, enable_theravada, enable_freudian, enable_jungian, enable_hermetic, enable_advaita, enable_taoist, enable_attachment, enable_ifs, enable_cbt, enable_dbt')
+      .select('enable_chakra_tags, enable_tarot_tags, enable_sacred_geometry, enable_theravada, enable_freudian, enable_jungian, enable_hermetic, enable_advaita, enable_taoist, enable_attachment, enable_ifs, enable_cbt, enable_dbt, enable_stoic, enable_gnostic')
       .eq('user_id', user.id)
       .single();
 
@@ -165,10 +165,12 @@ serve(async (req) => {
       ifs: userPrefs?.enable_ifs ?? true,
       cbt: userPrefs?.enable_cbt ?? true,
       dbt: userPrefs?.enable_dbt ?? true,
+      stoic: userPrefs?.enable_stoic ?? true,
+      gnostic: userPrefs?.enable_gnostic ?? true,
     };
     
     const activeFrameworkCount = Object.values(enabledFrameworks).filter(Boolean).length;
-    console.log('Enabled frameworks:', activeFrameworkCount, 'of 10');
+    console.log('Enabled frameworks:', activeFrameworkCount, 'of 12');
 
     console.log('Analyzing entry:', entryId);
 
@@ -250,19 +252,17 @@ Respond with ONLY a JSON object: {"depth_score": X, "reasoning": "brief explanat
     // Phase 2: Apply frameworks conditionally based on depth
     const applyFrameworks = depthScore >= 5;
 
+    // Categorize frameworks for diversity requirement
+    const spiritualFrameworks = ['theravada', 'advaita', 'taoist'].filter(fw => enabledFrameworks[fw as keyof typeof enabledFrameworks]);
+    const philosophicalFrameworks = ['hermetic', 'stoic', 'gnostic'].filter(fw => enabledFrameworks[fw as keyof typeof enabledFrameworks]);
+    const psychologyFrameworks = ['freudian', 'jungian', 'attachment', 'ifs', 'cbt', 'dbt'].filter(fw => enabledFrameworks[fw as keyof typeof enabledFrameworks]);
+
     // Filter and randomize framework order based on user preferences
     const frameworkOrder = [
-      enabledFrameworks.theravada ? 'theravada' : null,
-      enabledFrameworks.freudian ? 'freudian' : null,
-      enabledFrameworks.jungian ? 'jungian' : null,
-      enabledFrameworks.hermetic ? 'hermetic' : null,
-      enabledFrameworks.advaita ? 'advaita' : null,
-      enabledFrameworks.taoist ? 'taoist' : null,
-      enabledFrameworks.attachment ? 'attachment' : null,
-      enabledFrameworks.ifs ? 'ifs' : null,
-      enabledFrameworks.cbt ? 'cbt' : null,
-      enabledFrameworks.dbt ? 'dbt' : null,
-    ].filter(Boolean).sort(() => Math.random() - 0.5) as string[];
+      ...spiritualFrameworks,
+      ...philosophicalFrameworks,
+      ...psychologyFrameworks,
+    ].sort(() => Math.random() - 0.5);
     console.log('Framework order for this analysis:', frameworkOrder);
 
     // Call Lovable AI for semantic analysis
@@ -309,7 +309,7 @@ ADVANCED FRAMEWORK ANALYSIS (Depth Score: ${depthScore}/10)
 This entry demonstrates sufficient depth for advanced psychological/spiritual analysis.
 Apply the following frameworks where relevant:
 
-${enabledFrameworks.theravada ? `### THERAVADA BUDDHISM Framework
+${enabledFrameworks.theravada ? `### THERAVADA BUDDHISM Framework (Spiritual)
 **When to apply:** Suffering, attachment, desire, impermanence, seeking liberation
 
 Identify:
@@ -322,31 +322,33 @@ Identify:
 
 Style: Point to attachment nature, suggest mindfulness practices, reframe suffering as teacher
 ` : ''}
-${enabledFrameworks.freudian ? `### FREUDIAN PSYCHOANALYSIS Framework
-**When to apply:** Unconscious conflict, defense mechanisms, childhood echoes, repressed material
+${enabledFrameworks.advaita ? `### ADVAITA VEDANTA Framework (Spiritual)
+**When to apply:** Seeking identity, separation/oneness, spiritual seeking, sense of disconnection, Self-inquiry
 
 Identify:
-- Defense Mechanisms: Repression, projection, rationalization, displacement, reaction formation, sublimation
-- Psychic Structure: Id impulses vs. Ego mediation vs. Superego demands
-- Unconscious Material: What's between the lines? Unacknowledged desires?
-- Childhood Patterns: What's repeating?
-- Dream Work (for dreams): Manifest vs. latent content, symbols, wish fulfillment
+- Maya (Illusion): What false perceptions are creating suffering? What seems real but is temporary/changeable?
+- Atman/Brahman: Connecting to true Self beyond ego, recognizing universal consciousness, essential nature
+- Neti Neti ("Not this, not that"): What are they identifying with that isn't their true nature? False identifications
+- Witness Consciousness: Can they observe thoughts/feelings without being consumed? Pure awareness watching phenomena
+- Avidya (Ignorance): Misidentifying with body, mind, role, story - forgetting true nature as pure consciousness
+- Moksha (Liberation): Movement toward recognizing their nature as pure awareness, freedom from false identification
 
-Style: Make unconscious conscious, name defenses compassionately, connect present to past
+Style: Point to awareness itself, question false identifications, invite recognition of observer, dissolve subject-object duality, guide toward Self-inquiry
 ` : ''}
-${enabledFrameworks.jungian ? `### JUNGIAN PSYCHOLOGY Framework  
-**When to apply:** Symbolic content, identity exploration, transformation, archetypal patterns
+${enabledFrameworks.taoist ? `### TAOISM Framework (Spiritual)
+**When to apply:** Forcing, resistance, control issues, imbalance, lack of flow, overeffort, struggle
 
 Identify:
-- Archetypes: Self, Shadow, Anima/Animus, Hero, Wise Old Man/Woman, Mother/Father, Trickster
-- Individuation: Where in journey toward wholeness? What's integrating?
-- Shadow Work: Projected qualities? Rejected parts calling for integration?
-- Collective Unconscious: Universal patterns, mythological parallels
-- Symbols: Personal & collective meanings, mandala imagery, transformation symbols
+- Wu Wei (Effortless Action): Are they forcing? Where could they allow natural unfolding? Action through non-action
+- Yin/Yang Imbalance: Too much action (yang) or passivity (yin)? Where's the needed complement? Seeking balance
+- Following the Tao (The Way): Fighting current or flowing with it? Natural order vs. imposed will, path of least resistance
+- Te (Virtue/Power): Innate nature and authentic expression, not manufactured behavior, natural integrity
+- P'u (Uncarved Block): Simplicity, returning to natural state, unlearning conditioning, original innocence
+- Ziran (Naturalness/Spontaneity): Being authentic vs. performing, spontaneous response vs. calculated action
 
-Style: Honor symbolic dimension, encourage dialogue with unconscious, frame challenges as individuation
+Style: Suggest softening grip, point to natural flow, reframe "giving up" as "letting go," honor what wants to emerge, embrace simplicity
 ` : ''}
-${enabledFrameworks.hermetic ? `### HERMETICISM Framework
+${enabledFrameworks.hermetic ? `### HERMETICISM Framework (Philosophical)
 **When to apply:** Patterns of correspondence, mental creation, cause/effect, duality/polarity, cycles
 
 Identify:
@@ -360,33 +362,60 @@ Identify:
 
 Style: Connect inner experience to outer manifestation, identify cyclical patterns, explore mental causation, show correspondence between levels
 ` : ''}
-${enabledFrameworks.advaita ? `### ADVAITA VEDANTA Framework
-**When to apply:** Seeking identity, separation/oneness, spiritual seeking, sense of disconnection, Self-inquiry
+${enabledFrameworks.stoic ? `### STOICISM Framework (Philosophical)
+**When to apply:** Control anxiety, external worries, virtue questions, emotional reactions to circumstances, acceptance struggles
 
 Identify:
-- Maya (Illusion): What false perceptions are creating suffering? What seems real but is temporary/changeable?
-- Atman/Brahman: Connecting to true Self beyond ego, recognizing universal consciousness, essential nature
-- Neti Neti ("Not this, not that"): What are they identifying with that isn't their true nature? False identifications
-- Witness Consciousness: Can they observe thoughts/feelings without being consumed? Pure awareness watching phenomena
-- Avidya (Ignorance): Misidentifying with body, mind, role, story - forgetting true nature as pure consciousness
-- Moksha (Liberation): Movement toward recognizing their nature as pure awareness, freedom from false identification
+- Dichotomy of Control: What is truly up to them (judgments, choices, actions) vs. what is not (external events, others' actions)?
+- Virtue Ethics: Are they acting with wisdom, courage, justice, temperance? Which virtue is being tested?
+- Amor Fati (Love of Fate): Can they embrace what's happening rather than resisting? Acceptance of circumstance
+- Memento Mori: Perspective from mortality - does this matter in the grand scheme? What's truly important?
+- Premeditatio Malorum: Anticipating challenges to prepare emotionally, building resilience
+- Preferred/Dispreferred Indifferents: Health, wealth, reputation are preferred but not required for happiness
+- Inner Citadel: Their inner fortress that remains untouched by external circumstances
 
-Style: Point to awareness itself, question false identifications, invite recognition of observer, dissolve subject-object duality, guide toward Self-inquiry
+Style: Remind what is within their power, invite acceptance of what isn't, connect to virtue and character development, offer perspective from mortality, distinguish between value judgments and facts
 ` : ''}
-${enabledFrameworks.taoist ? `### TAOISM Framework
-**When to apply:** Forcing, resistance, control issues, imbalance, lack of flow, overeffort, struggle
+${enabledFrameworks.gnostic ? `### GNOSTICISM Framework (Philosophical)
+**When to apply:** Feeling trapped in material world, seeking hidden knowledge, spiritual awakening, divine spark recognition, liberation from ignorance
 
 Identify:
-- Wu Wei (Effortless Action): Are they forcing? Where could they allow natural unfolding? Action through non-action
-- Yin/Yang Imbalance: Too much action (yang) or passivity (yin)? Where's the needed complement? Seeking balance
-- Following the Tao (The Way): Fighting current or flowing with it? Natural order vs. imposed will, path of least resistance
-- Te (Virtue/Power): Innate nature and authentic expression, not manufactured behavior, natural integrity
-- P'u (Uncarved Block): Simplicity, returning to natural state, unlearning conditioning, original innocence
-- Ziran (Naturalness/Spontaneity): Being authentic vs. performing, spontaneous response vs. calculated action
+- Divine Spark (Pneuma): Recognition of divine essence within, the seed of the Divine trapped in matter
+- Archons: Limiting beliefs, systems, or patterns that keep consciousness trapped - internal and external oppressors
+- Gnosis vs. Pistis: Direct experiential knowing vs. mere belief - has knowledge been earned through experience?
+- Demiurge/Material World: Over-identification with material concerns, mistaking the copy for the original
+- Pleroma (Fullness): Connection to spiritual wholeness, the realm of divine light and truth
+- Sophia (Wisdom): The fall and redemption narrative - what wisdom is being gained through suffering?
+- Aeons: Divine emanations and spiritual hierarchies, levels of consciousness and understanding
+- Hylic/Psychic/Pneumatic: Which level of consciousness is operating - purely material, soul-level, or spirit-level?
 
-Style: Suggest softening grip, point to natural flow, reframe "giving up" as "letting go," honor what wants to emerge, embrace simplicity
+Style: Awaken to divine nature within, identify what keeps consciousness trapped, point toward liberating gnosis, frame suffering as catalyst for awakening
 ` : ''}
-${enabledFrameworks.attachment ? `### ATTACHMENT THEORY Framework
+${enabledFrameworks.freudian ? `### FREUDIAN PSYCHOANALYSIS Framework (Psychology)
+**When to apply:** Unconscious conflict, defense mechanisms, childhood echoes, repressed material
+
+Identify:
+- Defense Mechanisms: Repression, projection, rationalization, displacement, reaction formation, sublimation
+- Psychic Structure: Id impulses vs. Ego mediation vs. Superego demands
+- Unconscious Material: What's between the lines? Unacknowledged desires?
+- Childhood Patterns: What's repeating?
+- Dream Work (for dreams): Manifest vs. latent content, symbols, wish fulfillment
+
+Style: Make unconscious conscious, name defenses compassionately, connect present to past
+` : ''}
+${enabledFrameworks.jungian ? `### JUNGIAN PSYCHOLOGY Framework (Psychology)
+**When to apply:** Symbolic content, identity exploration, transformation, archetypal patterns
+
+Identify:
+- Archetypes: Self, Shadow, Anima/Animus, Hero, Wise Old Man/Woman, Mother/Father, Trickster
+- Individuation: Where in journey toward wholeness? What's integrating?
+- Shadow Work: Projected qualities? Rejected parts calling for integration?
+- Collective Unconscious: Universal patterns, mythological parallels
+- Symbols: Personal & collective meanings, mandala imagery, transformation symbols
+
+Style: Honor symbolic dimension, encourage dialogue with unconscious, frame challenges as individuation
+` : ''}
+${enabledFrameworks.attachment ? `### ATTACHMENT THEORY Framework (Psychology)
 **When to apply:** Relationships, connection anxiety, fear of abandonment, intimacy struggles, push-pull dynamics, trust issues
 
 Identify:
@@ -399,7 +428,7 @@ Identify:
 
 Style: Name attachment patterns without pathologizing, trace current struggles to their protective origins, guide toward "earned secure attachment" through awareness
 ` : ''}
-${enabledFrameworks.ifs ? `### IFS (INTERNAL FAMILY SYSTEMS) Framework
+${enabledFrameworks.ifs ? `### IFS (INTERNAL FAMILY SYSTEMS) Framework (Psychology)
 **When to apply:** Inner conflict, self-criticism, protective behaviors, feeling torn, internal dialogue, self-sabotage patterns
 
 Identify:
@@ -412,7 +441,7 @@ Identify:
 
 Style: Help user "unblend" from parts, speak TO parts rather than AS them, recognize protectors' positive intent, guide toward Self-leadership
 ` : ''}
-${enabledFrameworks.cbt ? `### CBT (COGNITIVE BEHAVIORAL THERAPY) Framework
+${enabledFrameworks.cbt ? `### CBT (COGNITIVE BEHAVIORAL THERAPY) Framework (Psychology)
 **When to apply:** Negative self-talk, catastrophizing, rumination, anxiety spirals, depression patterns, distorted thinking
 
 Identify:
@@ -425,7 +454,7 @@ Identify:
 
 Style: Gently name cognitive distortions without judgment, help identify thought patterns, encourage reality testing, suggest behavioral experiments to test beliefs
 ` : ''}
-${enabledFrameworks.dbt ? `### DBT (DIALECTICAL BEHAVIORAL THERAPY) Framework
+${enabledFrameworks.dbt ? `### DBT (DIALECTICAL BEHAVIORAL THERAPY) Framework (Psychology)
 **When to apply:** Emotional dysregulation, intense emotions, interpersonal conflict, black-and-white thinking, self-destructive urges, feeling invalidated
 
 Identify:
@@ -447,12 +476,19 @@ Style: Validate the emotion while encouraging change, hold dialectics ("both/and
 
 **MINIMUM REQUIREMENT**: Every entry analysis MUST apply at least 2 different framework lenses. For deeper entries (depth ≥ 5), aim for 3-5 frameworks. The frameworks_applied array MUST contain 2-5 canonical framework keys.
 
+**CATEGORY DIVERSITY REQUIREMENT** - For entries with depth ≥ 5, ensure variety across categories:
+${spiritualFrameworks.length > 0 ? `- Spiritual (${spiritualFrameworks.join(', ')}): Apply at least one if relevant` : ''}
+${philosophicalFrameworks.length > 0 ? `- Philosophical (${philosophicalFrameworks.join(', ')}): Apply at least one if relevant` : ''}
+${psychologyFrameworks.length > 0 ? `- Psychology (${psychologyFrameworks.join(', ')}): Apply at least one if relevant` : ''}
+
 ${frameworkOrder.length > 0 ? `**VARIETY REQUIREMENT** - To provide diverse perspectives over time:
 - Framework priority order for this analysis: ${frameworkOrder.join(' → ')}
 - When multiple frameworks seem equally relevant, prefer those appearing earlier in the priority order above` : ''}
 
 **Framework Strengths** (use to guide selection from enabled frameworks):
 ${enabledFrameworks.hermetic ? `- Hermeticism: mental causation, patterns, cycles, correspondence between inner/outer, polarity` : ''}
+${enabledFrameworks.stoic ? `- Stoicism: control vs acceptance, virtue, perspective, emotional resilience, character development` : ''}
+${enabledFrameworks.gnostic ? `- Gnosticism: divine spark, liberation from limitation, hidden knowledge, spiritual awakening` : ''}
 ${enabledFrameworks.advaita ? `- Advaita Vedanta: identity questions, separation/oneness, spiritual seeking, Self-inquiry, witness consciousness` : ''}
 ${enabledFrameworks.taoist ? `- Taoism: forcing vs. flow, control issues, balance, naturalness, effortless action, wu wei` : ''}
 ${enabledFrameworks.attachment ? `- Attachment Theory: relationship anxiety, trust issues, abandonment fears, intimacy struggles, push-pull dynamics` : ''}
@@ -464,15 +500,9 @@ Example 1 (Relationship): "Your relationship struggle shows Freudian projection 
 
 Example 2 (Creative Block): "You're caught in pure yang energy—pushing, forcing, grinding (Taoist imbalance). Your mental state creates your experience: the more you think 'I'm blocked,' the more blocked you become (Hermetic Mentalism). Path: Practice wu wei (Taoism): stop trying for 48 hours, let it percolate. Your true Self (Advaita) isn't the 'creator'—it's the awareness watching the creative process unfold."
 
-Example 3 (Identity Crisis): "The roles you're clinging to—successful professional, good parent—are Maya (Advaita), temporary costumes obscuring your true nature. Notice the Hermetic polarity: the more you try to be 'good,' the more you feel 'bad.' Your witness consciousness (Advaita) can observe this without being trapped in it. Path: Practice Neti Neti—'I am not my job, I am not my role'—to discover what remains when identifications fall away."
+Example 3 (Control Anxiety): "You're caught in the classic Stoic trap: trying to control what's not up to you. The Stoics would ask: what here is truly within your power? Your judgments, your responses, your choices—not the outcome. From a Hermetic lens, notice how your anxious thoughts (Mentalism) are creating the very reality you fear. The Stoic practice of premeditatio malorum isn't pessimism—it's freedom. If you've already faced the worst in your mind, what power does it hold?"
 
-Example 4 (Relationship Anxiety): "This anxiety is your attachment system activating—specifically an anxious-preoccupied pattern (Attachment Theory). When you sense distance, your protest behaviors kick in: texting repeatedly, seeking reassurance, hypervigilance for signs of rejection. There's also a Critic Manager part (IFS) telling you 'if you were better, they'd be closer.' Path: Notice when your attachment alarm goes off, practice self-soothing instead of seeking external reassurance, get curious about the Critic's protective intent."
-
-Example 5 (Inner Conflict): "You're experiencing a classic IFS polarization: one part wants to take the risk and pursue the opportunity, another part is fiercely protecting you from potential failure and rejection. That protective part has good reasons—it remembers past disappointments. From a Jungian lens, the risk-taker might be your Hero archetype calling for individuation. Path: Instead of letting these parts battle, can you get curious about what each needs? What would both parts need to feel safe enough to move forward?"
-
-Example 6 (Anxiety Spiral): "You're in a classic CBT catastrophizing spiral—that cognitive distortion where your mind jumps from 'one thing went wrong' to 'everything will fall apart.' Notice the thought chain: 'I made a mistake' → 'They'll think I'm incompetent' → 'I'll lose my job' → 'I'll never recover.' That's fortune-telling and mind-reading stacked together. Your Emotion Mind (DBT) has taken over—this feels absolutely real, but Wise Mind knows one mistake rarely defines a career. Path: Reality test the hot thought—what's the actual evidence? What's happened before when you made mistakes?"
-
-Example 7 (Emotional Intensity): "The dialectic here (DBT) is that you CAN feel devastated AND also know you'll survive this—both truths coexist. Your all-or-nothing thinking (CBT cognitive distortion) says 'if this relationship ended, I'm completely unlovable.' That's labeling and overgeneralization working together. You're in Emotion Mind right now—valid, but not the whole picture. Path: Practice radical acceptance (DBT)—not approval of what happened, but ending the internal war with reality. Ask: What would Wise Mind say about this?"
+Example 4 (Spiritual Seeking): "There's a Gnostic theme here—you sense a divine spark within that feels trapped by circumstance, like you're living in a reality that isn't quite real. The material concerns feel like archons (limiting forces) keeping you from your true nature. From Advaita: who is the one feeling trapped? That witness awareness is itself the liberation you seek. You're not seeking enlightenment—you ARE the light, temporarily identified with shadow."
 ` : ''}
 
 INTERPRETATION INSTRUCTIONS:
@@ -516,6 +546,15 @@ ${moodType === 'intention' ? `
 - How to maintain motivation and track progress
 ` : ''}
 
+${moodType === 'shadow_work' ? `
+🌑 SHADOW WORK ENTRY - Integrating the unconscious:
+- What disowned aspects are surfacing for integration?
+- Defense mechanisms at play (projection, denial, repression)
+- The gift hidden within the shadow material
+- Practices for befriending and integrating shadow parts
+- How this shadow work serves wholeness and individuation
+` : ''}
+
 ${moodType === 'general' ? `
 📖 GENERAL ENTRY - Overall themes:
 - Life themes emerging across their journey
@@ -534,12 +573,30 @@ Your interpretation must:
 6. Keep proper terminology (cognitive distortion, attachment, shadow, etc.) but explain terms briefly when helpful for accessibility
 ${applyFrameworks ? '7. Use framework concepts naturally - translate technical terms, illuminate without impressing' : ''}
 
+GROWTH CONNECTION VARIETY:
+For the "growth_connection" field, VARY your approach each time. Randomly choose ONE of these angles:
+- FORWARD-LOOKING: Focus on what's emerging, next phases, new possibilities opening up
+- GRATITUDE: Acknowledge progress, celebrate how far they've come, honor the work done
+- PATTERN THREAD: Connect to recurring themes across their journey, show the larger arc
+- CURIOSITY: Pose a question or wonder about what to explore next, open a door
+- MILESTONE: Name where they are in their development arc, what transition is happening
+
+NEVER start the growth_connection with the same phrase twice. Vary your opening:
+- "What's emerging here is..."
+- "Looking at your journey..."
+- "This moment in your path..."
+- "There's a thread connecting..."
+- "Something is shifting..."
+- "You're in the midst of..."
+- "Notice how..."
+- "The deeper invitation here..."
+
 IMPORTANT: For safety_concerns, only flag true if there is genuine risk language (e.g., "I want to end my life", "not worth living", "plan to hurt myself", "everyone would be better off without me"). Do not flag general sadness, stress, or normal difficult emotions.
 
 CRITICAL - CANONICAL FRAMEWORK KEYS:
 When specifying frameworks_applied in your JSON response, use ONLY these exact canonical keys:
-theravada, freudian, jungian, hermetic, advaita, taoist, attachment, ifs, cbt, dbt
-Never use variations like "taoism", "hermeticism", "advaita_vedanta", "attachment_theory", etc.
+theravada, freudian, jungian, hermetic, advaita, taoist, attachment, ifs, cbt, dbt, stoic, gnostic
+Never use variations like "taoism", "hermeticism", "advaita_vedanta", "attachment_theory", "stoicism", "gnosticism" etc.
 
 CRITICAL JSON RULES:
 - Return ONLY valid JSON - no markdown, no code blocks, no explanations
@@ -560,7 +617,7 @@ Respond with ONLY a valid JSON object in this exact format:
     "questions": ["Reflective question 1?", "Question 2?", "Question 3?"],
     "action_items": ["Specific action 1", "Action 2", "Action 3"],
     "patterns_identified": ["Pattern 1", "Maladaptive behavior 2", "Cognitive distortion 3"],
-    "growth_connection": "1 paragraph connecting this entry to their larger self-development journey"${applyFrameworks ? ',\n    "frameworks_applied": ["theravada", "jungian", "freudian"],\n    "depth_analysis": {\n      "psychological_themes": ["theme1", "theme2"],\n      "spiritual_themes": ["theme1", "theme2"],\n      "unconscious_material": "Brief note on what\'s beneath the surface"\n    }' : ''}
+    "growth_connection": "1 paragraph connecting this entry to their larger self-development journey - use varied angles and openings"${applyFrameworks ? ',\n    "frameworks_applied": ["theravada", "jungian", "stoic"],\n    "depth_analysis": {\n      "psychological_themes": ["theme1", "theme2"],\n      "spiritual_themes": ["theme1", "theme2"],\n      "unconscious_material": "Brief note on what\'s beneath the surface"\n    }' : ''}
   }${enableChakraTags ? ',\n  "chakra_tags": [{"chakra": "Root", "description": "brief"}]' : ''}${enableTarotTags ? ',\n  "tarot_tags": [{"card": "The Fool", "description": "brief"}]' : ''}${enableSacredGeometry ? ',\n  "sacred_geometry": [{"pattern": "Flower of Life", "description": "brief"}]' : ''}
 }`
           },
@@ -628,26 +685,14 @@ Respond with ONLY a valid JSON object in this exact format:
         entities: [],
         themes: ['reflection', 'personal growth'],
         emotions: [{ emotion: 'contemplative', intensity: 5 }],
-        keywords: ['journal', 'reflection'],
-        summary: 'Unable to fully analyze entry due to processing error. Please try again.',
-        safety_concerns: { flag: false, concerns: [] }
+        keywords: [],
+        summary: 'Entry analyzed with basic processing.',
+        safety_concerns: { flag: false, concerns: [] },
       };
-      
-      if (enableChakraTags) {
-        analysis.chakra_tags = [];
-      }
-      if (enableTarotTags) {
-        analysis.tarot_tags = [];
-      }
-      if (enableSacredGeometry) {
-        analysis.sacred_geometry = [];
-      }
-      
-      console.log('Using fallback analysis:', analysis);
     }
 
-    // Store insights in database (supabase client already initialized above)
-    const insightData: any = {
+    // Store the analysis results
+    const insightData = {
       entry_id: entryId,
       user_id: user.id,
       entities: analysis.entities || [],
@@ -657,38 +702,44 @@ Respond with ONLY a valid JSON object in this exact format:
       summary: analysis.summary || '',
       safety_concerns: analysis.safety_concerns || { flag: false, concerns: [] },
       interpretation: analysis.interpretation || null,
+      chakra_tags: analysis.chakra_tags || [],
+      tarot_tags: analysis.tarot_tags || [],
+      sacred_geometry: analysis.sacred_geometry || [],
       depth_score: depthScore,
       frameworks_applied: analysis.interpretation?.frameworks_applied || [],
     };
 
-    if (enableChakraTags && analysis.chakra_tags) {
-      insightData.chakra_tags = analysis.chakra_tags;
-    }
-
-    if (enableTarotTags && analysis.tarot_tags) {
-      insightData.tarot_tags = analysis.tarot_tags;
-    }
-
-    if (enableSacredGeometry && analysis.sacred_geometry) {
-      insightData.sacred_geometry = analysis.sacred_geometry;
-    }
-
-    const { error: insertError } = await supabase
+    // Upsert - update if exists, insert if not
+    const { error: upsertError } = await supabase
       .from('entry_insights')
-      .upsert(insightData, { onConflict: 'entry_id' });
+      .upsert(insightData, { 
+        onConflict: 'entry_id',
+        ignoreDuplicates: false 
+      });
 
-    if (insertError) {
-      console.error('Database insert error:', insertError);
-      throw insertError;
+    if (upsertError) {
+      console.error('Failed to save insights:', upsertError);
+      throw new Error('Failed to save analysis results');
     }
+
+    console.log('Analysis complete for entry:', entryId);
 
     return new Response(
-      JSON.stringify({ success: true, insights: analysis }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ 
+        success: true, 
+        insights: {
+          ...insightData,
+          depth_score: depthScore,
+        }
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
     );
-  } catch (error) {
+
+  } catch (error: unknown) {
     console.error('Error in analyze-entry:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
       JSON.stringify({ error: errorMessage }),
       { 

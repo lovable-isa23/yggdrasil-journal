@@ -97,15 +97,16 @@ const getMoodStyles = (moodType?: string, sourceType?: string) => {
     return {
       bg: 'from-teal-100 to-cyan-50 dark:from-teal-950/30 dark:to-cyan-900/20',
       border: 'border-l-teal-500',
-      textAccent: 'text-teal-700 dark:text-teal-300'
+      textAccent: 'text-teal-700 dark:text-[#8B6F47]'
     };
   }
   
   const moods = {
-    dream: { bg: 'from-purple-100 to-purple-50 dark:from-purple-950/30 dark:to-purple-900/20', border: 'border-l-purple-400', textAccent: 'text-purple-700 dark:text-purple-300' },
-    reflection: { bg: 'from-blue-100 to-blue-50 dark:from-blue-950/30 dark:to-blue-900/20', border: 'border-l-blue-400', textAccent: 'text-blue-700 dark:text-blue-300' },
-    gratitude: { bg: 'from-amber-100 to-yellow-50 dark:from-amber-950/30 dark:to-yellow-900/20', border: 'border-l-amber-400', textAccent: 'text-amber-700 dark:text-amber-300' },
-    intention: { bg: 'from-emerald-100 to-green-50 dark:from-emerald-950/30 dark:to-green-900/20', border: 'border-l-emerald-400', textAccent: 'text-emerald-700 dark:text-emerald-300' },
+    dream: { bg: 'from-purple-100 to-purple-50 dark:from-purple-950/30 dark:to-purple-900/20', border: 'border-l-purple-400', textAccent: 'text-purple-700 dark:text-[#8B6F47]' },
+    reflection: { bg: 'from-blue-100 to-blue-50 dark:from-blue-950/30 dark:to-blue-900/20', border: 'border-l-blue-400', textAccent: 'text-blue-700 dark:text-[#8B6F47]' },
+    gratitude: { bg: 'from-amber-100 to-yellow-50 dark:from-amber-950/30 dark:to-yellow-900/20', border: 'border-l-amber-400', textAccent: 'text-amber-700 dark:text-[#8B6F47]' },
+    intention: { bg: 'from-emerald-100 to-green-50 dark:from-emerald-950/30 dark:to-green-900/20', border: 'border-l-emerald-400', textAccent: 'text-emerald-700 dark:text-[#8B6F47]' },
+    shadow_work: { bg: 'from-slate-200 to-gray-100 dark:from-slate-950/30 dark:to-gray-900/20', border: 'border-l-slate-500', textAccent: 'text-slate-700 dark:text-[#8B6F47]' },
     general: { bg: 'from-[#F9F0E5] to-[#FFF7ED] dark:from-[#2A2420] dark:to-[#1F1A17]', border: 'border-l-[#D4A574]', textAccent: 'text-[#8B6F47] dark:text-[#D4A574]' }
   };
   return moods[moodType as keyof typeof moods] || moods.general;

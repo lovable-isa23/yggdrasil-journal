@@ -43,6 +43,13 @@ const MOOD_OPTIONS: MoodOption[] = [
     borderColor: 'border-emerald-400',
   },
   {
+    value: 'shadow_work',
+    label: 'Shadow Work',
+    icon: '🌑',
+    gradient: 'from-slate-200 to-gray-100',
+    borderColor: 'border-slate-500',
+  },
+  {
     value: 'general',
     label: 'General',
     icon: '📖',
@@ -57,7 +64,7 @@ interface MoodPickerProps {
 }
 
 export function MoodPicker({ currentMood, onMoodChange }: MoodPickerProps) {
-  const selectedMood = MOOD_OPTIONS.find(m => m.value === currentMood) || MOOD_OPTIONS[4];
+  const selectedMood = MOOD_OPTIONS.find(m => m.value === currentMood) || MOOD_OPTIONS[5];
 
   return (
     <Popover>

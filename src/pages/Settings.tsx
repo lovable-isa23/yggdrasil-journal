@@ -27,20 +27,24 @@ interface Preferences {
   enable_ifs: boolean;
   enable_cbt: boolean;
   enable_dbt: boolean;
+  enable_stoic: boolean;
+  enable_gnostic: boolean;
 }
 
 const FRAMEWORK_CONFIGS = {
   spiritual: [
     { key: 'enable_theravada' as keyof Preferences, icon: '☸️', name: 'Theravada Buddhism', description: 'Suffering, attachment, impermanence, mindfulness' },
-    { key: 'enable_hermetic' as keyof Preferences, icon: '🔮', name: 'Hermeticism', description: 'Mental causation, correspondence, polarity, cycles' },
     { key: 'enable_advaita' as keyof Preferences, icon: '🕉️', name: 'Advaita Vedanta', description: 'Self-inquiry, witness consciousness, true nature' },
     { key: 'enable_taoist' as keyof Preferences, icon: '☯️', name: 'Taoism', description: 'Flow, balance, wu wei, naturalness' },
   ],
-  depth: [
+  philosophical: [
+    { key: 'enable_hermetic' as keyof Preferences, icon: '🔮', name: 'Hermeticism', description: 'Mental causation, correspondence, polarity, cycles' },
+    { key: 'enable_stoic' as keyof Preferences, icon: '🏛️', name: 'Stoicism', description: 'Virtue, dichotomy of control, amor fati' },
+    { key: 'enable_gnostic' as keyof Preferences, icon: '✨', name: 'Gnosticism', description: 'Divine spark, gnosis, spiritual liberation' },
+  ],
+  psychology: [
     { key: 'enable_freudian' as keyof Preferences, icon: '🔺', name: 'Freudian', description: 'Unconscious conflict, defense mechanisms, childhood' },
     { key: 'enable_jungian' as keyof Preferences, icon: '🌓', name: 'Jungian', description: 'Archetypes, shadow work, individuation' },
-  ],
-  modern: [
     { key: 'enable_attachment' as keyof Preferences, icon: '💕', name: 'Attachment Theory', description: 'Relationship patterns, trust, intimacy' },
     { key: 'enable_ifs' as keyof Preferences, icon: '🎭', name: 'IFS', description: 'Inner parts, protectors, Self-leadership' },
     { key: 'enable_cbt' as keyof Preferences, icon: '💭', name: 'CBT', description: 'Cognitive distortions, thought patterns' },
@@ -51,7 +55,7 @@ const FRAMEWORK_CONFIGS = {
 const ALL_FRAMEWORK_KEYS: (keyof Preferences)[] = [
   'enable_theravada', 'enable_freudian', 'enable_jungian', 'enable_hermetic',
   'enable_advaita', 'enable_taoist', 'enable_attachment', 'enable_ifs',
-  'enable_cbt', 'enable_dbt'
+  'enable_cbt', 'enable_dbt', 'enable_stoic', 'enable_gnostic'
 ];
 
 const Settings = () => {
@@ -71,6 +75,8 @@ const Settings = () => {
     enable_ifs: true,
     enable_cbt: true,
     enable_dbt: true,
+    enable_stoic: true,
+    enable_gnostic: true,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -122,6 +128,8 @@ const Settings = () => {
           enable_ifs: data.enable_ifs ?? true,
           enable_cbt: data.enable_cbt ?? true,
           enable_dbt: data.enable_dbt ?? true,
+          enable_stoic: (data as any).enable_stoic ?? true,
+          enable_gnostic: (data as any).enable_gnostic ?? true,
         });
       }
     } catch (error) {
@@ -144,7 +152,7 @@ const Settings = () => {
         .upsert({
           user_id: user.id,
           ...newPreferences,
-        }, { onConflict: 'user_id' });
+        } as any, { onConflict: 'user_id' });
 
       if (error) throw error;
 
@@ -220,16 +228,57 @@ const Settings = () => {
         }
       }
       
-      toast.success('All entries re-analyzed with updated framework requirements!');
+      toast.success('All entries updated with latest analysis features!');
     } catch (error) {
       console.error('Error re-analyzing entries:', error);
-      toast.error('Failed to re-analyze entries');
+      toast.error('Failed to apply updates');
     } finally {
       setReanalyzing(false);
       setReanalyzeProgress(0);
       setReanalyzeTotalEntries(0);
     }
   };
+
+  const renderFrameworkSection = (
+    title: string,
+    icon: string,
+    frameworks: typeof FRAMEWORK_CONFIGS.spiritual
+  ) => (
+    <div className="mb-6">
+      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
+        {icon} {title}
+      </h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {frameworks.map(framework => (
+          <div
+            key={framework.key}
+            className={`p-3 rounded-lg border transition-colors ${
+              preferences[framework.key]
+                ? 'bg-primary/5 border-primary/20'
+                : 'bg-muted/30 border-border'
+            }`}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <Label className="text-sm font-medium flex items-center gap-2 cursor-pointer">
+                  <span>{framework.icon}</span>
+                  {framework.name}
+                </Label>
+                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                  {framework.description}
+                </p>
+              </div>
+              <Switch
+                checked={preferences[framework.key] as boolean}
+                onCheckedChange={() => handleToggle(framework.key)}
+                disabled={saving}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <AuthGuard>
@@ -297,7 +346,7 @@ const Settings = () => {
                   <h2 className="text-xl font-bold">Analysis Frameworks</h2>
                   <div className="flex items-center gap-3">
                     <span className="text-sm text-muted-foreground">
-                      {enabledCount}/10 enabled
+                      {enabledCount}/12 enabled
                     </span>
                     <Button
                       variant="outline"
@@ -313,113 +362,9 @@ const Settings = () => {
                   Choose which psychological and spiritual frameworks are applied to your journal analysis
                 </p>
 
-                {/* Spiritual Traditions */}
-                <div className="mb-6">
-                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
-                    🕉️ Spiritual Traditions
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {FRAMEWORK_CONFIGS.spiritual.map(framework => (
-                      <div
-                        key={framework.key}
-                        className={`p-3 rounded-lg border transition-colors ${
-                          preferences[framework.key]
-                            ? 'bg-primary/5 border-primary/20'
-                            : 'bg-muted/30 border-border'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <Label className="text-sm font-medium flex items-center gap-2 cursor-pointer">
-                              <span>{framework.icon}</span>
-                              {framework.name}
-                            </Label>
-                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                              {framework.description}
-                            </p>
-                          </div>
-                          <Switch
-                            checked={preferences[framework.key] as boolean}
-                            onCheckedChange={() => handleToggle(framework.key)}
-                            disabled={saving}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Depth Psychology */}
-                <div className="mb-6">
-                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
-                    🧠 Depth Psychology
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {FRAMEWORK_CONFIGS.depth.map(framework => (
-                      <div
-                        key={framework.key}
-                        className={`p-3 rounded-lg border transition-colors ${
-                          preferences[framework.key]
-                            ? 'bg-primary/5 border-primary/20'
-                            : 'bg-muted/30 border-border'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <Label className="text-sm font-medium flex items-center gap-2 cursor-pointer">
-                              <span>{framework.icon}</span>
-                              {framework.name}
-                            </Label>
-                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                              {framework.description}
-                            </p>
-                          </div>
-                          <Switch
-                            checked={preferences[framework.key] as boolean}
-                            onCheckedChange={() => handleToggle(framework.key)}
-                            disabled={saving}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Modern Psychology */}
-                <div>
-                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
-                    💭 Modern Psychology
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {FRAMEWORK_CONFIGS.modern.map(framework => (
-                      <div
-                        key={framework.key}
-                        className={`p-3 rounded-lg border transition-colors ${
-                          preferences[framework.key]
-                            ? 'bg-primary/5 border-primary/20'
-                            : 'bg-muted/30 border-border'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <Label className="text-sm font-medium flex items-center gap-2 cursor-pointer">
-                              <span>{framework.icon}</span>
-                              {framework.name}
-                            </Label>
-                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                              {framework.description}
-                            </p>
-                          </div>
-                          <Switch
-                            checked={preferences[framework.key] as boolean}
-                            onCheckedChange={() => handleToggle(framework.key)}
-                            disabled={saving}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                {renderFrameworkSection('Spiritual Traditions', '🕉️', FRAMEWORK_CONFIGS.spiritual)}
+                {renderFrameworkSection('Philosophical Systems', '🏛️', FRAMEWORK_CONFIGS.philosophical)}
+                {renderFrameworkSection('Psychology', '🧠', FRAMEWORK_CONFIGS.psychology)}
 
                 {!someFrameworksEnabled && (
                   <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
@@ -490,20 +435,20 @@ const Settings = () => {
                 </div>
               </Card>
 
-              {/* Data Management */}
+              {/* Apply Feature Updates */}
               <Card className="p-6">
-                <h2 className="text-xl font-bold mb-4">Data Management</h2>
+                <h2 className="text-xl font-bold mb-4">Apply Feature Updates</h2>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Re-analyze your journal entries to apply updated framework requirements (2-5 frameworks per entry)
+                  Apply any feature updates (like new frameworks or analysis improvements) to your existing journal entries
                 </p>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div className="space-y-1 flex-1">
                     <Label className="text-base font-medium flex items-center gap-2">
                       <RefreshCw className="h-4 w-4" />
-                      Re-analyze All Entries
+                      Apply Updates to All Entries
                     </Label>
                     <p className="text-sm text-muted-foreground">
-                      Apply the new 2-5 framework requirement to all existing entries
+                      Re-analyze entries with the latest framework improvements and diversity requirements
                     </p>
                   </div>
                   <Button
@@ -514,12 +459,12 @@ const Settings = () => {
                     {reanalyzing ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        Analyzing {reanalyzeProgress}/{reanalyzeTotalEntries}
+                        Updating {reanalyzeProgress}/{reanalyzeTotalEntries}
                       </>
                     ) : (
                       <>
                         <RefreshCw className="h-4 w-4" />
-                        Re-analyze
+                        Apply Updates
                       </>
                     )}
                   </Button>

@@ -21,21 +21,23 @@ import {
 interface FrameworkInfo {
   name: string;
   icon: string;
-  category: 'spiritual' | 'depth' | 'modern';
+  category: 'spiritual' | 'philosophical' | 'psychology';
   color: string;
 }
 
 const FRAMEWORK_CONFIG: Record<string, FrameworkInfo> = {
   theravada: { name: 'Theravada Buddhism', icon: '☸️', category: 'spiritual', color: 'hsl(var(--chart-1))' },
-  hermetic: { name: 'Hermeticism', icon: '🔮', category: 'spiritual', color: 'hsl(var(--chart-2))' },
-  advaita: { name: 'Vedanta', icon: '🕉️', category: 'spiritual', color: 'hsl(var(--chart-3))' },
-  taoist: { name: 'Taoism', icon: '☯️', category: 'spiritual', color: 'hsl(var(--chart-4))' },
-  freudian: { name: 'Freudian', icon: '🔺', category: 'depth', color: 'hsl(var(--chart-5))' },
-  jungian: { name: 'Jungian', icon: '🌓', category: 'depth', color: 'hsl(221 83% 53%)' },
-  attachment: { name: 'Attachment', icon: '💕', category: 'modern', color: 'hsl(160 84% 39%)' },
-  ifs: { name: 'IFS', icon: '🎭', category: 'modern', color: 'hsl(172 66% 50%)' },
-  cbt: { name: 'CBT', icon: '💭', category: 'modern', color: 'hsl(189 94% 43%)' },
-  dbt: { name: 'DBT', icon: '⚖️', category: 'modern', color: 'hsl(199 89% 48%)' },
+  advaita: { name: 'Vedanta', icon: '🕉️', category: 'spiritual', color: 'hsl(var(--chart-2))' },
+  taoist: { name: 'Taoism', icon: '☯️', category: 'spiritual', color: 'hsl(var(--chart-3))' },
+  hermetic: { name: 'Hermeticism', icon: '🔮', category: 'philosophical', color: 'hsl(var(--chart-4))' },
+  stoic: { name: 'Stoicism', icon: '🏛️', category: 'philosophical', color: 'hsl(var(--chart-5))' },
+  gnostic: { name: 'Gnosticism', icon: '✨', category: 'philosophical', color: 'hsl(221 83% 53%)' },
+  freudian: { name: 'Freudian', icon: '🔺', category: 'psychology', color: 'hsl(0 84% 60%)' },
+  jungian: { name: 'Jungian', icon: '🌓', category: 'psychology', color: 'hsl(280 68% 60%)' },
+  attachment: { name: 'Attachment', icon: '💕', category: 'psychology', color: 'hsl(160 84% 39%)' },
+  ifs: { name: 'IFS', icon: '🎭', category: 'psychology', color: 'hsl(172 66% 50%)' },
+  cbt: { name: 'CBT', icon: '💭', category: 'psychology', color: 'hsl(189 94% 43%)' },
+  dbt: { name: 'DBT', icon: '⚖️', category: 'psychology', color: 'hsl(199 89% 48%)' },
 };
 
 const normalizeFramework = (fw: string): string | null => {
@@ -50,6 +52,8 @@ const normalizeFramework = (fw: string): string | null => {
   if (normalized.includes('ifs') || normalized.includes('internalfamily')) return 'ifs';
   if (normalized.includes('cbt') || normalized.includes('cognitivebehavior')) return 'cbt';
   if (normalized.includes('dbt') || normalized.includes('dialectical')) return 'dbt';
+  if (normalized.includes('stoic') || normalized.includes('stoicism')) return 'stoic';
+  if (normalized.includes('gnostic') || normalized.includes('gnosticism')) return 'gnostic';
   return null;
 };
 
@@ -63,7 +67,7 @@ interface FrameworkStat {
   id: string;
   name: string;
   icon: string;
-  category: 'spiritual' | 'depth' | 'modern';
+  category: 'spiritual' | 'philosophical' | 'psychology';
   color: string;
   count: number;
   percentage: number;
@@ -220,8 +224,8 @@ export const FrameworkAnalytics = () => {
 
   const groupedStats = useMemo(() => ({
     spiritual: usageStats.filter(s => s.category === 'spiritual').sort((a, b) => b.percentage - a.percentage),
-    depth: usageStats.filter(s => s.category === 'depth').sort((a, b) => b.percentage - a.percentage),
-    modern: usageStats.filter(s => s.category === 'modern').sort((a, b) => b.percentage - a.percentage),
+    philosophical: usageStats.filter(s => s.category === 'philosophical').sort((a, b) => b.percentage - a.percentage),
+    psychology: usageStats.filter(s => s.category === 'psychology').sort((a, b) => b.percentage - a.percentage),
   }), [usageStats]);
 
   if (loading) {
@@ -326,19 +330,19 @@ export const FrameworkAnalytics = () => {
                 </div>
               </div>
 
-              {/* Depth Psychology */}
+              {/* Philosophical */}
               <div>
                 <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-2">
-                  🧠 Depth Psychology
+                  🏛️ Philosophical Systems
                 </h4>
                 <div className="space-y-1.5">
-                  {groupedStats.depth.map(stat => (
+                  {groupedStats.philosophical.map(stat => (
                     <div key={stat.id} className="flex items-center gap-2">
                       <span className="w-5 text-center text-sm">{stat.icon}</span>
                       <span className="w-28 text-xs truncate">{stat.name}</span>
                       <div className="flex-1 h-3 bg-muted rounded-full overflow-hidden">
                         <div 
-                          className="h-full bg-blue-500/70 rounded-full transition-all duration-500"
+                          className="h-full bg-purple-500/70 rounded-full transition-all duration-500"
                           style={{ width: `${stat.percentage}%` }}
                         />
                       </div>
@@ -348,13 +352,13 @@ export const FrameworkAnalytics = () => {
                 </div>
               </div>
 
-              {/* Modern Psychology */}
+              {/* Psychology */}
               <div>
                 <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-2">
-                  💭 Modern Psychology
+                  🧠 Psychology
                 </h4>
                 <div className="space-y-1.5">
-                  {groupedStats.modern.map(stat => (
+                  {groupedStats.psychology.map(stat => (
                     <div key={stat.id} className="flex items-center gap-2">
                       <span className="w-5 text-center text-sm">{stat.icon}</span>
                       <span className="w-28 text-xs truncate">{stat.name}</span>
@@ -419,37 +423,38 @@ export const FrameworkAnalytics = () => {
                             const isVisible = visibleFrameworks.has(fw);
                             return (
                               <span style={{ 
+                                color: isVisible ? FRAMEWORK_CONFIG[fw]?.color : 'hsl(var(--muted-foreground))',
                                 opacity: isVisible ? 1 : 0.3,
                                 textDecoration: isVisible ? 'none' : 'line-through'
                               }}>
-                                {value}
+                                {FRAMEWORK_CONFIG[fw]?.icon} {FRAMEWORK_CONFIG[fw]?.name}
                               </span>
                             );
                           }}
                         />
-                        {Object.entries(FRAMEWORK_CONFIG).map(([key, config]) => (
-                          <Line
-                            key={key}
-                            type="monotone"
-                            dataKey={key}
-                            name={`${config.icon} ${config.name}`}
-                            stroke={config.color}
-                            strokeWidth={2}
-                            strokeOpacity={visibleFrameworks.has(key) ? 1 : 0.1}
-                            dot={visibleFrameworks.has(key) ? { r: 2 } : false}
-                            activeDot={visibleFrameworks.has(key) ? { r: 4 } : false}
-                          />
+                        {Object.entries(FRAMEWORK_CONFIG).map(([fw, config]) => (
+                          visibleFrameworks.has(fw) && (
+                            <Line
+                              key={fw}
+                              type="monotone"
+                              dataKey={fw}
+                              stroke={config.color}
+                              strokeWidth={2}
+                              dot={{ r: 3 }}
+                              activeDot={{ r: 5 }}
+                            />
+                          )
                         ))}
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
-                  <p className="text-xs text-muted-foreground text-center mt-2">
+                  <p className="text-xs text-muted-foreground mt-2 text-center">
                     Click legend items to show/hide frameworks
                   </p>
                 </>
               ) : (
                 <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">
-                  Need at least 2 months of data for trends
+                  Need at least 2 months of data to show trends
                 </div>
               )}
             </CardContent>

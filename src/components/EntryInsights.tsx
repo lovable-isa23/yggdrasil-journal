@@ -8,6 +8,7 @@ import { Sparkles, Lightbulb, Heart, Tag, AlertTriangle, Phone, BookOpen, HelpCi
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import ReactMarkdown from 'react-markdown';
 
 interface EntryInsightsProps {
   entryId: string;
@@ -46,6 +47,36 @@ interface Insights {
   depth_score?: number;
   frameworks_applied?: string[];
 }
+
+// Sacred geometry icons mapping
+const SACRED_GEOMETRY_ICONS: Record<string, string> = {
+  'Flower of Life': '❀',
+  "Metatron's Cube": '⬡',
+  'Sri Yantra': '🔺',
+  'Tree of Life': '🌳',
+  'Merkaba': '✡',
+  'Torus': '🔄',
+  'Seed of Life': '⚪',
+  'Vesica Piscis': '◎',
+  'Golden Ratio': '🌀',
+  'Phi Spiral': '🌀',
+  'Platonic Solids': '⬢',
+};
+
+const getGeometryIcon = (pattern: string): string => {
+  // Try exact match first
+  if (SACRED_GEOMETRY_ICONS[pattern]) {
+    return SACRED_GEOMETRY_ICONS[pattern];
+  }
+  // Try partial match
+  const lowerPattern = pattern.toLowerCase();
+  for (const [key, icon] of Object.entries(SACRED_GEOMETRY_ICONS)) {
+    if (lowerPattern.includes(key.toLowerCase()) || key.toLowerCase().includes(lowerPattern)) {
+      return icon;
+    }
+  }
+  return '🌀'; // Default
+};
 
 export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) => {
   const [insights, setInsights] = useState<Insights | null>(null);
@@ -307,8 +338,10 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
                     const showIFS = isFrameworkMentioned('ifs', ['ifs', 'internal family', 'parts', 'exile', 'manager', 'firefighter', 'self-leadership', 'protector', 'part of me', 'inner part']);
                     const showCBT = isFrameworkMentioned('cbt', ['cbt', 'cognitive behavioral', 'cognitive distortion', 'automatic thought', 'core belief', 'all-or-nothing', 'catastrophiz', 'mind reading', 'fortune telling', 'should statement', 'labeling', 'filtering', 'overgeneraliz', 'cognitive triangle']);
                     const showDBT = isFrameworkMentioned('dbt', ['dbt', 'dialectic', 'wise mind', 'emotion mind', 'reasonable mind', 'radical acceptance', 'distress tolerance', 'interpersonal effectiveness', 'dear man', 'emotional dysregulation', 'validation', 'both/and']);
+                    const showStoic = isFrameworkMentioned('stoic', ['stoic', 'stoicism', 'dichotomy of control', 'virtue', 'amor fati', 'memento mori', 'premeditatio', 'what is up to us', 'indifferent', 'marcus aurelius', 'seneca', 'epictetus']);
+                    const showGnostic = isFrameworkMentioned('gnostic', ['gnostic', 'gnosis', 'divine spark', 'archon', 'demiurge', 'pleroma', 'sophia', 'pneuma', 'hylic', 'psychic', 'pneumatic', 'aeon']);
                     
-                    const hasAnyBadge = insights.depth_score && insights.depth_score >= 6 || showBuddhist || showFreudian || showJungian || showHermetic || showVedanta || showTaoist || showAttachment || showIFS || showCBT || showDBT;
+                    const hasAnyBadge = insights.depth_score && insights.depth_score >= 6 || showBuddhist || showFreudian || showJungian || showHermetic || showVedanta || showTaoist || showAttachment || showIFS || showCBT || showDBT || showStoic || showGnostic;
                     
                     if (!hasAnyBadge) return null;
                     
@@ -323,6 +356,8 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
                         {showHermetic && <Badge variant="outline" className="text-xs">🔮 Hermetic</Badge>}
                         {showVedanta && <Badge variant="outline" className="text-xs">🕉️ Vedanta</Badge>}
                         {showTaoist && <Badge variant="outline" className="text-xs">☯️ Taoist</Badge>}
+                        {showStoic && <Badge variant="outline" className="text-xs">🏛️ Stoic</Badge>}
+                        {showGnostic && <Badge variant="outline" className="text-xs">✨ Gnostic</Badge>}
                         {showAttachment && <Badge variant="outline" className="text-xs">💕 Attachment</Badge>}
                         {showIFS && <Badge variant="outline" className="text-xs">🎭 IFS</Badge>}
                         {showCBT && <Badge variant="outline" className="text-xs">💭 CBT</Badge>}
@@ -330,11 +365,11 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
                       </div>
                     );
                   })()}
-                  {/* Main Insight */}
-                  <div className="prose prose-sm max-w-none">
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                  {/* Main Insight with Markdown support */}
+                  <div className="prose prose-sm max-w-none dark:prose-invert">
+                    <ReactMarkdown>
                       {insights.interpretation.main_insight}
-                    </p>
+                    </ReactMarkdown>
                   </div>
 
                   {/* Nested accordion for subsections */}
@@ -351,7 +386,7 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
                             {insights.interpretation.patterns_identified.map((pattern, idx) => (
                               <li key={idx} className="flex items-start gap-2">
                                 <span className="text-primary mt-1">•</span>
-                                <span>{pattern}</span>
+                                <span className="prose prose-sm max-w-none dark:prose-invert"><ReactMarkdown>{pattern}</ReactMarkdown></span>
                               </li>
                             ))}
                           </ul>
@@ -371,7 +406,7 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
                             {insights.interpretation.questions.map((q, idx) => (
                               <li key={idx} className="flex items-start gap-2">
                                 <span className="text-primary font-medium">Q{idx + 1}:</span>
-                                <span className="italic">{q}</span>
+                                <span className="italic prose prose-sm max-w-none dark:prose-invert"><ReactMarkdown>{q}</ReactMarkdown></span>
                               </li>
                             ))}
                           </ul>
@@ -391,7 +426,7 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
                             {insights.interpretation.action_items.map((action, idx) => (
                               <li key={idx} className="flex items-start gap-2">
                                 <span className="text-primary">→</span>
-                                <span>{action}</span>
+                                <span className="prose prose-sm max-w-none dark:prose-invert"><ReactMarkdown>{action}</ReactMarkdown></span>
                               </li>
                             ))}
                           </ul>
@@ -406,9 +441,11 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
                           📈 Your Growth Journey
                         </AccordionTrigger>
                         <AccordionContent className="pt-2 pb-3">
-                          <p className="text-sm leading-relaxed">
-                            {insights.interpretation.growth_connection}
-                          </p>
+                          <div className="prose prose-sm max-w-none dark:prose-invert">
+                            <ReactMarkdown>
+                              {insights.interpretation.growth_connection}
+                            </ReactMarkdown>
+                          </div>
                         </AccordionContent>
                       </AccordionItem>
                     )}
@@ -569,7 +606,9 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
                 <div className="p-4 space-y-2 break-words">
                   {insights.sacred_geometry.map((geo, idx) => (
                     <div key={idx} className="flex gap-3 p-2 rounded bg-background/50">
-                      <span className="font-medium text-xs text-amber-700 dark:text-amber-400">{geo.pattern}:</span>
+                      <span className="font-medium text-xs text-amber-700 dark:text-amber-400">
+                        {getGeometryIcon(geo.pattern)} {geo.pattern}:
+                      </span>
                       <span className="text-xs text-muted-foreground">{geo.description}</span>
                     </div>
                   ))}
