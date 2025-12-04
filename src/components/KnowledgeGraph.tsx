@@ -37,7 +37,7 @@ interface GraphLink {
 
 export const KnowledgeGraph = () => {
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"entities" | "themes" | "keywords">("entities");
+  const [activeTab, setActiveTab] = useState<"all" | "entities" | "themes" | "keywords">("all");
   const svgRef = useRef<SVGSVGElement>(null);
   const [graphData, setGraphData] = useState<{ nodes: GraphNode[]; links: GraphLink[] }>({
     nodes: [],
@@ -124,8 +124,9 @@ export const KnowledgeGraph = () => {
   const buildGraph = (insights: any[]) => {
     const itemFreq = new Map<string, number>();
     const itemEntries = new Map<string, Set<string>>();
+    const itemTypes = new Map<string, "entity" | "theme" | "keyword">();
     const connections = new Map<string, { entryIds: Set<string>; strength: number; isAIStrength: boolean }>();
-    const itemDisplayNames = new Map<string, string>(); // Track original display names
+    const itemDisplayNames = new Map<string, string>();
 
     // Build a map of AI relationships first (these are the priority)
     const aiRelationshipMap = new Map<string, { strength: number; entryIds: string[] }>();
@@ -137,59 +138,70 @@ export const KnowledgeGraph = () => {
       });
     });
 
-    // Extract only the items for the current tab type
-    insights.forEach((insight) => {
-      let items: string[] = [];
-      
-      if (activeTab === "entities") {
-        items = (insight.entities as string[]) || [];
-      } else if (activeTab === "themes") {
-        items = (insight.themes as string[]) || [];
-      } else {
-        items = (insight.keywords as string[]) || [];
-      }
+    // Category colors for unified "all" view
+    const categoryColors = {
+      entity: "#8B5CF6",   // Purple
+      theme: "#10B981",    // Emerald
+      keyword: "#F59E0B",  // Amber
+    };
 
-      // Count frequency and track entry IDs (case-insensitive matching)
-      // Track original display names for each normalized key
+    // Extract items based on current tab
+    insights.forEach((insight) => {
       const displayNames = new Map<string, string>();
       
-      items.forEach((item) => {
-        const normalizedItem = item.toLowerCase();
-        // Keep the first occurrence's display name
-        if (!displayNames.has(normalizedItem)) {
-          displayNames.set(normalizedItem, item);
-        }
-        itemFreq.set(normalizedItem, (itemFreq.get(normalizedItem) || 0) + 1);
-        if (!itemEntries.has(normalizedItem)) {
-          itemEntries.set(normalizedItem, new Set());
-        }
-        itemEntries.get(normalizedItem)?.add(insight.entry_id);
-      });
+      const processItems = (items: string[], type: "entity" | "theme" | "keyword") => {
+        items.forEach((item) => {
+          const normalizedItem = item.toLowerCase();
+          if (!displayNames.has(normalizedItem)) {
+            displayNames.set(normalizedItem, item);
+          }
+          itemFreq.set(normalizedItem, (itemFreq.get(normalizedItem) || 0) + 1);
+          if (!itemTypes.has(normalizedItem)) {
+            itemTypes.set(normalizedItem, type);
+          }
+          if (!itemEntries.has(normalizedItem)) {
+            itemEntries.set(normalizedItem, new Set());
+          }
+          itemEntries.get(normalizedItem)?.add(insight.entry_id);
+        });
+        return items;
+      };
+
+      let allItems: string[] = [];
+      
+      if (activeTab === "all") {
+        // Collect from all categories
+        const entities = processItems((insight.entities as string[]) || [], "entity");
+        const themes = processItems((insight.themes as string[]) || [], "theme");
+        const keywords = processItems((insight.keywords as string[]) || [], "keyword");
+        allItems = [...entities, ...themes, ...keywords];
+      } else if (activeTab === "entities") {
+        allItems = processItems((insight.entities as string[]) || [], "entity");
+      } else if (activeTab === "themes") {
+        allItems = processItems((insight.themes as string[]) || [], "theme");
+      } else {
+        allItems = processItems((insight.keywords as string[]) || [], "keyword");
+      }
 
       // Build connections - prioritize AI relationships, fallback to co-occurrence
-      items.forEach((item1, i) => {
-        items.slice(i + 1).forEach((item2) => {
+      allItems.forEach((item1, i) => {
+        allItems.slice(i + 1).forEach((item2) => {
           const key = [item1.toLowerCase(), item2.toLowerCase()].sort().join("||");
-          
-          // Check if AI relationship exists for this pair
           const aiRel = aiRelationshipMap.get(key);
           
           if (!connections.has(key)) {
             if (aiRel) {
-              // Use AI-determined strength (solid lines)
               connections.set(key, {
                 entryIds: new Set([...aiRel.entryIds, insight.entry_id]),
                 strength: aiRel.strength,
                 isAIStrength: true
               });
             } else {
-              // Fallback to co-occurrence (dashed lines)
               connections.set(key, { entryIds: new Set([insight.entry_id]), strength: 1, isAIStrength: false });
             }
           } else {
             const conn = connections.get(key)!;
             conn.entryIds.add(insight.entry_id);
-            // Only update fallback strength if not AI-determined
             if (!conn.isAIStrength) {
               conn.strength = conn.entryIds.size;
             }
@@ -197,7 +209,6 @@ export const KnowledgeGraph = () => {
         });
       });
       
-      // Store displayNames in outer scope for use later
       displayNames.forEach((display, normalized) => {
         if (!itemDisplayNames.has(normalized)) {
           itemDisplayNames.set(normalized, display);
@@ -216,38 +227,59 @@ export const KnowledgeGraph = () => {
       }
     });
 
-    const nodes: GraphNode[] = [];
-    const links: GraphLink[] = [];
-    const getColor = () => {
+    // Build initial nodes list
+    let nodes: GraphNode[] = [];
+    const getColor = (type: "entity" | "theme" | "keyword") => {
+      if (activeTab === "all") {
+        return categoryColors[type];
+      }
       const colors = {
-        entities: "hsl(var(--primary))",
-        themes: "hsl(var(--accent))",
-        keywords: "hsl(var(--secondary))",
+        entity: "hsl(var(--primary))",
+        theme: "hsl(var(--accent))",
+        keyword: "hsl(var(--secondary))",
       };
-      return colors[activeTab];
+      return colors[type];
     };
 
-    const typeMap = {
-      entities: "entity" as const,
-      themes: "theme" as const,
-      keywords: "keyword" as const,
-    };
+    // Calculate AI connection count for each item (for relevance scoring)
+    const aiConnectionCounts = new Map<string, number>();
+    connections.forEach((connData, key) => {
+      if (connData.isAIStrength) {
+        const [sourceId, targetId] = key.split("||");
+        aiConnectionCounts.set(sourceId, (aiConnectionCounts.get(sourceId) || 0) + 1);
+        aiConnectionCounts.set(targetId, (aiConnectionCounts.get(targetId) || 0) + 1);
+      }
+    });
 
     itemFreq.forEach((count, normalizedName) => {
       const entryIds = Array.from(itemEntries.get(normalizedName) || []);
       const displayName = itemDisplayNames.get(normalizedName) || normalizedName;
+      const type = itemTypes.get(normalizedName) || "keyword";
+      const aiConnections = aiConnectionCounts.get(normalizedName) || 0;
+      
+      // Relevance score: (frequency × 2) + (aiConnectionCount × 5)
+      const relevanceScore = (count * 2) + (aiConnections * 5);
+      
       nodes.push({
         id: normalizedName,
         name: displayName,
         value: Math.max(count * 8, 15),
-        type: typeMap[activeTab],
-        color: getColor(),
-        entryIds
-      });
+        type,
+        color: getColor(type),
+        entryIds,
+        relevanceScore
+      } as GraphNode & { relevanceScore: number });
     });
 
-    const nodeIds = new Set(nodes.map((n) => n.id));
+    // For "all" tab, filter to top 10 most relevant nodes
+    if (activeTab === "all") {
+      nodes = (nodes as (GraphNode & { relevanceScore: number })[])
+        .sort((a, b) => b.relevanceScore - a.relevanceScore)
+        .slice(0, 10);
+    }
+
     const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+    const links: GraphLink[] = [];
     
     connections.forEach((connData, key) => {
       const [sourceId, targetId] = key.split("||");
@@ -255,7 +287,6 @@ export const KnowledgeGraph = () => {
       const targetNode = nodeMap.get(targetId);
       const strength = connData.strength || connData.entryIds.size;
       
-      // Filter by minimum strength
       if (sourceNode && targetNode && strength >= minStrength) {
         links.push({
           source: sourceNode,
@@ -314,7 +345,7 @@ export const KnowledgeGraph = () => {
     
     if (mostConnected) {
       const count = nodeConnectionCounts.get(mostConnected.id) || 0;
-      const typeLabel = activeTab === 'entities' ? 'entity' : activeTab === 'themes' ? 'theme' : 'keyword';
+      const typeLabel = activeTab === 'all' ? 'item' : activeTab === 'entities' ? 'entity' : activeTab === 'themes' ? 'theme' : 'keyword';
       insights.push(`"${mostConnected.name}" is your most connected ${typeLabel} with ${count} connections`);
     }
 
@@ -659,12 +690,13 @@ export const KnowledgeGraph = () => {
             Knowledge Graph
           </CardTitle>
           <CardDescription>
-            Explore connections between {activeTab} in your journal. Click on nodes to view details.
+            Explore connections between {activeTab === 'all' ? 'your top items' : activeTab} in your journal. Click on nodes to view details.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-            <TabsList className="grid w-full grid-cols-3 mb-4">
+            <TabsList className="grid w-full grid-cols-4 mb-4">
+              <TabsTrigger value="all">All</TabsTrigger>
               <TabsTrigger value="entities">Entities</TabsTrigger>
               <TabsTrigger value="themes">Themes</TabsTrigger>
               <TabsTrigger value="keywords">Keywords</TabsTrigger>
@@ -829,7 +861,7 @@ export const KnowledgeGraph = () => {
                 <div className="mt-6 space-y-6">
                   <div>
                   <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                    Connected {activeTab}
+                    Connected {activeTab === 'all' ? 'items' : activeTab}
                   </h3>
                   <div className="space-y-2">
                     {(() => {

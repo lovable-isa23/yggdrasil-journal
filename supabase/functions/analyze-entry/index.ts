@@ -294,7 +294,7 @@ Analyze the journal entry and extract:
 - entities: Key people, places, events, or concepts (max 10)
 - themes: Overarching themes or topics (max 5). Use simple, general descriptions to ensure commonality across entries (e.g., "personal growth", "relationships", "work stress", "mental health", "creativity"). Avoid overly specific or unique phrasing.
 - emotions: Emotions with intensity 1-10 (format: [{"emotion": "happy", "intensity": 8}])
-- keywords: Significant keywords (max 15)
+- keywords: Significant keywords (max 10)
 - summary: Brief 2-3 sentence summary
 - safety_concerns: Detect concerning content including suicidal ideation, self-harm thoughts, plans to harm self or others, severe hopelessness, or crisis situations. Format: {"flag": true/false, "concerns": ["concern1", "concern2"]}
 ${enableChakraTags ? `- chakra_tags: Identify which chakra energy centers relate to the content (format: [{"chakra": "Root", "description": "brief relevance"}]). Use ONLY these exact chakra names - never use alternative names like "Spleen" or "Spleen/Sacral": "Root" (survival, grounding), "Sacral" (creativity, emotions, passion), "Solar Plexus" (personal power, will), "Heart" (love, compassion), "Throat" (communication, expression), "Third Eye" (intuition, insight), "Crown" (spiritual connection).` : ''}
