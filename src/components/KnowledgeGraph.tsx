@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import * as d3 from "d3";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
@@ -63,10 +64,22 @@ export const KnowledgeGraph = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [allNodeNames, setAllNodeNames] = useState<{ name: string; type: string }[]>([]);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
     fetchGraphData();
   }, []);
+
+  // Handle URL params for highlighting nodes from external links
+  useEffect(() => {
+    const nodeToHighlight = searchParams.get('node');
+    if (nodeToHighlight && graphData.nodes.length > 0 && !loading) {
+      setTimeout(() => {
+        handleSearchSelect(nodeToHighlight);
+        setSearchParams({});
+      }, 1000);
+    }
+  }, [graphData.nodes, loading, searchParams]);
 
   useEffect(() => {
     if (allInsights.length > 0) {
@@ -647,7 +660,7 @@ export const KnowledgeGraph = () => {
       .join("line")
       .attr("stroke", "hsl(var(--border))")
       .attr("stroke-opacity", 0.5)
-      .attr("stroke-width", (d: any) => Math.sqrt(d.value));
+      .attr("stroke-width", (d: any) => 0.5 + d.value * 1.5);
 
     const node = g
       .append("g")
@@ -686,7 +699,7 @@ export const KnowledgeGraph = () => {
       .attr("dy", "0.35em")
       .attr("font-size", (d) => Math.max(8, Math.min(12, d.value / 2)) + "px")
       .attr("font-weight", "600")
-      .attr("fill", "#8B6F47")
+      .attr("fill", "#000000")
       .attr("pointer-events", "none");
 
     // Add hover and click effects
