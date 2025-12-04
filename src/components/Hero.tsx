@@ -95,7 +95,7 @@ export const Hero = () => {
                 <Button 
                   size="lg" 
                   variant="outline"
-                  className="text-lg px-8 py-6 transition-all duration-300 hover:scale-105 rounded-full border-foreground/20 hover:border-foreground/40 hover:bg-foreground/5"
+                  className="text-lg px-8 py-6 transition-all duration-300 hover:scale-105 rounded-full border-foreground/20 hover:border-foreground/40 hover:bg-earth-brown/10"
                   asChild
                 >
                   <Link to="/login">Sign In</Link>

@@ -145,26 +145,37 @@ export const KnowledgeGraph = () => {
       keyword: "#F59E0B",  // Amber
     };
 
+    // Helper to split items containing "and" or "&"
+    const splitItem = (item: string): string[] => {
+      return item.split(/\s+(?:and|&)\s+/i).map(s => s.trim()).filter(s => s.length > 0);
+    };
+
     // Extract items based on current tab
     insights.forEach((insight) => {
       const displayNames = new Map<string, string>();
       
       const processItems = (items: string[], type: "entity" | "theme" | "keyword") => {
+        const processedItems: string[] = [];
         items.forEach((item) => {
-          const normalizedItem = item.toLowerCase();
-          if (!displayNames.has(normalizedItem)) {
-            displayNames.set(normalizedItem, item);
-          }
-          itemFreq.set(normalizedItem, (itemFreq.get(normalizedItem) || 0) + 1);
-          if (!itemTypes.has(normalizedItem)) {
-            itemTypes.set(normalizedItem, type);
-          }
-          if (!itemEntries.has(normalizedItem)) {
-            itemEntries.set(normalizedItem, new Set());
-          }
-          itemEntries.get(normalizedItem)?.add(insight.entry_id);
+          // Split items containing "and" or "&"
+          const subItems = splitItem(item);
+          subItems.forEach((subItem) => {
+            const normalizedItem = subItem.toLowerCase();
+            if (!displayNames.has(normalizedItem)) {
+              displayNames.set(normalizedItem, subItem);
+            }
+            itemFreq.set(normalizedItem, (itemFreq.get(normalizedItem) || 0) + 1);
+            if (!itemTypes.has(normalizedItem)) {
+              itemTypes.set(normalizedItem, type);
+            }
+            if (!itemEntries.has(normalizedItem)) {
+              itemEntries.set(normalizedItem, new Set());
+            }
+            itemEntries.get(normalizedItem)?.add(insight.entry_id);
+            processedItems.push(subItem);
+          });
         });
-        return items;
+        return processedItems;
       };
 
       let allItems: string[] = [];
@@ -260,10 +271,14 @@ export const KnowledgeGraph = () => {
       // Relevance score: (frequency × 2) + (aiConnectionCount × 5)
       const relevanceScore = (count * 2) + (aiConnections * 5);
       
+      // Smaller nodes in "all" tab for better visibility
+      const sizeMultiplier = activeTab === "all" ? 5 : 8;
+      const minSize = activeTab === "all" ? 10 : 15;
+      
       nodes.push({
         id: normalizedName,
         name: displayName,
-        value: Math.max(count * 8, 15),
+        value: Math.max(count * sizeMultiplier, minSize),
         type,
         color: getColor(type),
         entryIds,
@@ -322,12 +337,17 @@ export const KnowledgeGraph = () => {
     // Find strongest connections
     const sortedLinks = [...links].sort((a, b) => (b.value || 0) - (a.value || 0));
     
-    // Top 2 strongest connections
-    sortedLinks.slice(0, 2).forEach(link => {
+    // Top 2 strongest connections (skip duplicates where source === target)
+    let connectionCount = 0;
+    for (const link of sortedLinks) {
+      if (connectionCount >= 2) break;
       const sourceName = typeof link.source === 'object' ? link.source.name : link.source;
       const targetName = typeof link.target === 'object' ? link.target.name : link.target;
+      // Skip if same item (case insensitive)
+      if (sourceName.toLowerCase() === targetName.toLowerCase()) continue;
       insights.push(`"${sourceName}" and "${targetName}" appear together frequently`);
-    });
+      connectionCount++;
+    }
     
     // Most connected node
     const nodeConnectionCounts = new Map<string, number>();
@@ -548,10 +568,9 @@ export const KnowledgeGraph = () => {
       .selectAll("line")
       .data(graphData.links)
       .join("line")
-      .attr("stroke", (d: GraphLink) => d.isAIStrength ? "hsl(var(--border))" : "hsl(var(--muted-foreground))")
-      .attr("stroke-opacity", (d: GraphLink) => d.isAIStrength ? 0.6 : 0.35)
-      .attr("stroke-width", (d: any) => Math.sqrt(d.value))
-      .attr("stroke-dasharray", (d: GraphLink) => d.isAIStrength ? "none" : "4,4");
+      .attr("stroke", "hsl(var(--border))")
+      .attr("stroke-opacity", 0.5)
+      .attr("stroke-width", (d: any) => Math.sqrt(d.value));
 
     const node = g
       .append("g")
@@ -626,9 +645,6 @@ export const KnowledgeGraph = () => {
       node.attr("transform", (d) => `translate(${d.x},${d.y})`);
     });
   };
-
-  // Check if there are any fallback connections
-  const hasFallbackConnections = graphData.links.some(link => !link.isAIStrength);
 
   if (loading) {
     return (
@@ -778,25 +794,43 @@ export const KnowledgeGraph = () => {
                   </div>
                 </div>
 
-                {/* Fallback connections notice */}
-                {hasFallbackConnections && (
-                  <div className="flex items-center justify-between p-3 mb-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-                    <div className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400">
-                      <span className="inline-block w-6 border-t-2 border-dashed border-amber-500" />
-                      <span>Dashed lines = co-occurrence only (no AI analysis)</span>
+                {/* Category description based on active tab */}
+                <div className="p-3 mb-4 bg-muted/30 border border-border rounded-lg">
+                  {activeTab === "all" && (
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">Top 10 most connected items across all categories:</p>
+                      <div className="flex flex-wrap gap-3 text-xs">
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-3 h-3 rounded-full bg-[#8B5CF6]" />
+                          <span className="text-muted-foreground">Entities (people, places, things)</span>
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-3 h-3 rounded-full bg-[#10B981]" />
+                          <span className="text-muted-foreground">Themes (abstract topics)</span>
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-3 h-3 rounded-full bg-[#F59E0B]" />
+                          <span className="text-muted-foreground">Keywords (significant terms)</span>
+                        </span>
+                      </div>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleRefreshAnalysis}
-                      disabled={refreshingAnalysis}
-                      className="gap-2 text-amber-700 dark:text-amber-400 border-amber-500/50 hover:bg-amber-500/10"
-                    >
-                      <RefreshCw className={`h-4 w-4 ${refreshingAnalysis ? 'animate-spin' : ''}`} />
-                      {refreshingAnalysis ? 'Analyzing...' : 'Refresh Analysis'}
-                    </Button>
-                  </div>
-                )}
+                  )}
+                  {activeTab === "entities" && (
+                    <p className="text-sm text-muted-foreground">
+                      Specific people, places, events, and concrete things mentioned in your entries
+                    </p>
+                  )}
+                  {activeTab === "themes" && (
+                    <p className="text-sm text-muted-foreground">
+                      Overarching abstract topics and patterns that connect your experiences
+                    </p>
+                  )}
+                  {activeTab === "keywords" && (
+                    <p className="text-sm text-muted-foreground">
+                      Significant individual words and terms that appear frequently in your writing
+                    </p>
+                  )}
+                </div>
 
                 {graphData.nodes.length === 0 && !loading ? (
                   <div className="flex justify-center items-center h-[600px] bg-muted/20 rounded-lg border mt-4">
