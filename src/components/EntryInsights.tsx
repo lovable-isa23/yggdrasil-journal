@@ -44,6 +44,7 @@ interface Insights {
   chakra_tags?: Array<{ chakra: string; description: string }>;
   tarot_tags?: Array<{ card: string; description: string }>;
   sacred_geometry?: Array<{ pattern: string; description: string }>;
+  archetype_tags?: Array<{ archetype: string; description: string }>;
   depth_score?: number;
   frameworks_applied?: string[];
 }
@@ -618,6 +619,30 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
                         {getGeometryIcon(geo.pattern)} {geo.pattern}:
                       </span>
                       <span className="text-xs text-muted-foreground">{geo.description}</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </AccordionContent>
+          </AccordionItem>
+        )}
+
+        {/* Jungian Archetypes */}
+        {insights.archetype_tags && insights.archetype_tags.length > 0 && (
+          <AccordionItem value="archetypes">
+            <AccordionTrigger className="hover:no-underline">
+              <div className="flex items-center gap-2 font-semibold text-sm">
+                <span className="text-lg">🎭</span>
+                Jungian Archetypes ({insights.archetype_tags.length})
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <Card className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 border-purple-200 dark:border-purple-800 w-full max-w-full overflow-hidden">
+                <div className="p-4 space-y-2 break-words">
+                  {insights.archetype_tags.map((tag, idx) => (
+                    <div key={idx} className="flex gap-3 p-2 rounded bg-background/50">
+                      <span className="font-medium text-xs text-purple-700 dark:text-purple-400">{tag.archetype}:</span>
+                      <span className="text-xs text-muted-foreground">{tag.description}</span>
                     </div>
                   ))}
                 </div>

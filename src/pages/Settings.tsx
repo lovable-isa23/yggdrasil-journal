@@ -16,6 +16,7 @@ interface Preferences {
   enable_chakra_tags: boolean;
   enable_tarot_tags: boolean;
   enable_sacred_geometry: boolean;
+  enable_archetype_tags: boolean;
   dark_mode: boolean;
   enable_theravada: boolean;
   enable_freudian: boolean;
@@ -64,6 +65,7 @@ const Settings = () => {
     enable_chakra_tags: false,
     enable_tarot_tags: false,
     enable_sacred_geometry: false,
+    enable_archetype_tags: false,
     dark_mode: false,
     enable_theravada: true,
     enable_freudian: true,
@@ -117,6 +119,7 @@ const Settings = () => {
           enable_chakra_tags: data.enable_chakra_tags ?? false,
           enable_tarot_tags: data.enable_tarot_tags ?? false,
           enable_sacred_geometry: data.enable_sacred_geometry ?? false,
+          enable_archetype_tags: (data as any).enable_archetype_tags ?? false,
           dark_mode: data.dark_mode ?? false,
           enable_theravada: data.enable_theravada ?? true,
           enable_freudian: data.enable_freudian ?? true,
@@ -416,7 +419,7 @@ const Settings = () => {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between py-3">
+                  <div className="flex items-center justify-between py-3 border-b">
                     <div className="space-y-1">
                       <Label htmlFor="sacred-geometry" className="text-base font-medium">
                         Sacred Geometry
@@ -429,6 +432,23 @@ const Settings = () => {
                       id="sacred-geometry"
                       checked={preferences.enable_sacred_geometry}
                       onCheckedChange={() => handleToggle('enable_sacred_geometry')}
+                      disabled={saving}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between py-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="archetype-tags" className="text-base font-medium">
+                        Jungian Archetypes
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Identify archetypal patterns (Hero, Shadow, Anima/Animus, Wise Old Man, etc.)
+                      </p>
+                    </div>
+                    <Switch
+                      id="archetype-tags"
+                      checked={preferences.enable_archetype_tags}
+                      onCheckedChange={() => handleToggle('enable_archetype_tags')}
                       disabled={saving}
                     />
                   </div>
