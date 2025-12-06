@@ -4,7 +4,7 @@ import * as d3 from "d3";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { Loader2, Calendar, FileText, Maximize2, Download, Image as ImageIcon, FileDown, Network, Lightbulb, Target, RefreshCw, Search } from "lucide-react";
+import { Loader2, Calendar, FileText, Maximize2, Download, Image as ImageIcon, FileDown, Network, Lightbulb, Target, RefreshCw, Search, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
@@ -520,6 +520,30 @@ export const KnowledgeGraph = () => {
     node.name.toLowerCase().includes(searchQuery.toLowerCase())
   ).slice(0, 20);
 
+  const handleZoomIn = () => {
+    if (!svgRef.current || !zoomRef.current) return;
+    const svg = d3.select(svgRef.current);
+    svg.transition().duration(300).call(
+      zoomRef.current.scaleBy, 1.5
+    );
+  };
+
+  const handleZoomOut = () => {
+    if (!svgRef.current || !zoomRef.current) return;
+    const svg = d3.select(svgRef.current);
+    svg.transition().duration(300).call(
+      zoomRef.current.scaleBy, 0.67
+    );
+  };
+
+  const handleResetZoom = () => {
+    if (!svgRef.current || !zoomRef.current) return;
+    const svg = d3.select(svgRef.current);
+    svg.transition().duration(300).call(
+      zoomRef.current.transform, d3.zoomIdentity
+    );
+  };
+
   const handleRefreshAnalysis = async () => {
     setRefreshingAnalysis(true);
     try {
@@ -801,7 +825,7 @@ export const KnowledgeGraph = () => {
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-            <TabsList className="grid w-full grid-cols-4 mb-4">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 mb-4 gap-1">
               <TabsTrigger value="all" className="gap-1.5">
                 All
                 <Badge variant="secondary" className="ml-1 text-xs px-1.5 py-0">{totalCounts.entities + totalCounts.themes + totalCounts.keywords}</Badge>
@@ -951,6 +975,30 @@ export const KnowledgeGraph = () => {
                     >
                       <Maximize2 className="h-4 w-4" />
                       Show All
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={handleZoomIn}
+                      title="Zoom In"
+                    >
+                      <ZoomIn className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={handleZoomOut}
+                      title="Zoom Out"
+                    >
+                      <ZoomOut className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={handleResetZoom}
+                      title="Reset Zoom"
+                    >
+                      <RotateCcw className="h-4 w-4" />
                     </Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

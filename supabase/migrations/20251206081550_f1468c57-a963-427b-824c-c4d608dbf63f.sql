@@ -1,0 +1,1 @@
+ALTER TABLE user_preferences ADD COLUMN enable_archetype_tags boolean DEFAULT false;

@@ -761,6 +761,7 @@ export type Database = {
           created_at: string
           dark_mode: boolean | null
           enable_advaita: boolean | null
+          enable_archetype_tags: boolean | null
           enable_attachment: boolean | null
           enable_cbt: boolean | null
           enable_chakra_tags: boolean | null
@@ -783,6 +784,7 @@ export type Database = {
           created_at?: string
           dark_mode?: boolean | null
           enable_advaita?: boolean | null
+          enable_archetype_tags?: boolean | null
           enable_attachment?: boolean | null
           enable_cbt?: boolean | null
           enable_chakra_tags?: boolean | null
@@ -805,6 +807,7 @@ export type Database = {
           created_at?: string
           dark_mode?: boolean | null
           enable_advaita?: boolean | null
+          enable_archetype_tags?: boolean | null
           enable_attachment?: boolean | null
           enable_cbt?: boolean | null
           enable_chakra_tags?: boolean | null

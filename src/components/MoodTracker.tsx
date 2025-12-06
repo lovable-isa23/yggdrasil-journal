@@ -271,7 +271,7 @@ export const MoodTracker = () => {
                 {startDate ? format(startDate, "PPP") : <span>Start date</span>}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
+            <PopoverContent className="w-auto p-0 z-50 pointer-events-auto" align="start">
               <Calendar
                 mode="single"
                 selected={startDate}
@@ -297,7 +297,7 @@ export const MoodTracker = () => {
                 {endDate ? format(endDate, "PPP") : <span>End date</span>}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
+            <PopoverContent className="w-auto p-0 z-50 pointer-events-auto" align="start">
               <Calendar
                 mode="single"
                 selected={endDate}

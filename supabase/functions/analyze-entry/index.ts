@@ -145,13 +145,14 @@ serve(async (req) => {
     // Fetch user preferences for tags and framework settings
     const { data: userPrefs } = await supabase
       .from('user_preferences')
-      .select('enable_chakra_tags, enable_tarot_tags, enable_sacred_geometry, enable_theravada, enable_freudian, enable_jungian, enable_hermetic, enable_advaita, enable_taoist, enable_attachment, enable_ifs, enable_cbt, enable_dbt, enable_stoic, enable_gnostic')
+      .select('enable_chakra_tags, enable_tarot_tags, enable_sacred_geometry, enable_archetype_tags, enable_theravada, enable_freudian, enable_jungian, enable_hermetic, enable_advaita, enable_taoist, enable_attachment, enable_ifs, enable_cbt, enable_dbt, enable_stoic, enable_gnostic')
       .eq('user_id', user.id)
       .single();
 
     const enableChakraTags = userPrefs?.enable_chakra_tags || false;
     const enableTarotTags = userPrefs?.enable_tarot_tags || false;
     const enableSacredGeometry = userPrefs?.enable_sacred_geometry || false;
+    const enableArchetypeTags = (userPrefs as any)?.enable_archetype_tags || false;
 
     // Framework preferences (default to true if not set)
     const enabledFrameworks = {
@@ -300,6 +301,7 @@ Analyze the journal entry and extract:
 ${enableChakraTags ? `- chakra_tags: Identify which chakra energy centers relate to the content (format: [{"chakra": "Root", "description": "brief relevance"}]). Use ONLY these exact chakra names - never use alternative names like "Spleen" or "Spleen/Sacral": "Root" (survival, grounding), "Sacral" (creativity, emotions, passion), "Solar Plexus" (personal power, will), "Heart" (love, compassion), "Throat" (communication, expression), "Third Eye" (intuition, insight), "Crown" (spiritual connection).` : ''}
 ${enableTarotTags ? `- tarot_tags: Identify relevant tarot archetypes (format: [{"card": "The Fool", "description": "brief relevance"}]). Consider Major Arcana cards and their symbolic meanings.` : ''}
 ${enableSacredGeometry ? `- sacred_geometry: Identify sacred geometric patterns and principles present (format: [{"pattern": "Flower of Life", "description": "brief relevance"}]). Consider patterns like: Flower of Life (interconnection, creation), Metatron's Cube (balance, divine structure), Sri Yantra (manifestation, cosmic order), Platonic Solids (elements, fundamental structures), Golden Ratio/Phi Spiral (natural growth, harmony), Vesica Piscis (duality, creation), Tree of Life (spiritual journey, interconnection), Merkaba (transformation, spiritual vehicle), Torus (energy flow, cycles), Seed of Life (new beginnings).` : ''}
+${enableArchetypeTags ? `- archetype_tags: Identify Jungian archetypal patterns present in the entry (format: [{"archetype": "The Hero", "description": "brief relevance"}]). Consider these archetypes: The Hero (journey of transformation, overcoming obstacles), The Shadow (rejected/hidden aspects, unconscious material), The Anima/Animus (inner feminine/masculine, contrasexual archetype), The Wise Old Man/Woman (wisdom, guidance, mentor energy), The Great Mother (nurturing/devouring, fertility, life/death), The Trickster (chaos, change agent, boundary crossing), The Child/Divine Child (innocence, new beginnings, potential), The Persona (social mask, public presentation), The Self (wholeness, integration, mandala), The Lover (passion, connection, beauty), The Magician (transformation, will, manifestation), The Ruler (order, control, authority).` : ''}
 
 ${applyFrameworks && frameworkOrder.length > 0 ? `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -618,7 +620,7 @@ Respond with ONLY a valid JSON object in this exact format:
     "action_items": ["Specific action 1", "Action 2", "Action 3"],
     "patterns_identified": ["Pattern 1", "Maladaptive behavior 2", "Cognitive distortion 3"],
     "growth_connection": "1 paragraph connecting this entry to their larger self-development journey - use varied angles and openings"${applyFrameworks ? ',\n    "frameworks_applied": ["theravada", "jungian", "stoic"],\n    "depth_analysis": {\n      "psychological_themes": ["theme1", "theme2"],\n      "spiritual_themes": ["theme1", "theme2"],\n      "unconscious_material": "Brief note on what\'s beneath the surface"\n    }' : ''}
-  }${enableChakraTags ? ',\n  "chakra_tags": [{"chakra": "Root", "description": "brief"}]' : ''}${enableTarotTags ? ',\n  "tarot_tags": [{"card": "The Fool", "description": "brief"}]' : ''}${enableSacredGeometry ? ',\n  "sacred_geometry": [{"pattern": "Flower of Life", "description": "brief"}]' : ''}
+  }${enableChakraTags ? ',\n  "chakra_tags": [{"chakra": "Root", "description": "brief"}]' : ''}${enableTarotTags ? ',\n  "tarot_tags": [{"card": "The Fool", "description": "brief"}]' : ''}${enableSacredGeometry ? ',\n  "sacred_geometry": [{"pattern": "Flower of Life", "description": "brief"}]' : ''}${enableArchetypeTags ? ',\n  "archetype_tags": [{"archetype": "The Hero", "description": "brief"}]' : ''}
 }`
           },
           {

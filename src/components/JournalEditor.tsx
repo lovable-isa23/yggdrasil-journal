@@ -317,7 +317,7 @@ export const JournalEditor = ({ onEntryCreated, replyToEntry, onReplyHandled }: 
               {entryDate ? format(entryDate, "PPP") : <span>Pick a date</span>}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
+          <PopoverContent className="w-auto p-0 z-50 pointer-events-auto" align="start">
             <Calendar
               mode="single"
               selected={entryDate}
