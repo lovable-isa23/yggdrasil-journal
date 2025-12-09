@@ -645,7 +645,7 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-6 py-4">
+          <div className="space-y-6 py-4 w-full max-w-full overflow-hidden">
             <div className="space-y-2">
               <Label htmlFor="edit-title">Title</Label>
               <Input
@@ -691,7 +691,7 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
                   <Target className="h-4 w-4" />
                   Link to Active Journeys
                 </Label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 w-full max-w-full">
                   {goals.map((goal) => {
                     const isSelected = editLinkedGoals.includes(goal.id);
                     return (
@@ -701,14 +701,14 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
                         onClick={() => toggleGoal(goal.id)}
                         disabled={isSaving}
                         className={cn(
-                          "inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm transition-all",
+                          "inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm transition-all max-w-full",
                           isSelected
                             ? "bg-primary text-primary-foreground"
                             : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
                         )}
                       >
-                        {goal.title}
-                        {isSelected && <X className="h-3 w-3" />}
+                        <span className="truncate max-w-[150px] sm:max-w-[200px]">{goal.title}</span>
+                        {isSelected && <X className="h-3 w-3 flex-shrink-0" />}
                       </button>
                     );
                   })}
@@ -768,7 +768,7 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
             </div>
           </div>
 
-          <DialogFooter className="gap-2">
+          <DialogFooter className="gap-2 flex-col-reverse sm:flex-row">
             <Button variant="outline" onClick={closeEditDialog} disabled={isSaving}>
               Cancel
             </Button>

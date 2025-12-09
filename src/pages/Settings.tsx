@@ -455,7 +455,7 @@ const Settings = () => {
                 </div>
               </Card>
 
-              {/* Apply Feature Updates */}
+              {/* Apply Feature Updates - Hidden
               <Card className="p-6">
                 <h2 className="text-xl font-bold mb-4">Apply Feature Updates</h2>
                 <p className="text-sm text-muted-foreground mb-4">
@@ -498,6 +498,7 @@ const Settings = () => {
                   </div>
                 )}
               </Card>
+              */}
 
               {/* Install App */}
               <Card className="p-6">
