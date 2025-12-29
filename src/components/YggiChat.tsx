@@ -13,11 +13,22 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Send, X, Plus } from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import type { User } from "@supabase/supabase-js";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type Message = {
   id: string;
@@ -27,6 +38,7 @@ type Message = {
 
 export function YggiChat() {
   const location = useLocation();
+  const isMobile = useIsMobile();
   const [user, setUser] = useState<User | null>(null);
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -34,13 +46,13 @@ export function YggiChat() {
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Check authentication status and load conversation
   useEffect(() => {
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setUser(session?.user ?? null);
@@ -50,7 +62,6 @@ export function YggiChat() {
       }
     );
 
-    // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -61,10 +72,8 @@ export function YggiChat() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Load or create conversation
   const loadOrCreateConversation = async (userId: string) => {
     try {
-      // Try to get the most recent conversation
       const { data: conversations, error: fetchError } = await supabase
         .from("yggi_conversations")
         .select("*")
@@ -75,13 +84,11 @@ export function YggiChat() {
       if (fetchError) throw fetchError;
 
       if (conversations && conversations.length > 0) {
-        // Load existing conversation
         const conv = conversations[0];
         setConversationId(conv.id);
         const loadedMessages = Array.isArray(conv.messages) ? conv.messages as Message[] : [];
         setMessages(loadedMessages);
       } else {
-        // Create new conversation
         const { data: newConv, error: createError } = await supabase
           .from("yggi_conversations")
           .insert({ user_id: userId, messages: [] })
@@ -97,7 +104,6 @@ export function YggiChat() {
     }
   };
 
-  // Save conversation to database
   const saveConversation = async (updatedMessages: Message[]) => {
     if (!conversationId || !user) return;
 
@@ -111,7 +117,6 @@ export function YggiChat() {
     }
   };
 
-  // Start a new conversation
   const startNewConversation = async () => {
     if (!user) return;
 
@@ -133,17 +138,30 @@ export function YggiChat() {
     }
   };
 
-  // Track visualViewport height for mobile keyboard
+  // Track visualViewport for mobile keyboard handling
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.visualViewport) {
-      const handleResize = () => {
-        setViewportHeight(window.visualViewport!.height);
-      };
+    if (!isMobile || typeof window === 'undefined' || !window.visualViewport) return;
+
+    const viewport = window.visualViewport;
+    
+    const handleResize = () => {
+      const currentHeight = viewport.height;
+      setViewportHeight(currentHeight);
       
-      window.visualViewport.addEventListener('resize', handleResize);
-      return () => window.visualViewport?.removeEventListener('resize', handleResize);
-    }
-  }, []);
+      // Keyboard is visible if viewport height is significantly less than window height
+      const keyboardThreshold = window.innerHeight * 0.75;
+      setKeyboardVisible(currentHeight < keyboardThreshold);
+    };
+    
+    viewport.addEventListener('resize', handleResize);
+    viewport.addEventListener('scroll', handleResize);
+    handleResize(); // Initial call
+    
+    return () => {
+      viewport.removeEventListener('resize', handleResize);
+      viewport.removeEventListener('scroll', handleResize);
+    };
+  }, [isMobile]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -168,7 +186,6 @@ export function YggiChat() {
     setInput("");
     setIsLoading(true);
 
-    // Create assistant message placeholder
     const assistantId = (Date.now() + 1).toString();
     setMessages((prev) => [...prev, { id: assistantId, role: "assistant", content: "" }]);
 
@@ -205,12 +222,10 @@ export function YggiChat() {
         } else {
           toast.error(errorData.error || "Failed to get response from Yggi");
         }
-        // Remove the empty assistant message
         setMessages((prev) => prev.filter((m) => m.id !== assistantId));
         return;
       }
 
-      // Handle streaming response
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
@@ -226,7 +241,6 @@ export function YggiChat() {
 
         buffer += decoder.decode(value, { stream: true });
 
-        // Process complete lines
         let newlineIndex: number;
         while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
           let line = buffer.slice(0, newlineIndex);
@@ -244,7 +258,6 @@ export function YggiChat() {
             const content = parsed.choices?.[0]?.delta?.content;
             if (content) {
               assistantContent += content;
-              // Update the assistant message
               setMessages((prev) =>
                 prev.map((m) =>
                   m.id === assistantId ? { ...m, content: assistantContent } : m
@@ -252,14 +265,12 @@ export function YggiChat() {
               );
             }
           } catch (e) {
-            // Incomplete JSON, put it back
             buffer = line + "\n" + buffer;
             break;
           }
         }
       }
 
-      // Final buffer flush
       if (buffer.trim()) {
         for (let raw of buffer.split("\n")) {
           if (!raw) continue;
@@ -285,7 +296,6 @@ export function YggiChat() {
         }
       }
 
-      // Save conversation after successful response
       const updatedMessages = [...messages, userMessage, { id: assistantId, role: "assistant" as const, content: assistantContent }];
       await saveConversation(updatedMessages);
     } catch (error) {
@@ -304,145 +314,196 @@ export function YggiChat() {
     }
   };
 
-  const drawerStyle = viewportHeight ? { 
-    height: `${Math.min(viewportHeight * 0.85, window.innerHeight * 0.85)}px`,
-    maxHeight: `${viewportHeight * 0.85}px`
-  } : undefined;
+  // Trigger button (shared between mobile and desktop)
+  const TriggerButton = (
+    <Button
+      className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:scale-110 transition-transform z-50 bg-[hsl(30,40%,50%)] hover:bg-[hsl(30,40%,45%)] text-white"
+      size="icon"
+      aria-label="Chat with Yggi"
+    >
+      <span className="text-2xl">🌱</span>
+    </Button>
+  );
 
-  return (
-    <>
+  // Header content (shared)
+  const HeaderContent = ({ CloseComponent }: { CloseComponent: typeof DrawerClose | typeof SheetClose }) => (
+    <div className="flex items-center justify-between">
+      <div>
+        <div className="flex items-center gap-2 text-lg font-semibold">
+          <span className="text-xl">🌱</span>
+          Chat with Yggi
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Your spiritual guide with full knowledge of your journey
+        </p>
+      </div>
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={startNewConversation}
+          disabled={isLoading || messages.length === 0}
+        >
+          <Plus className="h-4 w-4 mr-1" />
+          New
+        </Button>
+        <CloseComponent asChild>
+          <Button variant="ghost" size="icon">
+            <X className="h-4 w-4" />
+          </Button>
+        </CloseComponent>
+      </div>
+    </div>
+  );
+
+  // Messages content (shared)
+  const MessagesContent = (
+    <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+      <div className="space-y-4">
+        {messages.length === 0 && (
+          <div className="text-center text-muted-foreground py-8">
+            <p className="text-sm">
+              Ask Yggi anything about your journey, patterns, or insights
+            </p>
+          </div>
+        )}
+
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={`flex gap-3 ${
+              message.role === "user" ? "justify-end" : "justify-start"
+            }`}
+          >
+            {message.role === "assistant" && (
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                <span>🌱</span>
+              </div>
+            )}
+            <div
+              className={`rounded-lg px-4 py-3 max-w-[80%] ${
+                message.role === "user"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted"
+              }`}
+            >
+              {message.role === "assistant" ? (
+                <div className="prose prose-sm dark:prose-invert max-w-none">
+                  <ReactMarkdown>{message.content || "..."}</ReactMarkdown>
+                </div>
+              ) : (
+                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+              )}
+            </div>
+          </div>
+        ))}
+
+        {isLoading && (
+          <div className="flex gap-3 justify-start">
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+              <span>🌱</span>
+            </div>
+            <div className="rounded-lg px-4 py-3 bg-muted">
+              <Loader2 className="h-4 w-4 animate-spin" />
+            </div>
+          </div>
+        )}
+
+        <div ref={messagesEndRef} />
+      </div>
+    </ScrollArea>
+  );
+
+  // Input footer (shared)
+  const InputFooter = (
+    <div className="flex gap-2 w-full">
+      <Textarea
+        ref={textareaRef}
+        placeholder="Ask Yggi anything..."
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        onKeyDown={handleKeyDown}
+        onFocus={() => {
+          if (isMobile) {
+            setTimeout(() => {
+              textareaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
+          }
+        }}
+        disabled={isLoading}
+        className="min-h-[60px] resize-none"
+        rows={2}
+      />
+      <Button
+        onClick={handleSend}
+        disabled={!input.trim() || isLoading}
+        size="icon"
+        className="h-[60px] w-[60px] flex-shrink-0"
+      >
+        {isLoading ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Send className="h-4 w-4" />
+        )}
+      </Button>
+    </div>
+  );
+
+  // Mobile: use Drawer with improved keyboard handling
+  if (isMobile) {
+    const mobileHeight = keyboardVisible && viewportHeight 
+      ? `${viewportHeight}px` 
+      : '70dvh';
+
+    return (
       <Drawer open={open} onOpenChange={setOpen}>
         <DrawerTrigger asChild>
-          <Button
-            className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:scale-110 transition-transform z-50 bg-[hsl(30,40%,50%)] hover:bg-[hsl(30,40%,45%)] text-white"
-            size="icon"
-            aria-label="Chat with Yggi"
-          >
-            <span className="text-2xl">🌱</span>
-          </Button>
+          {TriggerButton}
         </DrawerTrigger>
         <DrawerContent 
-          className="h-[85vh] max-h-[85vh] supports-[height:100dvh]:h-[85dvh] supports-[height:100dvh]:max-h-[85dvh]"
-          style={drawerStyle}
+          className="flex flex-col"
+          style={{ 
+            height: mobileHeight, 
+            maxHeight: mobileHeight,
+          }}
         >
-          <DrawerHeader className="border-b">
-            <div className="flex items-center justify-between">
-              <div>
-                <DrawerTitle className="flex items-center gap-2">
-                  <span className="text-xl">🌱</span>
-                  Chat with Yggi
-                </DrawerTitle>
-                <DrawerDescription>
-                  Your spiritual guide with full knowledge of your journey
-                </DrawerDescription>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={startNewConversation}
-                  disabled={isLoading || messages.length === 0}
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  New
-                </Button>
-                <DrawerClose asChild>
-                  <Button variant="ghost" size="icon">
-                    <X className="h-4 w-4" />
-                  </Button>
-                </DrawerClose>
-              </div>
-            </div>
+          <DrawerHeader className="border-b flex-shrink-0">
+            <HeaderContent CloseComponent={DrawerClose} />
           </DrawerHeader>
 
-          <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-            <div className="space-y-4 max-w-3xl mx-auto">
-              {messages.length === 0 && (
-                <div className="text-center text-muted-foreground py-8">
-                  <p className="text-sm">
-                    Ask Yggi anything about your journey, patterns, or insights
-                  </p>
-                </div>
-              )}
+          {MessagesContent}
 
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex gap-3 ${
-                    message.role === "user" ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  {message.role === "assistant" && (
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                      <span>🌱</span>
-                    </div>
-                  )}
-                  <div
-                    className={`rounded-lg px-4 py-3 max-w-[80%] ${
-                      message.role === "user"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
-                    }`}
-                  >
-                    {message.role === "assistant" ? (
-                      <div className="prose prose-sm dark:prose-invert max-w-none">
-                        <ReactMarkdown>{message.content || "..."}</ReactMarkdown>
-                      </div>
-                    ) : (
-                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
-
-              {isLoading && (
-                <div className="flex gap-3 justify-start">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                    <span>🌱</span>
-                  </div>
-                  <div className="rounded-lg px-4 py-3 bg-muted">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  </div>
-                </div>
-              )}
-
-              <div ref={messagesEndRef} />
-            </div>
-          </ScrollArea>
-
-          <DrawerFooter className="border-t sticky bottom-0 bg-background pb-[max(1rem,env(safe-area-inset-bottom))]">
-            <div className="flex gap-2 max-w-3xl mx-auto w-full">
-              <Textarea
-                ref={textareaRef}
-                placeholder="Ask Yggi anything..."
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                onFocus={() => {
-                  setTimeout(() => {
-                    textareaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }, 300);
-                }}
-                disabled={isLoading}
-                className="min-h-[60px] resize-none"
-                rows={2}
-              />
-              <Button
-                onClick={handleSend}
-                disabled={!input.trim() || isLoading}
-                size="icon"
-                className="h-[60px] w-[60px] flex-shrink-0"
-              >
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
+          <DrawerFooter 
+            className="border-t flex-shrink-0 bg-background"
+            style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+          >
+            {InputFooter}
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
-    </>
+    );
+  }
+
+  // Desktop: use Sheet (right sidebar)
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        {TriggerButton}
+      </SheetTrigger>
+      <SheetContent 
+        side="right" 
+        className="w-[400px] sm:w-[450px] p-0 flex flex-col"
+      >
+        <SheetHeader className="border-b p-4 flex-shrink-0">
+          <HeaderContent CloseComponent={SheetClose} />
+        </SheetHeader>
+
+        {MessagesContent}
+
+        <SheetFooter className="border-t p-4 flex-shrink-0 bg-background">
+          {InputFooter}
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }
