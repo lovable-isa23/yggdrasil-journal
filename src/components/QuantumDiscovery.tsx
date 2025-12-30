@@ -38,7 +38,7 @@ export const QuantumDiscovery = ({ availableThemes = [] }: QuantumDiscoveryProps
     
     try {
       const { data, error: invokeError } = await supabase.functions.invoke("quantum-discovery", {
-        body: { start_theme: startTheme || undefined }
+        body: { start_theme: startTheme && startTheme !== "__any__" ? startTheme : undefined }
       });
 
       if (invokeError) throw invokeError;
@@ -108,7 +108,7 @@ export const QuantumDiscovery = ({ availableThemes = [] }: QuantumDiscoveryProps
                 <SelectValue placeholder="Starting theme (optional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Any theme</SelectItem>
+                <SelectItem value="__any__">Any theme</SelectItem>
                 {availableThemes.slice(0, 10).map((theme) => (
                   <SelectItem key={theme} value={theme}>
                     {theme}
