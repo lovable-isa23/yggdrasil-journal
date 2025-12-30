@@ -12,6 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./ui/tooltip";
 
 interface Discovery {
   node: string;
@@ -27,7 +33,6 @@ export const QuantumDiscovery = ({ availableThemes = [] }: QuantumDiscoveryProps
   const [discoveries, setDiscoveries] = useState<Discovery[]>([]);
   const [loading, setLoading] = useState(false);
   const [startTheme, setStartTheme] = useState<string>("");
-  const [method, setMethod] = useState<"quantum" | "classical_fallback" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [graphInfo, setGraphInfo] = useState<{ nodes: number; edges: number } | null>(null);
 
@@ -49,41 +54,51 @@ export const QuantumDiscovery = ({ availableThemes = [] }: QuantumDiscoveryProps
       }
 
       setDiscoveries(data.discoveries || []);
-      setMethod(data.method);
       setGraphInfo({
         nodes: data.total_nodes,
         edges: data.total_edges
       });
 
-      if (data.method === "quantum") {
-        toast.success("Quantum walk complete!");
-      } else {
-        toast.info("Used classical simulation (quantum service unavailable)");
-      }
+      toast.success("Found some hidden connections!");
     } catch (err) {
       console.error("Quantum discovery error:", err);
-      setError("Failed to run quantum discovery. Please try again.");
+      setError("Failed to find connections. Please try again.");
       toast.error("Discovery failed");
     } finally {
       setLoading(false);
     }
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 0.7) return "text-green-600 dark:text-green-400";
-    if (score >= 0.4) return "text-yellow-600 dark:text-yellow-400";
-    return "text-muted-foreground";
-  };
-
   const getTypeLabel = (type: Discovery["type"]) => {
     switch (type) {
       case "quantum_discovered":
-        return { label: "Quantum Discovered", className: "bg-purple-500/20 text-purple-700 dark:text-purple-300" };
+        return { label: "Hidden Gem", icon: "✨", className: "bg-purple-500/20 text-purple-700 dark:text-purple-300" };
       case "reinforced":
-        return { label: "Reinforced Connection", className: "bg-blue-500/20 text-blue-700 dark:text-blue-300" };
+        return { label: "Strong Link", icon: "🔗", className: "bg-blue-500/20 text-blue-700 dark:text-blue-300" };
       case "classical_fallback":
-        return { label: "Classical Walk", className: "bg-gray-500/20 text-gray-700 dark:text-gray-300" };
+        return { label: "Suggested", icon: "💡", className: "bg-amber-500/20 text-amber-700 dark:text-amber-300" };
     }
+  };
+
+  const getRelevanceDots = (score: number) => {
+    const filledDots = Math.ceil(score * 5);
+    return (
+      <div className="flex items-center gap-1.5">
+        <span className="text-xs text-muted-foreground">Relevance:</span>
+        <div className="flex gap-0.5">
+          {[1, 2, 3, 4, 5].map((dot) => (
+            <div
+              key={dot}
+              className={`w-1.5 h-1.5 rounded-full ${
+                dot <= filledDots
+                  ? "bg-primary"
+                  : "bg-muted"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -91,13 +106,22 @@ export const QuantumDiscovery = ({ availableThemes = [] }: QuantumDiscoveryProps
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-purple-500" />
-          Quantum Discovery
-          <Badge variant="outline" className="text-xs font-normal">
-            Experimental
-          </Badge>
+          Hidden Connections
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge variant="outline" className="text-xs font-normal cursor-help">
+                  Beta
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p>This feature uses advanced analysis to discover unexpected links between your journal themes.</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </CardTitle>
         <CardDescription>
-          Explore unexpected connections in your journal using quantum-inspired analysis
+          Discover surprising connections between your journal themes
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -125,7 +149,7 @@ export const QuantumDiscovery = ({ availableThemes = [] }: QuantumDiscoveryProps
             {loading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Discovering...
+                Exploring...
               </>
             ) : (
               <>
@@ -147,8 +171,7 @@ export const QuantumDiscovery = ({ availableThemes = [] }: QuantumDiscoveryProps
           <div className="space-y-3">
             {graphInfo && (
               <div className="text-xs text-muted-foreground">
-                Analyzed {graphInfo.nodes} concepts with {graphInfo.edges} connections
-                {method === "classical_fallback" && " (classical simulation)"}
+                Explored {graphInfo.nodes} themes across {graphInfo.edges} connections
               </div>
             )}
             
@@ -161,7 +184,7 @@ export const QuantumDiscovery = ({ availableThemes = [] }: QuantumDiscoveryProps
                     className="flex items-center justify-between gap-3 p-3 rounded-lg bg-background/50 border border-border/50"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <span className="text-lg">🔮</span>
+                      <span className="text-lg">{typeInfo.icon}</span>
                       <div className="min-w-0">
                         <div className="font-medium truncate">{discovery.node}</div>
                         <Badge variant="secondary" className={`text-xs mt-1 ${typeInfo.className}`}>
@@ -169,9 +192,7 @@ export const QuantumDiscovery = ({ availableThemes = [] }: QuantumDiscoveryProps
                         </Badge>
                       </div>
                     </div>
-                    <div className={`text-sm font-medium whitespace-nowrap ${getScoreColor(discovery.score)}`}>
-                      {Math.round(discovery.score * 100)}%
-                    </div>
+                    {getRelevanceDots(discovery.score)}
                   </div>
                 );
               })}
@@ -181,7 +202,8 @@ export const QuantumDiscovery = ({ availableThemes = [] }: QuantumDiscoveryProps
 
         {!loading && discoveries.length === 0 && !error && (
           <p className="text-sm text-muted-foreground">
-            Click the button above to discover unexpected connections in your knowledge graph using quantum random walk analysis.
+            Click the button above to explore hidden patterns in your journal entries. 
+            You might discover connections you never noticed before!
           </p>
         )}
       </CardContent>
