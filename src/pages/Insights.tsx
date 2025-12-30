@@ -9,6 +9,7 @@ import { DataExport } from "@/components/DataExport";
 import { DataImport } from "@/components/DataImport";
 import { NPSTooltip } from "@/components/NPSTooltip";
 import { FrameworkAnalytics } from "@/components/FrameworkAnalytics";
+import { PatternInsights } from "@/components/PatternInsights";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -141,6 +142,17 @@ const Insights = () => {
               </div>
               <div className="grid gap-6">
                 <FrameworkAnalytics />
+              </div>
+            </section>
+
+            {/* Pattern Discovery Section */}
+            <section>
+              <div className="flex items-center gap-2 mb-6">
+                <TrendingUp className="h-6 w-6 text-primary" />
+                <h3 className="text-2xl font-bold">Pattern Discovery</h3>
+              </div>
+              <div className="grid gap-6">
+                <PatternInsights />
               </div>
             </section>
 
