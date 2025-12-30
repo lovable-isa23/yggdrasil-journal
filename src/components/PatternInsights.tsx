@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Loader2, TrendingUp, Lightbulb, Calendar, RefreshCw, X, ChevronDown } from "lucide-react";
+import { Loader2, TrendingUp, Lightbulb, Calendar, RefreshCw, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { Progress } from "./ui/progress";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
@@ -12,6 +12,7 @@ import { format } from "date-fns";
 import { useDataSufficiency } from "@/hooks/use-data-sufficiency";
 import { InsufficientDataPrompt } from "@/components/InsufficientDataPrompt";
 import { useLoading } from "@/contexts/LoadingContext";
+import { QuantumDiscovery } from "./QuantumDiscovery";
 
 interface Pattern {
   id: string;
@@ -38,6 +39,7 @@ export const PatternInsights = () => {
     content: string;
     relevantQuote?: string;
   }>>([]);
+  const [availableThemes, setAvailableThemes] = useState<string[]>([]);
   const { hasMinimumData, totalEntries, deepEntries, analyzedEntries, needsAnalysis } = useDataSufficiency();
   const { startLoading, updateProgress, stopLoading } = useLoading();
 
@@ -55,6 +57,7 @@ export const PatternInsights = () => {
 
   useEffect(() => {
     fetchPatterns();
+    fetchAvailableThemes();
   }, []);
 
   const fetchPatterns = async () => {
@@ -70,6 +73,29 @@ export const PatternInsights = () => {
       console.error("Error fetching patterns:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAvailableThemes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("knowledge_relationships")
+        .select("source_item, target_item, weighted_strength")
+        .order("weighted_strength", { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+
+      // Extract unique themes/items
+      const themes = new Set<string>();
+      data?.forEach((rel) => {
+        themes.add(rel.source_item);
+        themes.add(rel.target_item);
+      });
+      
+      setAvailableThemes(Array.from(themes).slice(0, 20));
+    } catch (error) {
+      console.error("Error fetching themes:", error);
     }
   };
 
@@ -340,6 +366,12 @@ export const PatternInsights = () => {
           </div>
         )}
       </CardContent>
+
+      {hasMinimumData && (
+        <div className="px-6 pb-6">
+          <QuantumDiscovery availableThemes={availableThemes} />
+        </div>
+      )}
 
       <Sheet open={selectedItem !== null} onOpenChange={(open) => !open && setSelectedItem(null)}>
         <SheetContent className="overflow-y-auto">
