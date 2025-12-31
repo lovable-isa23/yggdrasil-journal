@@ -230,36 +230,56 @@ serve(async (req) => {
 
     // Try quantum service first
     if (quantumServiceUrl) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
       try {
-        console.log(`Calling quantum service at: ${quantumServiceUrl}`);
+        const fullUrl = `${quantumServiceUrl}/quantum-walk`;
+        console.log(`[QUANTUM] Calling service at: ${fullUrl}`);
+        console.log(`[QUANTUM] Request payload:`, JSON.stringify(quantumRequest));
         
-        const quantumResponse = await fetch(`${quantumServiceUrl}/quantum-walk`, {
+        const quantumResponse = await fetch(fullUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(quantumRequest)
+          body: JSON.stringify(quantumRequest),
+          signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
 
         if (quantumResponse.ok) {
           const quantumData = await quantumResponse.json();
-          console.log("Quantum service response:", quantumData);
+          console.log(`[QUANTUM] SUCCESS - Response:`, JSON.stringify(quantumData));
           
           discoveries = quantumData.discoveries || [];
           method = "quantum";
+          console.log(`[QUANTUM] Found ${discoveries.length} discoveries via quantum service`);
         } else {
-          console.warn(`Quantum service returned ${quantumResponse.status}, using fallback`);
+          const errorText = await quantumResponse.text();
+          console.warn(`[QUANTUM] Service returned ${quantumResponse.status}: ${errorText}`);
           discoveries = classicalRandomWalk(sortedNodes, edges, startNodeIdx);
           method = "classical_fallback";
         }
-      } catch (fetchError) {
-        console.warn("Quantum service unavailable, using classical fallback:", fetchError);
+      } catch (fetchError: unknown) {
+        clearTimeout(timeoutId);
+        
+        const error = fetchError as Error;
+        if (error.name === 'AbortError') {
+          console.warn("[QUANTUM] Service timeout after 10 seconds, using classical fallback");
+        } else {
+          console.warn(`[QUANTUM] Service error: ${error.message || fetchError}`);
+        }
+        
         discoveries = classicalRandomWalk(sortedNodes, edges, startNodeIdx);
         method = "classical_fallback";
       }
     } else {
-      console.log("No QUANTUM_SERVICE_URL configured, using classical fallback");
+      console.warn("[QUANTUM] No QUANTUM_SERVICE_URL configured, using classical fallback");
       discoveries = classicalRandomWalk(sortedNodes, edges, startNodeIdx);
       method = "classical_fallback";
     }
+    
+    console.log(`[QUANTUM] Discovery complete - Method: ${method}, Found: ${discoveries.length} connections`);
 
     return new Response(
       JSON.stringify({
