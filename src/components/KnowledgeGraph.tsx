@@ -4,8 +4,9 @@ import * as d3 from "d3";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { Loader2, Calendar, FileText, Maximize2, Download, Image as ImageIcon, FileDown, Network, Lightbulb, Target, RefreshCw, Search, ZoomIn, ZoomOut, RotateCcw, Eye } from "lucide-react";
+import { Loader2, Calendar, FileText, Maximize2, Minimize2, Download, Image as ImageIcon, FileDown, Network, Lightbulb, Target, RefreshCw, Search, ZoomIn, ZoomOut, RotateCcw, Eye } from "lucide-react";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
 import { Button } from "./ui/button";
@@ -67,6 +68,9 @@ export const KnowledgeGraph = () => {
   const [allNodeNames, setAllNodeNames] = useState<{ name: string; type: string }[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
   const [showAllNodes, setShowAllNodes] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const fullscreenSvgRef = useRef<SVGSVGElement>(null);
+  const fullscreenZoomRef = useRef<any>(null);
 
   useEffect(() => {
     fetchGraphData();
@@ -803,6 +807,151 @@ export const KnowledgeGraph = () => {
     });
   };
 
+  // Render graph in fullscreen modal
+  const renderFullscreenGraph = () => {
+    if (!fullscreenSvgRef.current || graphData.nodes.length === 0) return;
+
+    const svg = d3.select(fullscreenSvgRef.current);
+    svg.selectAll("*").remove();
+
+    const container = fullscreenSvgRef.current.parentElement;
+    const width = container?.clientWidth || 800;
+    const height = container?.clientHeight || 600;
+
+    svg
+      .attr("width", "100%")
+      .attr("height", "100%")
+      .attr("viewBox", [0, 0, width, height])
+      .attr("preserveAspectRatio", "xMidYMid meet");
+
+    const g = svg.append("g");
+    
+    const zoom = d3.zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.1, 5])
+      .on("zoom", (event) => {
+        g.attr("transform", event.transform);
+        const fontSize = Math.max(10, Math.min(20, 12 * event.transform.k));
+        g.selectAll("text").attr("font-size", `${fontSize}px`);
+      });
+
+    svg.call(zoom);
+    fullscreenZoomRef.current = zoom;
+
+    // Deep copy nodes to avoid conflicts with main graph
+    const nodesCopy = graphData.nodes.map(n => ({ ...n }));
+    const linksCopy = graphData.links.map(l => ({
+      source: typeof l.source === 'object' ? l.source.id : l.source,
+      target: typeof l.target === 'object' ? l.target.id : l.target,
+      value: l.value,
+      isAIStrength: l.isAIStrength
+    }));
+
+    const simulation = d3
+      .forceSimulation(nodesCopy)
+      .force(
+        "link",
+        d3.forceLink(linksCopy).id((d: any) => d.id).distance(120)
+      )
+      .force("charge", d3.forceManyBody().strength(-400))
+      .force("center", d3.forceCenter(width / 2, height / 2))
+      .force("collision", d3.forceCollide().radius((d: any) => d.value + 8));
+
+    const link = g
+      .append("g")
+      .selectAll("line")
+      .data(linksCopy)
+      .join("line")
+      .attr("stroke", "hsl(var(--border))")
+      .attr("stroke-opacity", 0.5)
+      .attr("stroke-width", (d: any) => 0.5 + d.value * 1.5);
+
+    const node = g
+      .append("g")
+      .selectAll("g")
+      .data(nodesCopy)
+      .join("g")
+      .call(
+        d3.drag<any, any>()
+          .on("start", (event, d) => {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+          })
+          .on("drag", (event, d) => {
+            d.fx = event.x;
+            d.fy = event.y;
+          })
+          .on("end", (event, d) => {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+          })
+      );
+
+    node
+      .append("circle")
+      .attr("r", (d: any) => d.value * 1.2)
+      .attr("fill", (d: any) => d.color)
+      .attr("stroke", "hsl(var(--background))")
+      .attr("stroke-width", 2);
+
+    node
+      .append("text")
+      .text((d: any) => d.name)
+      .attr("text-anchor", "middle")
+      .attr("dy", "0.35em")
+      .attr("font-size", (d: any) => Math.max(10, Math.min(14, d.value / 1.5)) + "px")
+      .attr("font-weight", "600")
+      .attr("fill", "hsl(var(--foreground))")
+      .attr("pointer-events", "none");
+
+    node
+      .style("cursor", "pointer")
+      .on("mouseenter", function(event, d: any) {
+        d3.select(this).select("circle")
+          .transition()
+          .duration(200)
+          .attr("r", d.value * 1.4)
+          .attr("stroke-width", 3);
+      })
+      .on("mouseleave", function(event, d: any) {
+        d3.select(this).select("circle")
+          .transition()
+          .duration(200)
+          .attr("r", d.value * 1.2)
+          .attr("stroke-width", 2);
+      })
+      .on("click", function(event, d: any) {
+        event.stopPropagation();
+        const originalNode = graphData.nodes.find(n => n.id === d.id);
+        if (originalNode) {
+          setSelectedNode(originalNode);
+          setIsSheetOpen(true);
+        }
+      });
+
+    simulation.on("tick", () => {
+      link
+        .attr("x1", (d: any) => d.source.x)
+        .attr("y1", (d: any) => d.source.y)
+        .attr("x2", (d: any) => d.target.x)
+        .attr("y2", (d: any) => d.target.y);
+
+      node.attr("transform", (d: any) => `translate(${d.x},${d.y})`);
+    });
+  };
+
+  // Render fullscreen graph when modal opens
+  useEffect(() => {
+    if (isFullScreen && graphData.nodes.length > 0) {
+      // Small delay to ensure DOM is ready
+      const timer = setTimeout(() => {
+        renderFullscreenGraph();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isFullScreen, graphData]);
+
   if (loading) {
     return (
       <Card className="w-full">
@@ -868,22 +1017,22 @@ export const KnowledgeGraph = () => {
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 mb-4 gap-1">
-              <TabsTrigger value="all" className="gap-1.5">
+            <TabsList className="flex flex-col sm:grid sm:grid-cols-4 w-full mb-4 h-auto gap-1">
+              <TabsTrigger value="all" className="w-full justify-start sm:justify-center gap-1.5">
                 All
-                <Badge variant="secondary" className="ml-1 text-xs px-1.5 py-0">{totalCounts.entities + totalCounts.themes + totalCounts.keywords}</Badge>
+                <Badge variant="secondary" className="ml-1 text-xs px-1.5 py-0 hidden sm:inline-flex">{totalCounts.entities + totalCounts.themes + totalCounts.keywords}</Badge>
               </TabsTrigger>
-              <TabsTrigger value="entities" className="gap-1.5">
+              <TabsTrigger value="entities" className="w-full justify-start sm:justify-center gap-1.5">
                 Entities
-                <Badge variant="secondary" className="ml-1 text-xs px-1.5 py-0">{totalCounts.entities}</Badge>
+                <Badge variant="secondary" className="ml-1 text-xs px-1.5 py-0 hidden sm:inline-flex">{totalCounts.entities}</Badge>
               </TabsTrigger>
-              <TabsTrigger value="themes" className="gap-1.5">
+              <TabsTrigger value="themes" className="w-full justify-start sm:justify-center gap-1.5">
                 Themes
-                <Badge variant="secondary" className="ml-1 text-xs px-1.5 py-0">{totalCounts.themes}</Badge>
+                <Badge variant="secondary" className="ml-1 text-xs px-1.5 py-0 hidden sm:inline-flex">{totalCounts.themes}</Badge>
               </TabsTrigger>
-              <TabsTrigger value="keywords" className="gap-1.5">
+              <TabsTrigger value="keywords" className="w-full justify-start sm:justify-center gap-1.5">
                 Keywords
-                <Badge variant="secondary" className="ml-1 text-xs px-1.5 py-0">{totalCounts.keywords}</Badge>
+                <Badge variant="secondary" className="ml-1 text-xs px-1.5 py-0 hidden sm:inline-flex">{totalCounts.keywords}</Badge>
               </TabsTrigger>
             </TabsList>
             
@@ -894,9 +1043,11 @@ export const KnowledgeGraph = () => {
                   id="show-all-nodes" 
                   checked={showAllNodes} 
                   onCheckedChange={setShowAllNodes}
+                  className="scale-90 sm:scale-100"
                 />
-                <label htmlFor="show-all-nodes" className="text-sm text-muted-foreground cursor-pointer">
-                  Show all nodes (instead of top 10)
+                <label htmlFor="show-all-nodes" className="text-xs sm:text-sm text-muted-foreground cursor-pointer">
+                  <span className="hidden sm:inline">Show all nodes (instead of top 10)</span>
+                  <span className="sm:hidden">Show all</span>
                 </label>
               </div>
             )}
@@ -1015,24 +1166,36 @@ export const KnowledgeGraph = () => {
                       </p>
                     )}
                   </div>
-                  <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2 w-full sm:w-auto">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsFullScreen(true)}
+                      className="gap-1.5"
+                      title="Fullscreen"
+                    >
+                      <Maximize2 className="h-4 w-4" />
+                      <span className="hidden sm:inline">Fullscreen</span>
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={handleCenterOnLargest}
-                      className="gap-2"
+                      className="gap-1.5"
+                      title="Center Largest"
                     >
                       <Target className="h-4 w-4" />
-                      Center Largest
+                      <span className="hidden sm:inline">Center</span>
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={handleShowAll}
-                      className="gap-2"
+                      className="gap-1.5"
+                      title="Show All"
                     >
-                      <Maximize2 className="h-4 w-4" />
-                      Show All
+                      <Eye className="h-4 w-4" />
+                      <span className="hidden sm:inline">Show All</span>
                     </Button>
                     <Button
                       variant="outline"
@@ -1060,12 +1223,11 @@ export const KnowledgeGraph = () => {
                     </Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="gap-2">
+                        <Button variant="outline" size="icon" title="Export">
                           <Download className="h-4 w-4" />
-                          Export
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+                      <DropdownMenuContent align="end" className="bg-popover">
                         <DropdownMenuItem onClick={exportAsPNG} className="gap-2">
                           <ImageIcon className="h-4 w-4" />
                           Export as PNG
@@ -1268,6 +1430,30 @@ export const KnowledgeGraph = () => {
           )}
         </SheetContent>
       </Sheet>
+      {/* Fullscreen Modal */}
+      <Dialog open={isFullScreen} onOpenChange={setIsFullScreen}>
+        <DialogContent className="max-w-[95vw] w-full h-[90vh] p-4 flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Network className="h-5 w-5" />
+                Knowledge Graph
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsFullScreen(false)}
+                className="mr-6"
+              >
+                <Minimize2 className="h-4 w-4" />
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden rounded-lg border bg-background/50">
+            <svg ref={fullscreenSvgRef} className="w-full h-full" />
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

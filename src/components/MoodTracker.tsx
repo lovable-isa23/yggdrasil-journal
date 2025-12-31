@@ -325,15 +325,20 @@ export const MoodTracker = () => {
             <XAxis 
               dataKey="displayDate" 
               className="text-xs"
-              stroke="#000000"
-              tick={{ fill: '#000000', fontWeight: 'normal' }}
+              stroke="hsl(var(--foreground))"
+              tick={{ fill: 'hsl(var(--foreground))', fontWeight: 'normal', fontSize: 10 }}
+              interval={moodData.length <= 7 ? 0 : moodData.length <= 14 ? 1 : Math.floor(moodData.length / 5)}
+              angle={-45}
+              textAnchor="end"
+              height={50}
             />
             <YAxis 
               domain={[-10, 10]}
               ticks={[-10, -5, 0, 5, 10]}
               className="text-xs"
-              stroke="#000000"
-              tick={{ fill: '#000000', fontWeight: 'normal' }}
+              stroke="hsl(var(--foreground))"
+              tick={{ fill: 'hsl(var(--foreground))', fontWeight: 'normal', fontSize: 10 }}
+              width={35}
             />
             <Tooltip
               contentStyle={{
@@ -348,8 +353,8 @@ export const MoodTracker = () => {
               dataKey="mood"
               stroke="hsl(var(--primary))"
               strokeWidth={2}
-              dot={{ fill: "hsl(var(--primary))", r: 4 }}
-              activeDot={{ r: 6 }}
+              dot={{ fill: "hsl(var(--primary))", r: 3 }}
+              activeDot={{ r: 5 }}
             />
           </LineChart>
         </ResponsiveContainer>
