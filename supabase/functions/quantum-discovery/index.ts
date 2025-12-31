@@ -357,12 +357,44 @@ serve(async (req) => {
       method = "classical_fallback";
     }
     
-    console.log(`[QUANTUM] Discovery complete - Method: ${method}, Found: ${discoveries.length} connections`);
+    // Entry lookup happens after this
+
+    // Look up entry IDs for each discovered node
+    const { data: insightsForEntries } = await supabase
+      .from("entry_insights")
+      .select("entry_id, themes, entities, keywords")
+      .eq("user_id", user.id);
+
+    // Build a map of theme/entity -> entry_ids
+    const themeToEntries = new Map<string, string[]>();
+    insightsForEntries?.forEach((insight: any) => {
+      const allItems = [
+        ...((insight.themes || []) as string[]),
+        ...((insight.entities || []) as string[]),
+        ...((insight.keywords || []) as string[])
+      ].map((i: string) => i.toLowerCase());
+      
+      allItems.forEach(item => {
+        const existing = themeToEntries.get(item) || [];
+        if (!existing.includes(insight.entry_id)) {
+          existing.push(insight.entry_id);
+        }
+        themeToEntries.set(item, existing);
+      });
+    });
+
+    // Add entry_ids to each discovery
+    const discoveriesWithEntries = discoveries.map((d: any) => ({
+      ...d,
+      entry_ids: themeToEntries.get(d.node.toLowerCase()) || []
+    }));
+
+    console.log(`[QUANTUM] Discovery complete - Method: ${method}, Found: ${discoveriesWithEntries.length} connections`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        discoveries,
+        discoveries: discoveriesWithEntries,
         method,
         start_node: sortedNodes[startNodeIdx],
         total_nodes: sortedNodes.length,
