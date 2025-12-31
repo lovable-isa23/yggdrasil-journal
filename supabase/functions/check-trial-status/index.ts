@@ -8,6 +8,21 @@ const corsHeaders = {
 
 const TRIAL_HOURS = 72;
 
+// Mask email for logging (e.g., "jo***@example.com")
+function maskEmail(email: string | null | undefined): string {
+  if (!email) return "[no-email]";
+  const [local, domain] = email.split("@");
+  if (!domain) return "[invalid-email]";
+  const maskedLocal = local.length > 2 ? local.slice(0, 2) + "***" : "***";
+  return `${maskedLocal}@${domain}`;
+}
+
+// Mask UUID for logging (e.g., "abc12***")
+function maskId(id: string | null | undefined): string {
+  if (!id) return "[no-id]";
+  return id.slice(0, 5) + "***";
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -40,7 +55,7 @@ serve(async (req) => {
 
     const userId = userData.user.id;
     const userEmail = userData.user.email;
-    console.log(`[CHECK-TRIAL] Checking status for user: ${userId}, email: ${userEmail}`);
+    console.log(`[CHECK-TRIAL] Checking status for user: ${maskId(userId)}`);
 
     // Check if user has paid (exists in beta_users with completed payment)
     const { data: betaUser } = await supabaseClient
@@ -51,7 +66,7 @@ serve(async (req) => {
       .maybeSingle();
 
     if (betaUser) {
-      console.log(`[CHECK-TRIAL] User ${userId} is a paid user`);
+      console.log(`[CHECK-TRIAL] User ${maskId(userId)} is a paid user`);
       return new Response(JSON.stringify({
         has_access: true,
         is_trial: false,
@@ -73,13 +88,13 @@ serve(async (req) => {
       .maybeSingle();
 
     if (profileError) {
-      console.error(`[CHECK-TRIAL] Error fetching profile:`, profileError);
+      console.error(`[CHECK-TRIAL] Error fetching profile`);
       throw profileError;
     }
 
     // If no profile found, create one (shouldn't happen but safety net)
     if (!profile) {
-      console.log(`[CHECK-TRIAL] No profile found for user ${userId}, creating one`);
+      console.log(`[CHECK-TRIAL] No profile found for user ${maskId(userId)}, creating one`);
       await supabaseClient.from("profiles").insert({
         id: userId,
         email: userEmail,
@@ -102,7 +117,7 @@ serve(async (req) => {
 
     // Legacy user: trial_started_at is NULL = permanent access
     if (!profile.trial_started_at) {
-      console.log(`[CHECK-TRIAL] User ${userId} is a legacy user with permanent access`);
+      console.log(`[CHECK-TRIAL] User ${maskId(userId)} is a legacy user with permanent access`);
       return new Response(JSON.stringify({
         has_access: true,
         is_trial: false,
@@ -123,7 +138,7 @@ serve(async (req) => {
     const hoursRemaining = Math.max(0, (trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60));
     const hasAccess = now < trialEndsAt;
 
-    console.log(`[CHECK-TRIAL] User ${userId} trial status: hasAccess=${hasAccess}, hoursRemaining=${hoursRemaining.toFixed(1)}`);
+    console.log(`[CHECK-TRIAL] User ${maskId(userId)} trial status: hasAccess=${hasAccess}, hoursRemaining=${hoursRemaining.toFixed(1)}`);
 
     return new Response(JSON.stringify({
       has_access: hasAccess,
@@ -138,7 +153,7 @@ serve(async (req) => {
     });
 
   } catch (error: any) {
-    console.error("[CHECK-TRIAL] Error:", error);
+    console.error("[CHECK-TRIAL] Error:", error?.message || "Unknown error");
     return new Response(JSON.stringify({ error: error?.message || "Unknown error" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,

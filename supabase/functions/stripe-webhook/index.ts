@@ -7,6 +7,21 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Mask email for logging (e.g., "jo***@example.com")
+function maskEmail(email: string | null | undefined): string {
+  if (!email) return "[no-email]";
+  const [local, domain] = email.split("@");
+  if (!domain) return "[invalid-email]";
+  const maskedLocal = local.length > 2 ? local.slice(0, 2) + "***" : "***";
+  return `${maskedLocal}@${domain}`;
+}
+
+// Mask UUID for logging (e.g., "abc12***")
+function maskId(id: string | null | undefined): string {
+  if (!id) return "[no-id]";
+  return id.slice(0, 5) + "***";
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -15,7 +30,7 @@ serve(async (req) => {
   try {
     const signature = req.headers.get("stripe-signature");
     if (!signature) {
-      console.error("No Stripe signature found");
+      console.error("[STRIPE-WEBHOOK] No Stripe signature found");
       return new Response(JSON.stringify({ error: "No signature" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -33,21 +48,20 @@ serve(async (req) => {
     try {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret!);
     } catch (err) {
-      console.error("Webhook signature verification failed:", err);
+      console.error("[STRIPE-WEBHOOK] Webhook signature verification failed");
       return new Response(JSON.stringify({ error: "Invalid signature" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    console.log("Webhook event type:", event.type);
+    console.log("[STRIPE-WEBHOOK] Event type:", event.type);
 
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
       
-      console.log("Processing checkout session:", session.id);
-      console.log("Customer email:", session.customer_email);
-      console.log("Session metadata:", session.metadata);
+      console.log("[STRIPE-WEBHOOK] Processing checkout session:", maskId(session.id));
+      console.log("[STRIPE-WEBHOOK] Customer email:", maskEmail(session.customer_email));
 
       const supabaseAdmin = createClient(
         Deno.env.get("SUPABASE_URL") ?? "",
@@ -64,7 +78,7 @@ serve(async (req) => {
       if (metadataUserId) {
         // User ID provided in metadata - this is from an existing logged-in user
         existingUserId = metadataUserId;
-        console.log("User ID from metadata:", existingUserId);
+        console.log("[STRIPE-WEBHOOK] User ID from metadata:", maskId(existingUserId));
       } else {
         // Fallback to email lookup
         const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
@@ -77,7 +91,7 @@ serve(async (req) => {
       }
 
       if (existingUserId) {
-        console.log("Updating existing user:", existingUserId);
+        console.log("[STRIPE-WEBHOOK] Updating existing user:", maskId(existingUserId));
         
         // Update or insert beta_users record
         const { error: upsertError } = await supabaseAdmin.from("beta_users").upsert({
@@ -89,9 +103,9 @@ serve(async (req) => {
         }, { onConflict: 'user_id' });
         
         if (upsertError) {
-          console.error("Error upserting beta_users:", upsertError);
+          console.error("[STRIPE-WEBHOOK] Error upserting beta_users");
         } else {
-          console.log("Successfully updated beta_users for user:", existingUserId);
+          console.log("[STRIPE-WEBHOOK] Successfully updated beta_users record");
         }
 
         return new Response(
@@ -110,11 +124,11 @@ serve(async (req) => {
       });
 
       if (userError) {
-        console.error("Error creating user:", userError);
+        console.error("[STRIPE-WEBHOOK] Error creating user");
         throw userError;
       }
 
-      console.log("Created new user:", newUser.user.id);
+      console.log("[STRIPE-WEBHOOK] Created new user:", maskId(newUser.user.id));
 
       // Insert beta_users record
       const { error: betaError } = await supabaseAdmin.from("beta_users").insert({
@@ -126,7 +140,7 @@ serve(async (req) => {
       });
 
       if (betaError) {
-        console.error("Error creating beta user record:", betaError);
+        console.error("[STRIPE-WEBHOOK] Error creating beta user record");
       }
 
       // Send welcome email
@@ -137,9 +151,9 @@ serve(async (req) => {
             userId: newUser.user.id 
           },
         });
-        console.log("Welcome email sent successfully");
+        console.log("[STRIPE-WEBHOOK] Welcome email sent successfully");
       } catch (emailError) {
-        console.error("Error sending welcome email:", emailError);
+        console.error("[STRIPE-WEBHOOK] Error sending welcome email");
         // Don't fail the webhook if email fails
       }
 
@@ -157,7 +171,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Webhook error:", error);
+    console.error("[STRIPE-WEBHOOK] Webhook error");
     const errorMessage = error instanceof Error ? error.message : String(error);
     return new Response(
       JSON.stringify({ error: errorMessage }),
