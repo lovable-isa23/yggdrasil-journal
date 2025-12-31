@@ -257,18 +257,19 @@ export const MoodTracker = () => {
             </Button>
           </div>
 
-        <div className="flex flex-wrap gap-2 items-center">
+        <div className="flex items-center gap-2 flex-nowrap overflow-x-auto pb-1">
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
+                size="sm"
                 className={cn(
-                  "justify-start text-left font-normal",
+                  "shrink-0 text-left font-normal",
                   !startDate && "text-muted-foreground"
                 )}
               >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {startDate ? format(startDate, "PPP") : <span>Start date</span>}
+                <CalendarIcon className="mr-1 h-4 w-4" />
+                {startDate ? format(startDate, "MMM d") : "Start"}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0 z-50 pointer-events-auto" align="start">
@@ -282,19 +283,20 @@ export const MoodTracker = () => {
             </PopoverContent>
           </Popover>
 
-          <span className="text-muted-foreground">to</span>
+          <span className="text-muted-foreground shrink-0">to</span>
 
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
+                size="sm"
                 className={cn(
-                  "justify-start text-left font-normal",
+                  "shrink-0 text-left font-normal",
                   !endDate && "text-muted-foreground"
                 )}
               >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {endDate ? format(endDate, "PPP") : <span>End date</span>}
+                <CalendarIcon className="mr-1 h-4 w-4" />
+                {endDate ? format(endDate, "MMM d") : "End"}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0 z-50 pointer-events-auto" align="start">
@@ -308,11 +310,11 @@ export const MoodTracker = () => {
             </PopoverContent>
           </Popover>
 
-          <Button variant="ghost" onClick={handleClearFilters}>
-            Clear filters
+          <Button variant="ghost" size="sm" onClick={handleClearFilters} className="shrink-0">
+            Clear
           </Button>
 
-          <Button variant="ghost" onClick={handleShowAll}>
+          <Button variant="ghost" size="sm" onClick={handleShowAll} className="shrink-0">
             Show all
           </Button>
         </div>

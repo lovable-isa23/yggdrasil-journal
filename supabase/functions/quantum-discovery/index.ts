@@ -90,10 +90,18 @@ function classicalRandomWalk(
     // Boost score for non-direct neighbors (interesting discoveries)
     const adjustedScore = isDirectNeighbor ? score * 0.5 : score * 1.5;
     
+    // Determine type based on connection pattern
+    let type: "quantum_discovered" | "reinforced" | "classical_fallback" = "classical_fallback";
+    if (!isDirectNeighbor && adjustedScore > 0.1) {
+      type = "quantum_discovered"; // Hidden gem - not directly connected but frequently visited
+    } else if (isDirectNeighbor && adjustedScore > 0.05) {
+      type = "reinforced"; // Strong direct connection
+    }
+    
     discoveries.push({
       node: nodes[nodeIdx],
-      score: Math.min(adjustedScore, 1),
-      type: "classical_fallback"
+      score: adjustedScore, // Keep raw score, apply tiered scoring later
+      type
     });
   }
 
@@ -260,38 +268,70 @@ serve(async (req) => {
             is_direct_connection: d.is_direct_connection
           }));
           
-          // Apply sqrt transformation and normalize for better score distribution
-          // sqrt spreads values: 0.25 becomes 0.5, 0.04 becomes 0.2
-          const maxScore = Math.max(...rawDiscoveries.map((d: any) => d.score), 0.01);
-          discoveries = rawDiscoveries.map((d: any) => ({
-            ...d,
-            score: Math.sqrt(d.score / maxScore) // sqrt transformation for better distribution
-          }));
+          // Use tiered scoring instead of normalization for better distribution
+          // This prevents all items from becoming 5/5 relevance
+          discoveries = rawDiscoveries.map((d: any) => {
+            const rawScore = d.score;
+            // Determine type based on connection properties
+            let type = d.type || "quantum_discovered";
+            if (d.is_direct_connection && rawScore > 0.3) {
+              type = "reinforced";
+            } else if (!d.is_direct_connection && rawScore > 0.1) {
+              type = "quantum_discovered";
+            }
+            return { ...d, type };
+          });
           
           // Look up relationship context for each discovery
-          const nodeNames = discoveries.map((d: any) => d.node);
           const { data: relContexts } = await supabase
             .from("knowledge_relationships")
             .select("source_item, target_item, pattern_description, context")
             .eq("user_id", user.id);
           
-          // Add insight to each discovery
+          // Also look up entry_insights for shared themes/emotions
+          const { data: entryInsights } = await supabase
+            .from("entry_insights")
+            .select("themes, emotions, entities")
+            .eq("user_id", user.id)
+            .limit(50);
+          
+          // Build a map of theme/entity to common emotions
+          const themeEmotionMap = new Map<string, string[]>();
+          entryInsights?.forEach((insight: any) => {
+            const themes = (insight.themes || []) as string[];
+            const emotions = ((insight.emotions || []) as any[]).map(e => e.emotion || e);
+            themes.forEach(theme => {
+              const existing = themeEmotionMap.get(theme.toLowerCase()) || [];
+              themeEmotionMap.set(theme.toLowerCase(), [...existing, ...emotions]);
+            });
+          });
+          
+          // Add insight to each discovery with richer context
           discoveries = discoveries.map((d: any) => {
             const relContext = relContexts?.find((r: any) => 
               r.source_item?.toLowerCase() === d.node.toLowerCase() || 
               r.target_item?.toLowerCase() === d.node.toLowerCase()
             );
-            const typeLabel = d.type === 'quantum_discovered' ? 'hidden patterns' : 
-                             d.type === 'reinforced' ? 'strong recurring links' : 'thematic connections';
-            return {
-              ...d,
-              insight: relContext?.pattern_description || relContext?.context || 
-                `Connected through ${typeLabel} in your journal`
-            };
+            
+            // Get associated emotions for this theme
+            const associatedEmotions = themeEmotionMap.get(d.node.toLowerCase()) || [];
+            const topEmotions = [...new Set(associatedEmotions)].slice(0, 2);
+            
+            let insight = relContext?.pattern_description || relContext?.context;
+            if (!insight && topEmotions.length > 0) {
+              insight = `Often appears with ${topEmotions.join(' and ')} emotions`;
+            }
+            if (!insight) {
+              const typeLabel = d.type === 'quantum_discovered' ? 'hidden patterns' : 
+                               d.type === 'reinforced' ? 'strong recurring links' : 'thematic connections';
+              insight = `Connected through ${typeLabel} in your journal`;
+            }
+            
+            return { ...d, insight };
           });
           
           method = "quantum";
-          console.log(`[QUANTUM] Found ${discoveries.length} discoveries via quantum service (sqrt normalized)`);
+          console.log(`[QUANTUM] Found ${discoveries.length} discoveries via quantum service (tiered scoring)`);
         } else {
           const errorText = await quantumResponse.text();
           console.warn(`[QUANTUM] Service returned ${quantumResponse.status}: ${errorText}`);
