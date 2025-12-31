@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -16,12 +17,75 @@ interface ParseResult {
   insights: string[];
 }
 
+// Rate limiting constants
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 5; // 5 requests per minute per IP
+
+// In-memory rate limiting (resets on function cold start)
+const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
+
+function checkRateLimit(clientIP: string): { allowed: boolean; retryAfter?: number } {
+  const now = Date.now();
+  const entry = rateLimitMap.get(clientIP);
+
+  if (!entry || now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
+    // New window
+    rateLimitMap.set(clientIP, { count: 1, windowStart: now });
+    return { allowed: true };
+  }
+
+  if (entry.count >= MAX_REQUESTS_PER_WINDOW) {
+    const retryAfter = Math.ceil((entry.windowStart + RATE_LIMIT_WINDOW_MS - now) / 1000);
+    return { allowed: false, retryAfter };
+  }
+
+  entry.count++;
+  return { allowed: true };
+}
+
+// Clean up old entries periodically
+function cleanupRateLimitMap() {
+  const now = Date.now();
+  for (const [ip, entry] of rateLimitMap.entries()) {
+    if (now - entry.windowStart > RATE_LIMIT_WINDOW_MS * 2) {
+      rateLimitMap.delete(ip);
+    }
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Get client IP for rate limiting
+    const clientIP = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || 
+                     req.headers.get("cf-connecting-ip") || 
+                     "unknown";
+
+    // Check rate limit
+    const rateLimit = checkRateLimit(clientIP);
+    if (!rateLimit.allowed) {
+      console.log(`[DEMO-PARSE] Rate limit exceeded for IP: ${clientIP.slice(0, 8)}***`);
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+        { 
+          status: 429, 
+          headers: { 
+            ...corsHeaders, 
+            "Content-Type": "application/json",
+            "Retry-After": String(rateLimit.retryAfter || 60)
+          } 
+        }
+      );
+    }
+
+    // Cleanup old rate limit entries occasionally
+    if (Math.random() < 0.1) {
+      cleanupRateLimitMap();
+    }
+
     const { text } = await req.json();
 
     if (!text || typeof text !== "string") {
@@ -138,13 +202,13 @@ Insights should be short, conversational observations (max 10 words each).`,
 
     const result: ParseResult = JSON.parse(toolCall.function.arguments);
 
-    console.log("Demo parse result:", JSON.stringify(result, null, 2));
+    console.log("[DEMO-PARSE] Parse completed with", result.entities?.length || 0, "entities");
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Demo parse error:", error);
+    console.error("[DEMO-PARSE] Error:", error instanceof Error ? error.message : "Unknown error");
     return new Response(
       JSON.stringify({ 
         error: error instanceof Error ? error.message : "Failed to parse text",
