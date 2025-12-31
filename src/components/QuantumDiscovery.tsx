@@ -69,7 +69,7 @@ export const QuantumDiscovery = ({ availableThemes = [] }: QuantumDiscoveryProps
     }
   };
 
-  const getTypeLabel = (type: Discovery["type"]) => {
+  const getTypeLabel = (type: string) => {
     switch (type) {
       case "quantum_discovered":
         return { label: "Hidden Gem", icon: "✨", className: "bg-purple-500/20 text-purple-700 dark:text-purple-300" };
@@ -77,6 +77,8 @@ export const QuantumDiscovery = ({ availableThemes = [] }: QuantumDiscoveryProps
         return { label: "Strong Link", icon: "🔗", className: "bg-blue-500/20 text-blue-700 dark:text-blue-300" };
       case "classical_fallback":
         return { label: "Suggested", icon: "💡", className: "bg-amber-500/20 text-amber-700 dark:text-amber-300" };
+      default:
+        return { label: "Discovery", icon: "🔍", className: "bg-gray-500/20 text-gray-700 dark:text-gray-300" };
     }
   };
 
