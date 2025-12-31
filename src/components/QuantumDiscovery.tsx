@@ -1,9 +1,10 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Sparkles, Loader2, Zap, AlertCircle } from "lucide-react";
+import { Sparkles, Loader2, Zap, AlertCircle, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import {
   Select,
@@ -48,6 +49,7 @@ interface QuantumDiscoveryProps {
 }
 
 export const QuantumDiscovery = ({ availableThemes = [] }: QuantumDiscoveryProps) => {
+  const navigate = useNavigate();
   const [discoveries, setDiscoveries] = useState<Discovery[]>([]);
   const [loading, setLoading] = useState(false);
   const [startTheme, setStartTheme] = useState<string>("");
@@ -58,6 +60,11 @@ export const QuantumDiscovery = ({ availableThemes = [] }: QuantumDiscoveryProps
   const [selectedDiscovery, setSelectedDiscovery] = useState<Discovery | null>(null);
   const [relatedEntries, setRelatedEntries] = useState<RelatedEntry[]>([]);
   const [loadingEntries, setLoadingEntries] = useState(false);
+
+  const handleNavigateToEntry = (entryId: string) => {
+    setSelectedDiscovery(null);
+    navigate("/journal", { state: { scrollToEntryId: entryId } });
+  };
 
   const runQuantumDiscovery = async () => {
     setLoading(true);
@@ -315,10 +322,17 @@ export const QuantumDiscovery = ({ availableThemes = [] }: QuantumDiscoveryProps
               <p className="text-sm text-muted-foreground">No entries found for this connection</p>
             ) : (
               relatedEntries.map((entry) => (
-                <Card key={entry.id} className="p-4">
+                <Card 
+                  key={entry.id} 
+                  className="p-4 cursor-pointer hover:bg-muted/50 transition-colors group"
+                  onClick={() => handleNavigateToEntry(entry.id)}
+                >
                   <div className="space-y-2">
                     <div className="flex items-start justify-between gap-2">
-                      <h4 className="font-semibold text-sm">{entry.title}</h4>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <h4 className="font-semibold text-sm truncate">{entry.title}</h4>
+                        <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                      </div>
                       <Badge variant="outline" className="text-xs shrink-0">
                         {format(new Date(entry.entry_date), "MMM dd, yyyy")}
                       </Badge>

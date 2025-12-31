@@ -24,8 +24,10 @@ const Journal = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Get filterImportId from navigation state (from Import History "View" button)
-  const filterImportId = (location.state as { filterImportId?: string } | null)?.filterImportId;
+  // Get state from navigation (from Import History "View" button or other navigations)
+  const locationState = location.state as { filterImportId?: string; scrollToEntryId?: string } | null;
+  const filterImportId = locationState?.filterImportId;
+  const scrollToEntryId = locationState?.scrollToEntryId;
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -167,6 +169,7 @@ const Journal = () => {
                 onEntriesLoaded={handleEntriesLoaded}
                 onReply={handleReply}
                 filterImportId={filterImportId}
+                scrollToEntryId={scrollToEntryId}
               />
             </section>
           </div>

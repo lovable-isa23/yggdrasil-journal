@@ -73,6 +73,7 @@ interface JournalEntryListProps {
   onEntriesLoaded?: (total: number, filtered: number) => void;
   onReply?: (entryId: string, entryTitle: string) => void;
   filterImportId?: string;
+  scrollToEntryId?: string;
 }
 
 const getPreview = (content: string): string => {
@@ -137,10 +138,11 @@ const getDepthBadge = (depthScore?: number | null) => {
   }
 };
 
-export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntriesLoaded, onReply, filterImportId }: JournalEntryListProps) {
+export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntriesLoaded, onReply, filterImportId, scrollToEntryId }: JournalEntryListProps) {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [openEntries, setOpenEntries] = useState<Set<string>>(new Set());
+  const [highlightedEntryId, setHighlightedEntryId] = useState<string | null>(null);
   const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
   const [entryToEdit, setEntryToEdit] = useState<JournalEntry | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -203,6 +205,28 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
     fetchEntries(); 
     fetchGoals();
   }, [refreshTrigger]);
+
+  // Handle scroll to entry when navigating from other pages
+  useEffect(() => {
+    if (scrollToEntryId && !loading && entries.length > 0) {
+      // Open the entry and highlight it
+      setOpenEntries(prev => new Set([...prev, scrollToEntryId]));
+      setHighlightedEntryId(scrollToEntryId);
+      
+      // Scroll to the entry after a short delay to allow rendering
+      setTimeout(() => {
+        const entryElement = document.getElementById(`entry-${scrollToEntryId}`);
+        if (entryElement) {
+          entryElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+      
+      // Remove highlight after 3 seconds
+      setTimeout(() => {
+        setHighlightedEntryId(null);
+      }, 3000);
+    }
+  }, [scrollToEntryId, loading, entries]);
 
   // Apply filters and sorting
   const filteredAndSortedEntries = React.useMemo(() => {
@@ -446,8 +470,13 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
          const moodOption = MOOD_OPTIONS.find(m => m.value === (entry.mood_type || 'general'));
          const sourceBadge = getSourceBadge(entry.source_type);
 
+         const isHighlighted = highlightedEntryId === entry.id;
+         
          return (
-           <Card key={entry.id} id={`entry-${entry.id}`} className={`overflow-hidden w-full max-w-full border-l-4 ${moodStyles.border} bg-gradient-to-br ${moodStyles.bg} transition-all duration-200 hover:-translate-y-1 hover:shadow-lg`}>
+           <Card key={entry.id} id={`entry-${entry.id}`} className={cn(
+             `overflow-hidden w-full max-w-full border-l-4 ${moodStyles.border} bg-gradient-to-br ${moodStyles.bg} transition-all duration-200 hover:-translate-y-1 hover:shadow-lg`,
+             isHighlighted && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+           )}>
               <CardHeader className="pb-3 relative">
                 {/* Small floating reply/edit/delete buttons */}
                 <div className="absolute top-3 right-3 flex gap-1">
