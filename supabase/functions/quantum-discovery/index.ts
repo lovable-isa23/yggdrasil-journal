@@ -260,15 +260,38 @@ serve(async (req) => {
             is_direct_connection: d.is_direct_connection
           }));
           
-          // Normalize scores so highest = 1.0 (shows 5 dots)
+          // Apply sqrt transformation and normalize for better score distribution
+          // sqrt spreads values: 0.25 becomes 0.5, 0.04 becomes 0.2
           const maxScore = Math.max(...rawDiscoveries.map((d: any) => d.score), 0.01);
           discoveries = rawDiscoveries.map((d: any) => ({
             ...d,
-            score: d.score / maxScore
+            score: Math.sqrt(d.score / maxScore) // sqrt transformation for better distribution
           }));
           
+          // Look up relationship context for each discovery
+          const nodeNames = discoveries.map((d: any) => d.node);
+          const { data: relContexts } = await supabase
+            .from("knowledge_relationships")
+            .select("source_item, target_item, pattern_description, context")
+            .eq("user_id", user.id);
+          
+          // Add insight to each discovery
+          discoveries = discoveries.map((d: any) => {
+            const relContext = relContexts?.find((r: any) => 
+              r.source_item?.toLowerCase() === d.node.toLowerCase() || 
+              r.target_item?.toLowerCase() === d.node.toLowerCase()
+            );
+            const typeLabel = d.type === 'quantum_discovered' ? 'hidden patterns' : 
+                             d.type === 'reinforced' ? 'strong recurring links' : 'thematic connections';
+            return {
+              ...d,
+              insight: relContext?.pattern_description || relContext?.context || 
+                `Connected through ${typeLabel} in your journal`
+            };
+          });
+          
           method = "quantum";
-          console.log(`[QUANTUM] Found ${discoveries.length} discoveries via quantum service (normalized scores)`);
+          console.log(`[QUANTUM] Found ${discoveries.length} discoveries via quantum service (sqrt normalized)`);
         } else {
           const errorText = await quantumResponse.text();
           console.warn(`[QUANTUM] Service returned ${quantumResponse.status}: ${errorText}`);

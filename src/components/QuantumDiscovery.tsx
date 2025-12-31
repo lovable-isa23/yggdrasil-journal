@@ -23,6 +23,7 @@ interface Discovery {
   node: string;
   score: number;
   type: "quantum_discovered" | "reinforced" | "classical_fallback";
+  insight?: string;
 }
 
 interface QuantumDiscoveryProps {
@@ -183,18 +184,25 @@ export const QuantumDiscovery = ({ availableThemes = [] }: QuantumDiscoveryProps
                 return (
                   <div 
                     key={idx}
-                    className="flex items-center justify-between gap-3 p-3 rounded-lg bg-background/50 border border-border/50"
+                    className="flex flex-col gap-2 p-3 rounded-lg bg-background/50 border border-border/50"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <span className="text-lg">{typeInfo.icon}</span>
-                      <div className="min-w-0">
-                        <div className="font-medium truncate">{discovery.node}</div>
-                        <Badge variant="secondary" className={`text-xs mt-1 ${typeInfo.className}`}>
-                          {typeInfo.label}
-                        </Badge>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="text-lg">{typeInfo.icon}</span>
+                        <div className="min-w-0">
+                          <div className="font-medium truncate">{discovery.node}</div>
+                          <Badge variant="secondary" className={`text-xs mt-1 ${typeInfo.className}`}>
+                            {typeInfo.label}
+                          </Badge>
+                        </div>
                       </div>
+                      {getRelevanceDots(discovery.score)}
                     </div>
-                    {getRelevanceDots(discovery.score)}
+                    {discovery.insight && (
+                      <p className="text-xs text-muted-foreground pl-9 line-clamp-2">
+                        {discovery.insight}
+                      </p>
+                    )}
                   </div>
                 );
               })}
