@@ -4,7 +4,7 @@ import * as d3 from "d3";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { Loader2, Calendar, FileText, Maximize2, Download, Image as ImageIcon, FileDown, Network, Lightbulb, Target, RefreshCw, Search, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { Loader2, Calendar, FileText, Maximize2, Download, Image as ImageIcon, FileDown, Network, Lightbulb, Target, RefreshCw, Search, ZoomIn, ZoomOut, RotateCcw, Eye } from "lucide-react";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
@@ -18,6 +18,7 @@ import { useDataSufficiency } from "@/hooks/use-data-sufficiency";
 import { InsufficientDataPrompt } from "@/components/InsufficientDataPrompt";
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "./ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { Switch } from "./ui/switch";
 
 interface GraphNode extends d3.SimulationNodeDatum {
   id: string;
@@ -65,6 +66,7 @@ export const KnowledgeGraph = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [allNodeNames, setAllNodeNames] = useState<{ name: string; type: string }[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [showAllNodes, setShowAllNodes] = useState(false);
 
   useEffect(() => {
     fetchGraphData();
@@ -85,7 +87,7 @@ export const KnowledgeGraph = () => {
     if (allInsights.length > 0) {
       buildGraph(allInsights);
     }
-  }, [activeTab, allInsights, minStrength]);
+  }, [activeTab, allInsights, minStrength, showAllNodes]);
 
   useEffect(() => {
     if (graphData.nodes.length > 0) {
@@ -152,14 +154,42 @@ export const KnowledgeGraph = () => {
     const allThemes = new Set<string>();
     const allKeywords = new Set<string>();
 
+    // Alias groups for combining similar nodes
+    const aliasGroups = [
+      ['mom', 'mother', 'mum', 'mama'],
+      ['dad', 'father', 'papa'],
+      ['josh', 'joshua'],
+      ['discord', 'discord server'],
+      ['yggdrasil', 'yggdrasil (project)', 'yggdrasil project'],
+    ];
+
+    // Get canonical name for an item (normalizes aliases)
+    const getCanonicalName = (name: string): string => {
+      const lower = name.toLowerCase().trim();
+      for (const group of aliasGroups) {
+        if (group.some(alias => lower === alias || lower.includes(alias))) {
+          return group[0]; // Return first item as canonical
+        }
+      }
+      return lower;
+    };
+
     // Build a map of AI relationships first (these are the priority)
     const aiRelationshipMap = new Map<string, { strength: number; entryIds: string[] }>();
     relationships.forEach((rel) => {
-      const key = [rel.source_item.toLowerCase(), rel.target_item.toLowerCase()].sort().join("||");
-      aiRelationshipMap.set(key, {
-        strength: rel.strength,
-        entryIds: rel.entry_ids || []
-      });
+      const sourceCanon = getCanonicalName(rel.source_item);
+      const targetCanon = getCanonicalName(rel.target_item);
+      const key = [sourceCanon, targetCanon].sort().join("||");
+      const existing = aiRelationshipMap.get(key);
+      if (existing) {
+        existing.strength += rel.strength;
+        existing.entryIds = [...new Set([...existing.entryIds, ...(rel.entry_ids || [])])];
+      } else {
+        aiRelationshipMap.set(key, {
+          strength: rel.strength,
+          entryIds: rel.entry_ids || []
+        });
+      }
     });
 
     // Category colors for unified "all" view
@@ -169,20 +199,21 @@ export const KnowledgeGraph = () => {
       keyword: "#F59E0B",  // Amber
     };
 
+    // Helper to split items containing "and", "&", or "/"
+    const splitItem = (item: string): string[] => {
+      return item.split(/\s*(?:and|&|\/)\s*/i).map(s => s.trim()).filter(s => s.length > 0);
+    };
+
     // Count all items in each category before any filtering
     insights.forEach((insight) => {
-      const splitItem = (item: string): string[] => {
-        return item.split(/\s+(?:and|&)\s+/i).map(s => s.trim()).filter(s => s.length > 0);
-      };
-      
       (insight.entities || []).forEach((item: string) => {
-        splitItem(item).forEach(subItem => allEntities.add(subItem.toLowerCase()));
+        splitItem(item).forEach(subItem => allEntities.add(getCanonicalName(subItem)));
       });
       (insight.themes || []).forEach((item: string) => {
-        splitItem(item).forEach(subItem => allThemes.add(subItem.toLowerCase()));
+        splitItem(item).forEach(subItem => allThemes.add(getCanonicalName(subItem)));
       });
       (insight.keywords || []).forEach((item: string) => {
-        splitItem(item).forEach(subItem => allKeywords.add(subItem.toLowerCase()));
+        splitItem(item).forEach(subItem => allKeywords.add(getCanonicalName(subItem)));
       });
     });
 
@@ -200,11 +231,6 @@ export const KnowledgeGraph = () => {
     allKeywords.forEach(item => searchableNodes.push({ name: item, type: "keyword" }));
     setAllNodeNames(searchableNodes);
 
-    // Helper to split items containing "and" or "&"
-    const splitItem = (item: string): string[] => {
-      return item.split(/\s+(?:and|&)\s+/i).map(s => s.trim()).filter(s => s.length > 0);
-    };
-
     // Extract items based on current tab
     insights.forEach((insight) => {
       const displayNames = new Map<string, string>();
@@ -212,22 +238,23 @@ export const KnowledgeGraph = () => {
       const processItems = (items: string[], type: "entity" | "theme" | "keyword") => {
         const processedItems: string[] = [];
         items.forEach((item) => {
-          // Split items containing "and" or "&"
+          // Split items containing "and", "&", or "/"
           const subItems = splitItem(item);
           subItems.forEach((subItem) => {
-            const normalizedItem = subItem.toLowerCase();
-            if (!displayNames.has(normalizedItem)) {
-              displayNames.set(normalizedItem, subItem);
+            const canonicalItem = getCanonicalName(subItem);
+            if (!displayNames.has(canonicalItem)) {
+              // Capitalize first letter for display
+              displayNames.set(canonicalItem, canonicalItem.charAt(0).toUpperCase() + canonicalItem.slice(1));
             }
-            itemFreq.set(normalizedItem, (itemFreq.get(normalizedItem) || 0) + 1);
-            if (!itemTypes.has(normalizedItem)) {
-              itemTypes.set(normalizedItem, type);
+            itemFreq.set(canonicalItem, (itemFreq.get(canonicalItem) || 0) + 1);
+            if (!itemTypes.has(canonicalItem)) {
+              itemTypes.set(canonicalItem, type);
             }
-            if (!itemEntries.has(normalizedItem)) {
-              itemEntries.set(normalizedItem, new Set());
+            if (!itemEntries.has(canonicalItem)) {
+              itemEntries.set(canonicalItem, new Set());
             }
-            itemEntries.get(normalizedItem)?.add(insight.entry_id);
-            processedItems.push(subItem);
+            itemEntries.get(canonicalItem)?.add(insight.entry_id);
+            processedItems.push(canonicalItem);
           });
         });
         return processedItems;
@@ -341,8 +368,8 @@ export const KnowledgeGraph = () => {
       } as GraphNode & { relevanceScore: number });
     });
 
-    // For "all" tab, filter to top 10 most relevant nodes
-    if (activeTab === "all") {
+    // For "all" tab, filter to top 10 most relevant nodes unless showAllNodes is enabled
+    if (activeTab === "all" && !showAllNodes) {
       nodes = (nodes as (GraphNode & { relevanceScore: number })[])
         .sort((a, b) => b.relevanceScore - a.relevanceScore)
         .slice(0, 10);
@@ -462,27 +489,43 @@ export const KnowledgeGraph = () => {
   const handleCenterOnLargest = () => {
     if (!svgRef.current || !zoomRef.current || graphData.nodes.length === 0) return;
     
-    // Find largest node by value
-    const largestNode = graphData.nodes.reduce((max, node) => 
-      node.value > max.value ? node : max, graphData.nodes[0]);
+    // Count connections per node to find the most connected one
+    const connectionCounts = new Map<string, number>();
+    graphData.links.forEach(link => {
+      const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
+      const targetId = typeof link.target === 'object' ? link.target.id : link.target;
+      connectionCounts.set(sourceId, (connectionCounts.get(sourceId) || 0) + 1);
+      connectionCounts.set(targetId, (connectionCounts.get(targetId) || 0) + 1);
+    });
     
-    // Get actual position from D3 simulation (nodes are mutated by D3)
-    const svg = d3.select(svgRef.current);
-    const nodeSelection = svg.selectAll<SVGCircleElement, GraphNode>("circle")
-      .filter((d: GraphNode) => d.id === largestNode.id);
+    // Find most connected node
+    const mostConnectedNode = graphData.nodes.reduce((max, node) => {
+      const maxCount = connectionCounts.get(max.id) || 0;
+      const nodeCount = connectionCounts.get(node.id) || 0;
+      return nodeCount > maxCount ? node : max;
+    }, graphData.nodes[0]);
     
-    if (nodeSelection.empty()) return;
-    
-    const nodeData = nodeSelection.datum() as GraphNode;
-    if (nodeData.x === undefined || nodeData.y === undefined) return;
-    
-    const width = 800;
-    const height = 600;
-    
-    svg.transition().duration(750).call(
-      zoomRef.current.transform,
-      d3.zoomIdentity.translate(width / 2 - nodeData.x, height / 2 - nodeData.y).scale(1.5)
-    );
+    // Use setTimeout to ensure D3 has updated positions
+    setTimeout(() => {
+      if (!svgRef.current || !zoomRef.current) return;
+      
+      const svg = d3.select(svgRef.current);
+      const nodeSelection = svg.selectAll<SVGCircleElement, GraphNode>("circle")
+        .filter((d: GraphNode) => d.id === mostConnectedNode.id);
+      
+      if (nodeSelection.empty()) return;
+      
+      const nodeData = nodeSelection.datum() as GraphNode;
+      if (nodeData.x === undefined || nodeData.y === undefined) return;
+      
+      const width = 800;
+      const height = 600;
+      
+      svg.transition().duration(750).call(
+        zoomRef.current.transform,
+        d3.zoomIdentity.translate(width / 2 - nodeData.x, height / 2 - nodeData.y).scale(1.5)
+      );
+    }, 100);
   };
 
   const handleSearchSelect = (nodeName: string) => {
@@ -843,6 +886,21 @@ export const KnowledgeGraph = () => {
                 <Badge variant="secondary" className="ml-1 text-xs px-1.5 py-0">{totalCounts.keywords}</Badge>
               </TabsTrigger>
             </TabsList>
+            
+            {/* Show All Nodes Toggle - only visible on "all" tab */}
+            {activeTab === "all" && (
+              <div className="flex items-center gap-2 mb-4">
+                <Switch 
+                  id="show-all-nodes" 
+                  checked={showAllNodes} 
+                  onCheckedChange={setShowAllNodes}
+                />
+                <label htmlFor="show-all-nodes" className="text-sm text-muted-foreground cursor-pointer">
+                  Show all nodes (instead of top 10)
+                </label>
+              </div>
+            )}
+            
             <TabsContent value={activeTab}>
               <div className="relative w-full bg-background/50 rounded-lg border p-2 sm:p-4 overflow-hidden">
               {/* Search */}
