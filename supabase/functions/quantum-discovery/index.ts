@@ -251,9 +251,24 @@ serve(async (req) => {
           const quantumData = await quantumResponse.json();
           console.log(`[QUANTUM] SUCCESS - Response:`, JSON.stringify(quantumData));
           
-          discoveries = quantumData.discoveries || [];
+          // Map quantum service response fields to frontend expected format
+          const rawDiscoveries = (quantumData.discoveries || []).map((d: any) => ({
+            node: d.node,
+            score: d.discovery_score || d.score || 0,
+            type: d.connection_type || d.type || "quantum_discovered",
+            probability: d.probability,
+            is_direct_connection: d.is_direct_connection
+          }));
+          
+          // Normalize scores so highest = 1.0 (shows 5 dots)
+          const maxScore = Math.max(...rawDiscoveries.map((d: any) => d.score), 0.01);
+          discoveries = rawDiscoveries.map((d: any) => ({
+            ...d,
+            score: d.score / maxScore
+          }));
+          
           method = "quantum";
-          console.log(`[QUANTUM] Found ${discoveries.length} discoveries via quantum service`);
+          console.log(`[QUANTUM] Found ${discoveries.length} discoveries via quantum service (normalized scores)`);
         } else {
           const errorText = await quantumResponse.text();
           console.warn(`[QUANTUM] Service returned ${quantumResponse.status}: ${errorText}`);
