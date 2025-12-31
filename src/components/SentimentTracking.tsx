@@ -265,12 +265,13 @@ export const SentimentTracking = () => {
             ? `${format(startDate, 'MMM d, yyyy')} - ${format(endDate, 'MMM d, yyyy')}`
             : "Emotional patterns and correlations over time"}
         </CardDescription>
-        <div className="flex gap-2 flex-wrap mt-2">
+        <div className="flex items-center gap-1.5 flex-wrap mt-2">
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
-                <CalendarIcon className="h-4 w-4" />
-                Start Date
+              <Button variant="outline" size="sm" className="gap-1 h-8 px-2 text-xs">
+                <CalendarIcon className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Start</span>
+                {startDate ? format(startDate, "M/d") : <span className="sm:hidden">Start</span>}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
@@ -285,9 +286,10 @@ export const SentimentTracking = () => {
 
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
-                <CalendarIcon className="h-4 w-4" />
-                End Date
+              <Button variant="outline" size="sm" className="gap-1 h-8 px-2 text-xs">
+                <CalendarIcon className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">End</span>
+                {endDate ? format(endDate, "M/d") : <span className="sm:hidden">End</span>}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
@@ -302,39 +304,42 @@ export const SentimentTracking = () => {
           <Button
             variant="outline"
             size="sm"
+            className="h-8 px-2 text-xs"
             onClick={() => {
               setStartDate(subDays(new Date(), 30));
               setEndDate(new Date());
             }}
           >
-            Last 30 days
+            <span className="hidden sm:inline">Last 30 days</span>
+            <span className="sm:hidden">30d</span>
           </Button>
 
           <Button
             variant="outline"
             size="sm"
+            className="h-8 px-2 text-xs"
             onClick={() => {
               setStartDate(undefined);
               setEndDate(undefined);
               setSentimentData(allSentimentData);
             }}
           >
-            Show all
+            <span className="hidden sm:inline">Show all</span>
+            <span className="sm:hidden">All</span>
           </Button>
 
           {(startDate || endDate) && (
             <Button
               variant="ghost"
               size="sm"
+              className="h-8 px-2"
               onClick={() => {
                 setStartDate(undefined);
                 setEndDate(undefined);
                 setSentimentData(allSentimentData);
               }}
-              className="gap-2"
             >
               <X className="h-4 w-4" />
-              Clear
             </Button>
           )}
         </div>
@@ -351,8 +356,16 @@ export const SentimentTracking = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="date" className="text-xs" />
-                  <YAxis domain={[0, 10]} className="text-xs" />
+                  <XAxis 
+                    dataKey="date" 
+                    className="text-xs" 
+                    tick={{ fontSize: 10 }}
+                    interval={chartData.length <= 7 ? 0 : chartData.length <= 14 ? 1 : Math.floor(chartData.length / 5)}
+                    angle={-45}
+                    textAnchor="end"
+                    height={50}
+                  />
+                  <YAxis domain={[0, 10]} className="text-xs" tick={{ fontSize: 10 }} width={30} />
                   <Tooltip />
                   <Legend />
                   <Line 
@@ -360,6 +373,7 @@ export const SentimentTracking = () => {
                     dataKey="intensity" 
                     stroke="hsl(var(--primary))" 
                     strokeWidth={2}
+                    dot={{ r: 3 }}
                     name="Emotional Intensity"
                   />
                 </LineChart>
