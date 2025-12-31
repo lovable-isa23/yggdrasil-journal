@@ -76,6 +76,14 @@ export const PatternInsights = () => {
     }
   };
 
+  // Split items on "and", "&", or "/" for proper separation
+  const splitItem = (item: string): string[] => {
+    return item
+      .split(/\s*(?:and|&|\/)\s*/i)
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+  };
+
   const fetchAvailableThemes = async () => {
     try {
       const { data, error } = await supabase
@@ -86,14 +94,19 @@ export const PatternInsights = () => {
 
       if (error) throw error;
 
-      // Extract unique themes/items
+      // Extract unique themes/items, splitting combined items
       const themes = new Set<string>();
       data?.forEach((rel) => {
-        themes.add(rel.source_item);
-        themes.add(rel.target_item);
+        splitItem(rel.source_item).forEach(t => themes.add(t.toLowerCase()));
+        splitItem(rel.target_item).forEach(t => themes.add(t.toLowerCase()));
       });
       
-      setAvailableThemes(Array.from(themes).slice(0, 20));
+      // Capitalize first letter of each theme
+      const formatted = Array.from(themes)
+        .map(t => t.charAt(0).toUpperCase() + t.slice(1))
+        .sort();
+      
+      setAvailableThemes(formatted.slice(0, 20));
     } catch (error) {
       console.error("Error fetching themes:", error);
     }
@@ -152,6 +165,16 @@ export const PatternInsights = () => {
     setSelectedItem(item);
     
     try {
+      // Fetch decrypted entries to get readable content
+      const { data: decryptedData, error: decryptError } = await supabase.functions.invoke("decrypt-entries");
+      
+      if (decryptError) {
+        console.error("Decrypt error:", decryptError);
+        throw decryptError;
+      }
+      
+      const allEntries = decryptedData?.entries || [];
+      
       // Fetch entry_insights that contain this item in themes, keywords, or entities
       const { data: insights, error: insightsError } = await supabase
         .from("entry_insights")
@@ -159,16 +182,17 @@ export const PatternInsights = () => {
 
       if (insightsError) throw insightsError;
 
-      // Filter insights that contain the selected item
+      // Filter insights that contain the selected item (case-insensitive)
+      const itemLower = item.toLowerCase();
       const relevantInsights = insights?.filter((insight) => {
-        const themes = (insight.themes as string[]) || [];
-        const keywords = (insight.keywords as string[]) || [];
-        const entities = (insight.entities as string[]) || [];
+        const themes = ((insight.themes as string[]) || []).map(t => t.toLowerCase());
+        const keywords = ((insight.keywords as string[]) || []).map(k => k.toLowerCase());
+        const entities = ((insight.entities as string[]) || []).map(e => e.toLowerCase());
         
         return (
-          themes.includes(item) ||
-          keywords.includes(item) ||
-          entities.includes(item)
+          themes.some(t => t.includes(itemLower) || itemLower.includes(t)) ||
+          keywords.some(k => k.includes(itemLower) || itemLower.includes(k)) ||
+          entities.some(e => e.includes(itemLower) || itemLower.includes(e))
         );
       }) || [];
 
@@ -179,29 +203,26 @@ export const PatternInsights = () => {
         return;
       }
 
-      // Fetch the actual journal entries
-      const { data: entries, error: entriesError } = await supabase
-        .from("journal_entries")
-        .select("id, title, entry_date, content")
-        .in("id", entryIds)
-        .order("entry_date", { ascending: false });
+      // Filter decrypted entries by matching IDs
+      const matchedEntries = allEntries
+        .filter((e: any) => entryIds.includes(e.id))
+        .map((entry: any) => {
+          const sentences = (entry.content || "").split(/[.!?]+/);
+          const relevantSentence = sentences.find((s: string) =>
+            s.toLowerCase().includes(item.toLowerCase())
+          );
 
-      if (entriesError) throw entriesError;
+          return {
+            id: entry.id,
+            title: entry.title,
+            entry_date: entry.entry_date,
+            content: entry.content,
+            relevantQuote: relevantSentence?.trim() || (entry.content || "").slice(0, 150) + "...",
+          };
+        })
+        .sort((a: any, b: any) => new Date(b.entry_date).getTime() - new Date(a.entry_date).getTime());
 
-      // Extract relevant quotes from content that mention the item
-      const entriesWithQuotes = entries?.map((entry) => {
-        const sentences = entry.content.split(/[.!?]+/);
-        const relevantSentence = sentences.find((s) =>
-          s.toLowerCase().includes(item.toLowerCase())
-        );
-
-        return {
-          ...entry,
-          relevantQuote: relevantSentence?.trim() || entry.content.slice(0, 150) + "...",
-        };
-      }) || [];
-
-      setRelatedEntries(entriesWithQuotes);
+      setRelatedEntries(matchedEntries);
     } catch (error) {
       console.error("Error fetching related entries:", error);
       toast.error("Failed to load related entries");

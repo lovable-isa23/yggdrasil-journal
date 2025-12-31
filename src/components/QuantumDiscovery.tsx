@@ -84,7 +84,14 @@ export const QuantumDiscovery = ({ availableThemes = [] }: QuantumDiscoveryProps
   };
 
   const getRelevanceDots = (score: number) => {
-    const filledDots = Math.ceil(score * 5);
+    // Use tiered scoring: 
+    // score >= 0.4 = 5 dots, 0.3-0.4 = 4 dots, 0.2-0.3 = 3 dots, 0.1-0.2 = 2 dots, <0.1 = 1 dot
+    let filledDots = 1;
+    if (score >= 0.4) filledDots = 5;
+    else if (score >= 0.3) filledDots = 4;
+    else if (score >= 0.2) filledDots = 3;
+    else if (score >= 0.1) filledDots = 2;
+    
     return (
       <div className="flex items-center gap-1.5">
         <span className="text-xs text-muted-foreground">Relevance:</span>

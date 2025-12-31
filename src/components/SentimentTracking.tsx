@@ -5,11 +5,13 @@ import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Calendar } from "./ui/calendar";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
 import { Loader2, Heart, TrendingUp, TrendingDown, Minus, Calendar as CalendarIcon, X } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { format, isWithinInterval, subDays } from "date-fns";
 import { useDataSufficiency } from "@/hooks/use-data-sufficiency";
 import { InsufficientDataPrompt } from "@/components/InsufficientDataPrompt";
+import { toast } from "sonner";
 
 interface SentimentData {
   date: string;
@@ -17,6 +19,14 @@ interface SentimentData {
   emotions: Map<string, number>;
   themes: string[];
   entities: string[];
+}
+
+interface RelatedEntry {
+  id: string;
+  title: string;
+  entry_date: string;
+  content: string;
+  relevantQuote?: string;
 }
 
 export const SentimentTracking = () => {
@@ -27,6 +37,10 @@ export const SentimentTracking = () => {
   const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 30));
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
   const { hasMinimumData, totalEntries, deepEntries, analyzedEntries, needsAnalysis } = useDataSufficiency();
+  
+  // State for clickable themes/entities sidebar
+  const [selectedItem, setSelectedItem] = useState<string | null>(null);
+  const [relatedEntries, setRelatedEntries] = useState<RelatedEntry[]>([]);
 
   useEffect(() => {
     fetchSentimentData();
@@ -131,6 +145,62 @@ export const SentimentTracking = () => {
     if (recent > older + 0.5) return <TrendingUp className="h-4 w-4 text-green-500" />;
     if (recent < older - 0.5) return <TrendingDown className="h-4 w-4 text-red-500" />;
     return <Minus className="h-4 w-4 text-muted-foreground" />;
+  };
+
+  // Handle click on theme/entity to show related entries
+  const handleItemClick = async (item: string, itemType: 'theme' | 'entity') => {
+    setSelectedItem(item);
+    
+    try {
+      // Fetch decrypted entries to get readable content
+      const { data: decryptedData, error: decryptError } = await supabase.functions.invoke("decrypt-entries");
+      
+      if (decryptError) {
+        console.error("Decrypt error:", decryptError);
+        throw decryptError;
+      }
+      
+      const allEntries = decryptedData?.entries || [];
+      
+      // Fetch insights to find which entries mention this item
+      const { data: insights, error: insightsError } = await supabase
+        .from("entry_insights")
+        .select("entry_id, themes, entities");
+        
+      if (insightsError) throw insightsError;
+      
+      const itemLower = item.toLowerCase();
+      const matchingEntryIds = insights
+        ?.filter(i => {
+          const list = itemType === 'theme' 
+            ? ((i.themes as string[]) || []).map(t => t.toLowerCase())
+            : ((i.entities as string[]) || []).map(e => e.toLowerCase());
+          return list.some(l => l.includes(itemLower) || itemLower.includes(l));
+        })
+        .map(i => i.entry_id) || [];
+      
+      const matchedEntries = allEntries
+        .filter((e: any) => matchingEntryIds.includes(e.id))
+        .map((entry: any) => {
+          const sentences = (entry.content || "").split(/[.!?]+/);
+          const relevantSentence = sentences.find((s: string) =>
+            s.toLowerCase().includes(item.toLowerCase())
+          );
+          return {
+            id: entry.id,
+            title: entry.title,
+            entry_date: entry.entry_date,
+            content: entry.content,
+            relevantQuote: relevantSentence?.trim() || (entry.content || "").slice(0, 150) + "...",
+          };
+        })
+        .sort((a: any, b: any) => new Date(b.entry_date).getTime() - new Date(a.entry_date).getTime());
+      
+      setRelatedEntries(matchedEntries);
+    } catch (error) {
+      console.error("Error fetching related entries:", error);
+      toast.error("Failed to load related entries");
+    }
   };
 
   if (loading) {
@@ -328,7 +398,12 @@ export const SentimentTracking = () => {
                           .sort((a, b) => b[1] - a[1])
                           .slice(0, 5)
                           .map(([theme, count]) => (
-                            <Badge key={theme} variant="outline" className="text-xs">
+                            <Badge 
+                              key={theme} 
+                              variant="outline" 
+                              className="text-xs cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                              onClick={() => handleItemClick(theme, 'theme')}
+                            >
                               {theme} ({count})
                             </Badge>
                           ))}
@@ -343,7 +418,12 @@ export const SentimentTracking = () => {
                           .sort((a, b) => b[1] - a[1])
                           .slice(0, 5)
                           .map(([entity, count]) => (
-                            <Badge key={entity} variant="outline" className="text-xs">
+                            <Badge 
+                              key={entity} 
+                              variant="outline" 
+                              className="text-xs cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                              onClick={() => handleItemClick(entity, 'entity')}
+                            >
                               {entity} ({count})
                             </Badge>
                           ))}
@@ -356,6 +436,43 @@ export const SentimentTracking = () => {
           </>
         )}
       </CardContent>
+
+      {/* Sidebar for related entries */}
+      <Sheet open={selectedItem !== null} onOpenChange={(open) => !open && setSelectedItem(null)}>
+        <SheetContent className="overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>{selectedItem}</SheetTitle>
+            <SheetDescription>
+              Journal entries mentioning this item
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-6 space-y-4">
+            {relatedEntries.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No entries found mentioning this item</p>
+            ) : (
+              relatedEntries.map((entry) => (
+                <Card key={entry.id} className="p-4">
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <h4 className="font-semibold text-sm">{entry.title}</h4>
+                      <Badge variant="outline" className="text-xs shrink-0">
+                        {format(new Date(entry.entry_date), "MMM dd, yyyy")}
+                      </Badge>
+                    </div>
+                    {entry.relevantQuote && (
+                      <div className="bg-muted/50 rounded-lg p-3 mt-2 border-l-2 border-primary">
+                        <p className="text-xs italic text-muted-foreground">
+                          "{entry.relevantQuote}"
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </Card>
   );
 };
