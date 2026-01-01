@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Sparkles, Loader2, Zap, AlertCircle, ExternalLink } from "lucide-react";
+import { Sparkles, Loader2, Zap, AlertCircle, ExternalLink, ArrowRight, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import {
   Select,
@@ -28,12 +28,19 @@ import {
 } from "./ui/sheet";
 import { format } from "date-fns";
 
+interface ConnectionPathStep {
+  from: string;
+  to: string;
+  description?: string;
+}
+
 interface Discovery {
   node: string;
   score: number;
   type: "quantum_discovered" | "reinforced" | "classical_fallback";
   insight?: string;
   entry_ids?: string[];
+  connection_path?: ConnectionPathStep[];
 }
 
 interface RelatedEntry {
@@ -53,6 +60,7 @@ export const QuantumDiscovery = ({ availableThemes = [] }: QuantumDiscoveryProps
   const [discoveries, setDiscoveries] = useState<Discovery[]>([]);
   const [loading, setLoading] = useState(false);
   const [startTheme, setStartTheme] = useState<string>("");
+  const [selectedStartTheme, setSelectedStartTheme] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [graphInfo, setGraphInfo] = useState<{ nodes: number; edges: number } | null>(null);
   
@@ -84,6 +92,7 @@ export const QuantumDiscovery = ({ availableThemes = [] }: QuantumDiscoveryProps
       }
 
       setDiscoveries(data.discoveries || []);
+      setSelectedStartTheme(data.start_node || null);
       setGraphInfo({
         nodes: data.total_nodes,
         edges: data.total_edges
@@ -313,7 +322,46 @@ export const QuantumDiscovery = ({ availableThemes = [] }: QuantumDiscoveryProps
               {selectedDiscovery?.insight || "Journal entries forming this connection"}
             </SheetDescription>
           </SheetHeader>
+          
+          {/* Connection Path Visualization */}
+          {selectedDiscovery?.connection_path && selectedDiscovery.connection_path.length > 0 && (
+            <div className="mt-4 p-3 bg-muted/30 rounded-lg border border-border/50">
+              <div className="text-xs font-medium text-muted-foreground mb-2">Connection Path</div>
+              <div className="flex flex-wrap items-center gap-1">
+                {selectedStartTheme && (
+                  <>
+                    <Badge variant="outline" className="bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30">
+                      {selectedStartTheme}
+                    </Badge>
+                    <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                  </>
+                )}
+                {selectedDiscovery.connection_path.map((step, idx) => (
+                  <div key={idx} className="flex items-center gap-1">
+                    {idx > 0 && <ArrowRight className="h-3 w-3 text-muted-foreground" />}
+                    <Badge variant="outline" className="text-xs">
+                      {step.to}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+              {selectedDiscovery.connection_path.some(p => p.description) && (
+                <div className="mt-2 space-y-1">
+                  {selectedDiscovery.connection_path.filter(p => p.description).map((step, idx) => (
+                    <div key={idx} className="text-xs text-muted-foreground flex items-start gap-2">
+                      <ChevronRight className="h-3 w-3 mt-0.5 shrink-0" />
+                      <span><strong>{step.from} → {step.to}:</strong> {step.description}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          
           <div className="mt-6 space-y-4">
+            <div className="text-sm font-medium text-muted-foreground">
+              Related Entries ({relatedEntries.length})
+            </div>
             {loadingEntries ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
