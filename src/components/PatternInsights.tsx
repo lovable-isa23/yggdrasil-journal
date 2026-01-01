@@ -106,7 +106,7 @@ export const PatternInsights = () => {
         .map(t => t.charAt(0).toUpperCase() + t.slice(1))
         .sort();
       
-      setAvailableThemes(formatted.slice(0, 20));
+      setAvailableThemes(formatted.slice(0, 30));
     } catch (error) {
       console.error("Error fetching themes:", error);
     }

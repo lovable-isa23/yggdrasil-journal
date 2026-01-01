@@ -210,9 +210,9 @@ export const QuantumDiscovery = ({ availableThemes = [] }: QuantumDiscoveryProps
                 <SelectTrigger className="w-full sm:w-[200px]">
                   <SelectValue placeholder="Starting theme (optional)" />
                 </SelectTrigger>
-                <SelectContent>
+              <SelectContent className="max-h-[300px]">
                   <SelectItem value="__any__">Any theme</SelectItem>
-                  {availableThemes.slice(0, 10).map((theme) => (
+                  {availableThemes.slice(0, 25).map((theme) => (
                     <SelectItem key={theme} value={theme}>
                       {theme}
                     </SelectItem>
