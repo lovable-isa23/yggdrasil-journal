@@ -90,11 +90,11 @@ function classicalRandomWalk(
     // Boost score for non-direct neighbors (interesting discoveries)
     const adjustedScore = isDirectNeighbor ? score * 0.5 : score * 1.5;
     
-    // Determine type based on connection pattern
+    // Determine type based on connection pattern with adjusted thresholds for diversity
     let type: "quantum_discovered" | "reinforced" | "classical_fallback" = "classical_fallback";
-    if (!isDirectNeighbor && adjustedScore > 0.1) {
+    if (!isDirectNeighbor && adjustedScore > 0.05) {
       type = "quantum_discovered"; // Hidden gem - not directly connected but frequently visited
-    } else if (isDirectNeighbor && adjustedScore > 0.05) {
+    } else if (isDirectNeighbor && adjustedScore > 0.03) {
       type = "reinforced"; // Strong direct connection
     }
     
@@ -358,6 +358,12 @@ serve(async (req) => {
     }
     
     // Entry lookup happens after this
+
+    // Filter out the starting theme from discoveries (self-connection bug fix)
+    const startNodeName = sortedNodes[startNodeIdx]?.toLowerCase();
+    discoveries = discoveries.filter((d: any) => 
+      d.node.toLowerCase() !== startNodeName
+    );
 
     // Look up entry IDs for each discovered node
     const { data: insightsForEntries } = await supabase
