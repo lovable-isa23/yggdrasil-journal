@@ -29,7 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn, parseLocalDate } from "@/lib/utils";
+import { cn, parseLocalDate, preserveNewlines } from "@/lib/utils";
 import { EntryLinkSelector } from "@/components/EntryLinkSelector";
 
 interface JournalEntry {
@@ -570,7 +570,7 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
                 <>
                   <CardContent className="pt-4 border-t">
                     <div className="prose prose-sm max-w-full dark:prose-invert break-words overflow-hidden md:prose-ul:list-disc md:prose-ol:list-decimal prose-ul:list-none prose-ol:list-none prose-ul:pl-0 prose-ol:pl-0 prose-li:leading-tight md:prose-li:leading-relaxed prose-p:leading-snug md:prose-p:leading-relaxed">
-                      <ReactMarkdown>{entry.content}</ReactMarkdown>
+                      <ReactMarkdown>{preserveNewlines(entry.content)}</ReactMarkdown>
                     </div>
                     
                     {/* Show bidirectional linked entries when expanded */}
@@ -789,7 +789,7 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
                 <TabsContent value="preview" className="mt-2">
                   <div className="min-h-[200px] sm:min-h-[300px] rounded-md border bg-muted/50 p-4">
                     <div className="prose prose-sm max-w-full dark:prose-invert break-words overflow-hidden md:prose-ul:list-disc md:prose-ol:list-decimal prose-ul:list-none prose-ol:list-none prose-ul:pl-0 prose-ol:pl-0 prose-li:leading-tight md:prose-li:leading-relaxed prose-p:leading-snug md:prose-p:leading-relaxed">
-                      <ReactMarkdown>{editContent || "*No content to preview*"}</ReactMarkdown>
+                      <ReactMarkdown>{preserveNewlines(editContent) || "*No content to preview*"}</ReactMarkdown>
                     </div>
                   </div>
                 </TabsContent>

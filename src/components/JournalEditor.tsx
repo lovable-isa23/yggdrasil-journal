@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, Target, X, MessageSquareReply, Link2, ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import { cn, preserveNewlines } from "@/lib/utils";
 import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -372,7 +372,7 @@ export const JournalEditor = ({ onEntryCreated, replyToEntry, onReplyHandled }: 
                   disallowedElements={['script', 'iframe', 'object', 'embed']}
                   unwrapDisallowed={true}
                 >
-                  {content}
+                  {preserveNewlines(content)}
                 </ReactMarkdown>
               ) : (
                 <p className="text-muted-foreground italic">Nothing to preview yet...</p>
