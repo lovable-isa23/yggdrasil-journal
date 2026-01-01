@@ -30,15 +30,24 @@ interface Discovery {
   type: "quantum_discovered" | "reinforced" | "classical_fallback";
 }
 
-// Classical random walk fallback
+interface ConnectionPath {
+  from: string;
+  to: string;
+  via?: string;
+  description?: string;
+}
+
+// Classical random walk with path tracking
 function classicalRandomWalk(
   nodes: string[],
   edges: GraphEdge[],
   startNode: number,
   steps: number = 100
-): Discovery[] {
+): { discoveries: Discovery[]; paths: Map<number, number[]> } {
   const visits = new Map<number, number>();
+  const paths = new Map<number, number[]>(); // Track paths to each node
   let current = startNode;
+  let currentPath: number[] = [startNode];
   
   // Build adjacency list
   const adjacency = new Map<number, { target: number; weight: number }[]>();
@@ -54,10 +63,16 @@ function classicalRandomWalk(
   for (let i = 0; i < steps; i++) {
     visits.set(current, (visits.get(current) || 0) + 1);
     
+    // Store the shortest path to this node
+    if (!paths.has(current) || currentPath.length < (paths.get(current)?.length || Infinity)) {
+      paths.set(current, [...currentPath]);
+    }
+    
     const neighbors = adjacency.get(current) || [];
     if (neighbors.length === 0) {
       // Teleport to random node if stuck
       current = Math.floor(Math.random() * nodes.length);
+      currentPath = [startNode, current];
       continue;
     }
     
@@ -69,6 +84,7 @@ function classicalRandomWalk(
       rand -= neighbor.weight;
       if (rand <= 0) {
         current = neighbor.target;
+        currentPath = [...currentPath.slice(0, 3), current]; // Keep path short
         break;
       }
     }
@@ -100,14 +116,15 @@ function classicalRandomWalk(
     
     discoveries.push({
       node: nodes[nodeIdx],
-      score: adjustedScore, // Keep raw score, apply tiered scoring later
+      score: adjustedScore,
       type
     });
   }
 
-  return discoveries
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 5);
+  return {
+    discoveries: discoveries.sort((a, b) => b.score - a.score).slice(0, 5),
+    paths
+  };
 }
 
 serve(async (req) => {
@@ -153,10 +170,10 @@ serve(async (req) => {
       // No body or invalid JSON, use default
     }
 
-    // Fetch user's knowledge relationships
+// Fetch user's knowledge relationships with entry_ids and pattern descriptions
     const { data: relationships, error: relError } = await supabase
       .from("knowledge_relationships")
-      .select("source_item, target_item, weighted_strength, strength")
+      .select("source_item, target_item, weighted_strength, strength, entry_ids, pattern_description, context")
       .eq("user_id", user.id);
 
     if (relError) {
@@ -234,17 +251,29 @@ serve(async (req) => {
     };
 
     let discoveries: Discovery[];
+    let discoveryPaths = new Map<number, number[]>();
     let method: "quantum" | "classical_fallback" = "quantum";
+
+    // Build relationship lookup maps for entry_ids and descriptions
+    const relationshipMap = new Map<string, { entry_ids: string[]; description?: string }>();
+    for (const rel of relationships) {
+      const key = `${rel.source_item.toLowerCase()}|${rel.target_item.toLowerCase()}`;
+      const reverseKey = `${rel.target_item.toLowerCase()}|${rel.source_item.toLowerCase()}`;
+      const entry_ids = (rel.entry_ids || []) as string[];
+      const description = rel.pattern_description || rel.context;
+      
+      relationshipMap.set(key, { entry_ids, description });
+      relationshipMap.set(reverseKey, { entry_ids, description });
+    }
 
     // Try quantum service first
     if (quantumServiceUrl) {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
       
       try {
         const fullUrl = `${quantumServiceUrl}/quantum-walk`;
         console.log(`[QUANTUM] Calling service at: ${fullUrl}`);
-        console.log(`[QUANTUM] Request payload:`, JSON.stringify(quantumRequest));
         
         const quantumResponse = await fetch(fullUrl, {
           method: "POST",
@@ -257,150 +286,138 @@ serve(async (req) => {
 
         if (quantumResponse.ok) {
           const quantumData = await quantumResponse.json();
-          console.log(`[QUANTUM] SUCCESS - Response:`, JSON.stringify(quantumData));
+          console.log(`[QUANTUM] SUCCESS`);
           
-          // Map quantum service response fields to frontend expected format
-          const rawDiscoveries = (quantumData.discoveries || []).map((d: any) => ({
-            node: d.node,
-            score: d.discovery_score || d.score || 0,
-            type: d.connection_type || d.type || "quantum_discovered",
-            probability: d.probability,
-            is_direct_connection: d.is_direct_connection
-          }));
-          
-          // Use tiered scoring instead of normalization for better distribution
-          // This prevents all items from becoming 5/5 relevance
-          discoveries = rawDiscoveries.map((d: any) => {
-            const rawScore = d.score;
-            // Determine type based on connection properties
-            let type = d.type || "quantum_discovered";
+          discoveries = (quantumData.discoveries || []).map((d: any) => {
+            const rawScore = d.discovery_score || d.score || 0;
+            let type: "quantum_discovered" | "reinforced" | "classical_fallback" = "classical_fallback";
             if (d.is_direct_connection && rawScore > 0.3) {
               type = "reinforced";
             } else if (!d.is_direct_connection && rawScore > 0.1) {
               type = "quantum_discovered";
             }
-            return { ...d, type };
-          });
-          
-          // Look up relationship context for each discovery
-          const { data: relContexts } = await supabase
-            .from("knowledge_relationships")
-            .select("source_item, target_item, pattern_description, context")
-            .eq("user_id", user.id);
-          
-          // Also look up entry_insights for shared themes/emotions
-          const { data: entryInsights } = await supabase
-            .from("entry_insights")
-            .select("themes, emotions, entities")
-            .eq("user_id", user.id)
-            .limit(50);
-          
-          // Build a map of theme/entity to common emotions
-          const themeEmotionMap = new Map<string, string[]>();
-          entryInsights?.forEach((insight: any) => {
-            const themes = (insight.themes || []) as string[];
-            const emotions = ((insight.emotions || []) as any[]).map(e => e.emotion || e);
-            themes.forEach(theme => {
-              const existing = themeEmotionMap.get(theme.toLowerCase()) || [];
-              themeEmotionMap.set(theme.toLowerCase(), [...existing, ...emotions]);
-            });
-          });
-          
-          // Add insight to each discovery with richer context
-          discoveries = discoveries.map((d: any) => {
-            const relContext = relContexts?.find((r: any) => 
-              r.source_item?.toLowerCase() === d.node.toLowerCase() || 
-              r.target_item?.toLowerCase() === d.node.toLowerCase()
-            );
-            
-            // Get associated emotions for this theme
-            const associatedEmotions = themeEmotionMap.get(d.node.toLowerCase()) || [];
-            const topEmotions = [...new Set(associatedEmotions)].slice(0, 2);
-            
-            let insight = relContext?.pattern_description || relContext?.context;
-            if (!insight && topEmotions.length > 0) {
-              insight = `Often appears with ${topEmotions.join(' and ')} emotions`;
-            }
-            if (!insight) {
-              const typeLabel = d.type === 'quantum_discovered' ? 'hidden patterns' : 
-                               d.type === 'reinforced' ? 'strong recurring links' : 'thematic connections';
-              insight = `Connected through ${typeLabel} in your journal`;
-            }
-            
-            return { ...d, insight };
+            return { node: d.node, score: rawScore, type };
           });
           
           method = "quantum";
-          console.log(`[QUANTUM] Found ${discoveries.length} discoveries via quantum service (tiered scoring)`);
         } else {
-          const errorText = await quantumResponse.text();
-          console.warn(`[QUANTUM] Service returned ${quantumResponse.status}: ${errorText}`);
-          discoveries = classicalRandomWalk(sortedNodes, edges, startNodeIdx);
+          const walkResult = classicalRandomWalk(sortedNodes, edges, startNodeIdx);
+          discoveries = walkResult.discoveries;
+          discoveryPaths = walkResult.paths;
           method = "classical_fallback";
         }
       } catch (fetchError: unknown) {
         clearTimeout(timeoutId);
-        
-        const error = fetchError as Error;
-        if (error.name === 'AbortError') {
-          console.warn("[QUANTUM] Service timeout after 10 seconds, using classical fallback");
-        } else {
-          console.warn(`[QUANTUM] Service error: ${error.message || fetchError}`);
-        }
-        
-        discoveries = classicalRandomWalk(sortedNodes, edges, startNodeIdx);
+        const walkResult = classicalRandomWalk(sortedNodes, edges, startNodeIdx);
+        discoveries = walkResult.discoveries;
+        discoveryPaths = walkResult.paths;
         method = "classical_fallback";
       }
     } else {
-      console.warn("[QUANTUM] No QUANTUM_SERVICE_URL configured, using classical fallback");
-      discoveries = classicalRandomWalk(sortedNodes, edges, startNodeIdx);
+      const walkResult = classicalRandomWalk(sortedNodes, edges, startNodeIdx);
+      discoveries = walkResult.discoveries;
+      discoveryPaths = walkResult.paths;
       method = "classical_fallback";
     }
-    
-    // Entry lookup happens after this
 
-    // Filter out the starting theme from discoveries (self-connection bug fix)
+    // Filter out the starting theme from discoveries
     const startNodeName = sortedNodes[startNodeIdx]?.toLowerCase();
     discoveries = discoveries.filter((d: any) => 
       d.node.toLowerCase() !== startNodeName
     );
 
-    // Look up entry IDs for each discovered node
-    const { data: insightsForEntries } = await supabase
-      .from("entry_insights")
-      .select("entry_id, themes, entities, keywords")
-      .eq("user_id", user.id);
-
-    // Build a map of theme/entity -> entry_ids
-    const themeToEntries = new Map<string, string[]>();
-    insightsForEntries?.forEach((insight: any) => {
-      const allItems = [
-        ...((insight.themes || []) as string[]),
-        ...((insight.entities || []) as string[]),
-        ...((insight.keywords || []) as string[])
-      ].map((i: string) => i.toLowerCase());
+    // Enrich discoveries with paths, entry_ids, and insights
+    const enrichedDiscoveries = discoveries.map((d: any) => {
+      const discoveredNodeIdx = nodeIndex.get(d.node);
+      const pathIndices = discoveredNodeIdx !== undefined ? discoveryPaths.get(discoveredNodeIdx) : undefined;
       
-      allItems.forEach(item => {
-        const existing = themeToEntries.get(item) || [];
-        if (!existing.includes(insight.entry_id)) {
-          existing.push(insight.entry_id);
+      // Build connection path
+      const connectionPath: ConnectionPath[] = [];
+      let allEntryIds: string[] = [];
+      
+      if (pathIndices && pathIndices.length > 1) {
+        // We have a path - use it to build the connection chain
+        for (let i = 0; i < pathIndices.length - 1; i++) {
+          const fromNode = sortedNodes[pathIndices[i]];
+          const toNode = sortedNodes[pathIndices[i + 1]];
+          const relKey = `${fromNode.toLowerCase()}|${toNode.toLowerCase()}`;
+          const relData = relationshipMap.get(relKey);
+          
+          connectionPath.push({
+            from: fromNode,
+            to: toNode,
+            description: relData?.description
+          });
+          
+          // Collect entry_ids from this relationship
+          if (relData?.entry_ids) {
+            allEntryIds = [...allEntryIds, ...relData.entry_ids];
+          }
         }
-        themeToEntries.set(item, existing);
-      });
+      } else {
+        // No path tracked - check for direct relationship
+        const directKey = `${sortedNodes[startNodeIdx].toLowerCase()}|${d.node.toLowerCase()}`;
+        const directRel = relationshipMap.get(directKey);
+        
+        if (directRel) {
+          connectionPath.push({
+            from: sortedNodes[startNodeIdx],
+            to: d.node,
+            description: directRel.description
+          });
+          allEntryIds = directRel.entry_ids || [];
+        } else {
+          // Find any relationship containing this node to get entry_ids
+          for (const rel of relationships) {
+            if (rel.source_item.toLowerCase() === d.node.toLowerCase() || 
+                rel.target_item.toLowerCase() === d.node.toLowerCase()) {
+              const relEntryIds = (rel.entry_ids || []) as string[];
+              allEntryIds = [...allEntryIds, ...relEntryIds];
+            }
+          }
+        }
+      }
+      
+      // Deduplicate entry_ids
+      allEntryIds = [...new Set(allEntryIds)];
+      
+      // Generate insight based on path
+      let insight: string;
+      if (connectionPath.length > 1) {
+        const intermediates = connectionPath.slice(0, -1).map(p => p.to);
+        insight = `Connected through ${intermediates.join(' → ')}`;
+        
+        // Add description from the most relevant relationship
+        const relevantPath = connectionPath.find(p => p.description);
+        if (relevantPath?.description) {
+          insight += `: ${relevantPath.description}`;
+        }
+      } else if (connectionPath.length === 1 && connectionPath[0].description) {
+        insight = connectionPath[0].description;
+      } else {
+        const typeLabel = d.type === 'quantum_discovered' ? 'hidden patterns' : 
+                         d.type === 'reinforced' ? 'strong recurring links' : 'thematic connections';
+        insight = `Connected through ${typeLabel} in your journal`;
+      }
+      
+      return {
+        ...d,
+        entry_ids: allEntryIds,
+        insight,
+        connection_path: connectionPath.map(p => ({
+          from: p.from,
+          to: p.to,
+          description: p.description
+        }))
+      };
     });
 
-    // Add entry_ids to each discovery
-    const discoveriesWithEntries = discoveries.map((d: any) => ({
-      ...d,
-      entry_ids: themeToEntries.get(d.node.toLowerCase()) || []
-    }));
-
-    console.log(`[QUANTUM] Discovery complete - Method: ${method}, Found: ${discoveriesWithEntries.length} connections`);
+    console.log(`[QUANTUM] Discovery complete - Method: ${method}, Found: ${enrichedDiscoveries.length} connections`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        discoveries: discoveriesWithEntries,
+        discoveries: enrichedDiscoveries,
         method,
         start_node: sortedNodes[startNodeIdx],
         total_nodes: sortedNodes.length,
