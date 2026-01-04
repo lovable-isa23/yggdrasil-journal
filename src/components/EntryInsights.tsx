@@ -150,7 +150,7 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
 
   const analyzeEntry = async (isReanalysis = false) => {
     setLoading(true);
-    startLoading("analyze-entry", "Analyzing entry...");
+    startLoading("analyze-entry", "Preparing analysis...");
     
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -158,41 +158,49 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
       if (!session) {
         toast.error("You must be logged in");
         stopLoading();
+        setLoading(false);
         return;
       }
 
-      // Smooth progress updates with artificial delays
+      // Start with initial progress
       updateProgress(10, "Preparing analysis...");
-      await new Promise(resolve => setTimeout(resolve, 200));
       
-      updateProgress(30, "Detecting emotions and themes...");
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // Progressive loading during API call
+      let currentProgress = 10;
+      const progressMessages = [
+        "Detecting emotions and themes...",
+        "Analyzing patterns...",
+        "Processing content...",
+        "Extracting insights..."
+      ];
+      
+      const progressInterval = setInterval(() => {
+        currentProgress += Math.random() * 3 + 1; // Random increment 1-4%
+        if (currentProgress < 60) {
+          const msgIndex = Math.floor((currentProgress - 10) / 12.5);
+          updateProgress(currentProgress, progressMessages[Math.min(msgIndex, progressMessages.length - 1)]);
+        }
+      }, 400);
       
       const { data, error } = await supabase.functions.invoke("analyze-entry", {
         body: { entryId, title, content },
       });
 
+      clearInterval(progressInterval);
+
       if (error) throw error;
 
       updateProgress(70, "Generating insights...");
-      await new Promise(resolve => setTimeout(resolve, 200));
-      
-      updateProgress(85, "Processing patterns...");
-      await new Promise(resolve => setTimeout(resolve, 200));
 
       if (data?.insights) {
         setInsights(data.insights);
         setHasAnalyzed(true);
-        updateProgress(90, "Saving insights...");
-        await new Promise(resolve => setTimeout(resolve, 200));
         
-        toast.success(isReanalysis ? "Entry re-analyzed with updated settings!" : "Entry analyzed! Check out your insights below.");
-        
-        // Refetch from database to ensure we display persisted data
-        updateProgress(95, "Refreshing data...");
-        await new Promise(resolve => setTimeout(resolve, 200));
+        updateProgress(85, "Saving insights...");
         await checkExistingInsights();
+        
         updateProgress(100, "Complete!");
+        toast.success(isReanalysis ? "Entry re-analyzed with updated settings!" : "Entry analyzed! Check out your insights below.");
       }
     } catch (error: any) {
       console.error("Analysis error:", error);
@@ -202,7 +210,7 @@ export const EntryInsights = ({ entryId, title, content }: EntryInsightsProps) =
       setTimeout(() => {
         stopLoading();
         setLoading(false);
-      }, 800);
+      }, 600);
     }
   };
 

@@ -42,6 +42,7 @@ interface GraphLink {
 
 export const KnowledgeGraph = () => {
   const [loading, setLoading] = useState(true);
+  const [renderComplete, setRenderComplete] = useState(false);
   const [activeTab, setActiveTab] = useState<"all" | "entities" | "themes" | "keywords">("all");
   const [totalCounts, setTotalCounts] = useState({ entities: 0, themes: 0, keywords: 0 });
   const svgRef = useRef<SVGSVGElement>(null);
@@ -95,6 +96,7 @@ export const KnowledgeGraph = () => {
 
   useEffect(() => {
     if (graphData.nodes.length > 0) {
+      setRenderComplete(false);
       renderGraph();
       generateInsights(graphData.nodes, graphData.links);
     } else {
@@ -805,6 +807,10 @@ export const KnowledgeGraph = () => {
 
       node.attr("transform", (d) => `translate(${d.x},${d.y})`);
     });
+
+    simulation.on("end", () => {
+      setRenderComplete(true);
+    });
   };
 
   // Render graph in fullscreen modal
@@ -1290,8 +1296,21 @@ export const KnowledgeGraph = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex justify-center overflow-x-auto" ref={graphContainerRef}>
-                    <svg ref={svgRef} className="w-full max-w-full h-auto" style={{ minHeight: "400px" }} />
+                  <div className="relative flex justify-center overflow-x-auto" ref={graphContainerRef}>
+                    {/* Loading overlay */}
+                    {!renderComplete && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-card/95 z-10 rounded-lg">
+                        <div className="text-center space-y-3">
+                          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+                          <p className="text-sm text-muted-foreground">Building knowledge graph...</p>
+                        </div>
+                      </div>
+                    )}
+                    <svg 
+                      ref={svgRef} 
+                      className={`w-full max-w-full h-auto transition-opacity duration-300 ${renderComplete ? 'opacity-100' : 'opacity-0'}`} 
+                      style={{ minHeight: "400px" }} 
+                    />
                   </div>
                 )}
               </div>
