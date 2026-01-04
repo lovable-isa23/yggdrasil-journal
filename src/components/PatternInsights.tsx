@@ -77,11 +77,25 @@ export const PatternInsights = () => {
   };
 
   // Split items on "and", "&", or "/" for proper separation
+  // but preserve content inside parentheses
   const splitItem = (item: string): string[] => {
-    return item
+    // First, temporarily replace content inside parentheses
+    const parenthesesContent: string[] = [];
+    const withPlaceholders = item.replace(/\([^)]+\)/g, (match) => {
+      parenthesesContent.push(match);
+      return `__PAREN_${parenthesesContent.length - 1}__`;
+    });
+    
+    // Now split on "and", "&", or "/" 
+    const parts = withPlaceholders
       .split(/\s*(?:and|&|\/)\s*/i)
       .map(s => s.trim())
       .filter(s => s.length > 0);
+    
+    // Restore parentheses content
+    return parts.map(part => 
+      part.replace(/__PAREN_(\d+)__/g, (_, idx) => parenthesesContent[parseInt(idx)])
+    );
   };
 
   const fetchAvailableThemes = async () => {
