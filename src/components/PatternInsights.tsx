@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Loader2, TrendingUp, Lightbulb, Calendar, RefreshCw, ChevronDown } from "lucide-react";
+import { Skeleton } from "./ui/skeleton";
 import { toast } from "sonner";
 import { Progress } from "./ui/progress";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
@@ -246,8 +247,34 @@ export const PatternInsights = () => {
   if (loading) {
     return (
       <Card>
-        <CardContent className="flex items-center justify-center p-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <Skeleton className="h-6 w-40 mb-2" />
+              <Skeleton className="h-4 w-64" />
+            </div>
+            <Skeleton className="h-10 w-36" />
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="p-4">
+              <div className="flex items-start gap-3">
+                <Skeleton className="h-8 w-8 rounded-full flex-shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-5 w-48" />
+                  <Skeleton className="h-5 w-20" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                </div>
+                <div className="flex-shrink-0 hidden sm:block">
+                  <Skeleton className="h-4 w-16 mb-1" />
+                  <Skeleton className="h-2 w-20" />
+                  <Skeleton className="h-3 w-8 mt-1" />
+                </div>
+              </div>
+            </Card>
+          ))}
         </CardContent>
       </Card>
     );
@@ -417,8 +444,26 @@ export const PatternInsights = () => {
             </SheetDescription>
           </SheetHeader>
           <div className="mt-6 space-y-4">
-            {relatedEntries.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No entries found mentioning this item</p>
+            {selectedItem && relatedEntries.length === 0 ? (
+              // Show skeleton while loading related entries
+              relatedEntries === undefined ? (
+                [1, 2].map((i) => (
+                  <Card key={i} className="p-4">
+                    <div className="space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-5 w-20" />
+                      </div>
+                      <div className="bg-muted/50 rounded-lg p-3 mt-2 border-l-2 border-muted">
+                        <Skeleton className="h-3 w-full" />
+                        <Skeleton className="h-3 w-3/4 mt-1" />
+                      </div>
+                    </div>
+                  </Card>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">No entries found mentioning this item</p>
+              )
             ) : (
               relatedEntries.map((entry) => (
                 <Card key={entry.id} className="p-4">

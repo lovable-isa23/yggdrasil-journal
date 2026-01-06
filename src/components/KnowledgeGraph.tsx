@@ -180,22 +180,67 @@ export const KnowledgeGraph = () => {
       return lower;
     };
 
-    // Build a map of AI relationships first (these are the priority)
-    const aiRelationshipMap = new Map<string, { strength: number; entryIds: string[] }>();
-    relationships.forEach((rel) => {
-      const sourceCanon = getCanonicalName(rel.source_item);
-      const targetCanon = getCanonicalName(rel.target_item);
-      const key = [sourceCanon, targetCanon].sort().join("||");
-      const existing = aiRelationshipMap.get(key);
+    // Helper to split items containing "and", "&", or "/" but preserve parentheses content
+    const splitItemForRelationship = (item: string): string[] => {
+      // First, temporarily replace content inside parentheses
+      const parenthesesContent: string[] = [];
+      const withPlaceholders = item.replace(/\([^)]+\)/g, (match) => {
+        parenthesesContent.push(match);
+        return `__PAREN_${parenthesesContent.length - 1}__`;
+      });
+      
+      // Now split on "and", "&", or "/" 
+      const parts = withPlaceholders
+        .split(/\s*(?:and|&|\/)\s*/i)
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
+      
+      // Restore parentheses content
+      return parts.map(part => 
+        part.replace(/__PAREN_(\d+)__/g, (_, idx) => parenthesesContent[parseInt(idx)])
+      );
+    };
+
+    // Helper to store a relationship in the map
+    const storeRelationship = (map: Map<string, { strength: number; entryIds: string[] }>, key: string, rel: any) => {
+      const existing = map.get(key);
       if (existing) {
-        existing.strength += rel.strength;
+        // Keep highest strength and merge entry IDs
+        existing.strength = Math.max(existing.strength, rel.strength);
         existing.entryIds = [...new Set([...existing.entryIds, ...(rel.entry_ids || [])])];
       } else {
-        aiRelationshipMap.set(key, {
+        map.set(key, {
           strength: rel.strength,
           entryIds: rel.entry_ids || []
         });
       }
+    };
+
+    // Build a map of AI relationships first (these are the priority)
+    // Store both original compound keys AND split component keys for proper matching
+    const aiRelationshipMap = new Map<string, { strength: number; entryIds: string[] }>();
+    relationships.forEach((rel) => {
+      const sourceCanon = getCanonicalName(rel.source_item);
+      const targetCanon = getCanonicalName(rel.target_item);
+      
+      // Primary key with original (possibly compound) items
+      const primaryKey = [sourceCanon, targetCanon].sort().join("||");
+      storeRelationship(aiRelationshipMap, primaryKey, rel);
+      
+      // Also store with split components for matching when items like "Anger/Frustration" 
+      // are later split into individual nodes like "Anger" and "Frustration"
+      const sourceComponents = splitItemForRelationship(rel.source_item).map(s => getCanonicalName(s));
+      const targetComponents = splitItemForRelationship(rel.target_item).map(s => getCanonicalName(s));
+      
+      // Create entries for each component combination
+      sourceComponents.forEach(sc => {
+        targetComponents.forEach(tc => {
+          const componentKey = [sc, tc].sort().join("||");
+          if (componentKey !== primaryKey) {
+            storeRelationship(aiRelationshipMap, componentKey, rel);
+          }
+        });
+      });
     });
 
     // Category colors for unified "all" view
