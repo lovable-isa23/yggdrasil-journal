@@ -21,38 +21,11 @@ interface AniccaEntry {
   note?: string;
 }
 
-const NEGATIVE_EMOTIONS = [
-  'anxious', 'frustrated', 'defensive', 'humiliated', 'weak', 'guarded',
-  'irritated', 'jealous', 'voiceless', 'ungrounded', 'lost', 'disconnected',
-  'drained', 'insecure', 'indecisive', 'angry', 'sad', 'fearful', 'guilty',
-  'ashamed', 'overwhelmed', 'stressed', 'depressed', 'lonely', 'resentful'
-];
-
-const POSITIVE_EMOTIONS = [
-  'loving', 'grateful', 'motivated', 'creative', 'joyful', 'empowered',
-  'proud', 'hopeful', 'peaceful', 'focused', 'clear', 'passionate',
-  'purposeful', 'expressive', 'happy', 'content', 'excited', 'calm',
-  'confident', 'inspired', 'optimistic', 'compassionate', 'playful'
-];
-
 const isAniccaFormat = (data: any[]): boolean => {
   return data.length > 0 &&
     data[0].emotions &&
     Array.isArray(data[0].emotions) &&
     typeof data[0].date === 'string';
-};
-
-const inferMoodType = (emotions: Array<{ name: string }>): string => {
-  const negCount = emotions.filter(e =>
-    NEGATIVE_EMOTIONS.includes(e.name.toLowerCase())
-  ).length;
-  const posCount = emotions.filter(e =>
-    POSITIVE_EMOTIONS.includes(e.name.toLowerCase())
-  ).length;
-
-  if (negCount > posCount) return 'shadow_work';
-  if (posCount > negCount) return 'gratitude';
-  return 'reflection';
 };
 
 export const DataImport = ({ onImportComplete }: { onImportComplete: () => void }) => {
@@ -95,14 +68,12 @@ export const DataImport = ({ onImportComplete }: { onImportComplete: () => void 
         content += `\n\n## Reflection\n\n${entry.note}`;
       }
 
-      const moodType = inferMoodType(entry.emotions);
-
       return {
         title: `Mood Check-in - ${timeStr}`,
         content,
         entry_date: formatLocalDate(dateObj),
         source_type: 'anicca_import',
-        mood_type: moodType,
+        mood_type: 'general',
       };
     });
   };
