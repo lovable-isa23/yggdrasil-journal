@@ -10,7 +10,50 @@ interface ParsedEntry {
   title: string;
   content: string;
   entry_date: string;
+  source_type?: string;
+  mood_type?: string;
 }
+
+interface AniccaEntry {
+  id: string;
+  date: string;
+  emotions: Array<{ name: string; chakra: string; intensity: number }>;
+  note?: string;
+}
+
+const NEGATIVE_EMOTIONS = [
+  'anxious', 'frustrated', 'defensive', 'humiliated', 'weak', 'guarded',
+  'irritated', 'jealous', 'voiceless', 'ungrounded', 'lost', 'disconnected',
+  'drained', 'insecure', 'indecisive', 'angry', 'sad', 'fearful', 'guilty',
+  'ashamed', 'overwhelmed', 'stressed', 'depressed', 'lonely', 'resentful'
+];
+
+const POSITIVE_EMOTIONS = [
+  'loving', 'grateful', 'motivated', 'creative', 'joyful', 'empowered',
+  'proud', 'hopeful', 'peaceful', 'focused', 'clear', 'passionate',
+  'purposeful', 'expressive', 'happy', 'content', 'excited', 'calm',
+  'confident', 'inspired', 'optimistic', 'compassionate', 'playful'
+];
+
+const isAniccaFormat = (data: any[]): boolean => {
+  return data.length > 0 &&
+    data[0].emotions &&
+    Array.isArray(data[0].emotions) &&
+    typeof data[0].date === 'string';
+};
+
+const inferMoodType = (emotions: Array<{ name: string }>): string => {
+  const negCount = emotions.filter(e =>
+    NEGATIVE_EMOTIONS.includes(e.name.toLowerCase())
+  ).length;
+  const posCount = emotions.filter(e =>
+    POSITIVE_EMOTIONS.includes(e.name.toLowerCase())
+  ).length;
+
+  if (negCount > posCount) return 'shadow_work';
+  if (posCount > negCount) return 'gratitude';
+  return 'reflection';
+};
 
 export const DataImport = ({ onImportComplete }: { onImportComplete: () => void }) => {
   const [isImporting, setIsImporting] = useState(false);
@@ -27,8 +70,44 @@ export const DataImport = ({ onImportComplete }: { onImportComplete: () => void 
     return `${year}-${month}-${day}`;
   };
 
+  const parseAniccaFile = (data: AniccaEntry[]): ParsedEntry[] => {
+    return data.map(entry => {
+      const dateObj = new Date(entry.date);
+      const timeStr = dateObj.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+
+      // Build emotions table
+      const emotionRows = entry.emotions.map(e => {
+        const filled = '●'.repeat(e.intensity);
+        const empty = '○'.repeat(5 - e.intensity);
+        return `| ${e.name} | ${e.chakra} | ${filled}${empty} |`;
+      }).join('\n');
+
+      let content = `## Emotional State\n\n`;
+      content += `| Emotion | Chakra | Intensity |\n`;
+      content += `|---------|--------|----------|\n`;
+      content += emotionRows;
+
+      if (entry.note) {
+        content += `\n\n## Reflection\n\n${entry.note}`;
+      }
+
+      const moodType = inferMoodType(entry.emotions);
+
+      return {
+        title: `Mood Check-in - ${timeStr}`,
+        content,
+        entry_date: formatLocalDate(dateObj),
+        source_type: 'anicca_import',
+        mood_type: moodType,
+      };
+    });
+  };
+
   const parseTextFile = (text: string): ParsedEntry[] => {
-    // Simple text/markdown parsing - treat entire file as one entry
     const lines = text.trim().split('\n');
     const title = lines[0]?.substring(0, 200) || "Imported Entry";
     const content = text.substring(0, 50000);
@@ -44,6 +123,11 @@ export const DataImport = ({ onImportComplete }: { onImportComplete: () => void 
     try {
       const data = JSON.parse(text);
       const entries = Array.isArray(data) ? data : [data];
+
+      // Check if this is an Anicca format export
+      if (isAniccaFormat(entries)) {
+        return parseAniccaFile(entries as AniccaEntry[]);
+      }
       
       return entries.map(entry => {
         let entryDate = formatLocalDate(new Date());
@@ -196,9 +280,13 @@ export const DataImport = ({ onImportComplete }: { onImportComplete: () => void 
 
           // Insert entries with import_batch_id
           const entriesToInsert = entries.map(entry => ({
-            ...entry,
+            title: entry.title,
+            content: entry.content,
+            entry_date: entry.entry_date,
             user_id: user.id,
             import_batch_id: importRecord.id,
+            ...(entry.source_type && { source_type: entry.source_type }),
+            ...(entry.mood_type && { mood_type: entry.mood_type }),
           }));
 
           const { error: insertError } = await supabase
