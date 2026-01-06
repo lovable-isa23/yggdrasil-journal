@@ -1250,6 +1250,19 @@ export const KnowledgeGraph = () => {
                     </Button>
                     <Button
                       variant="outline"
+                      size="sm"
+                      onClick={handleRefreshAnalysis}
+                      disabled={refreshingAnalysis}
+                      className="gap-1.5"
+                      title="Re-analyze patterns with AI to update connection strengths"
+                    >
+                      <RefreshCw className={`h-4 w-4 ${refreshingAnalysis ? 'animate-spin' : ''}`} />
+                      <span className="hidden sm:inline">
+                        {refreshingAnalysis ? 'Analyzing...' : 'Refresh'}
+                      </span>
+                    </Button>
+                    <Button
+                      variant="outline"
                       size="icon"
                       onClick={handleZoomIn}
                       title="Zoom In"
