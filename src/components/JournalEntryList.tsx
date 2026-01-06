@@ -116,7 +116,9 @@ const getMoodStyles = (moodType?: string, sourceType?: string) => {
 const getSourceBadge = (sourceType?: string) => {
   if (!sourceType || sourceType === 'manual') return null;
   
-  if (sourceType === 'sacred_practice') {
+  if (sourceType === 'anicca_import') {
+    return { label: 'Anicca Import', className: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300' };
+  } else if (sourceType === 'sacred_practice') {
     return { label: 'Sacred Practice', className: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300' };
   } else if (sourceType === 'milestone_reflection' || sourceType === 'goal_reflection') {
     return { label: 'Journey Reflection', className: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300' };
