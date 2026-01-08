@@ -3,9 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Loader2, Target, Plus, Calendar as CalendarIcon, TrendingUp, CheckCircle2, Sparkles, Edit2, Trash2, ChevronDown, Heart, BookOpen, Lightbulb, Palette, Users } from "lucide-react";
+import { Loader2, Target, Plus, Calendar as CalendarIcon, TrendingUp, CheckCircle2, Sparkles, Edit2, Trash2, ChevronDown, Heart, BookOpen, Lightbulb, Palette, Users, Zap } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { format, subDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { GoalDialog } from "./GoalDialog";
@@ -15,8 +15,10 @@ import { PracticeManager } from "./PracticeManager";
 import { JourneyTimeline } from "./JourneyTimeline";
 import { WisdomCaptureDialog } from "./WisdomCaptureDialog";
 import { ReflectionDialog } from "./ReflectionDialog";
-import { SpiritualGuidePanel } from "./SpiritualGuidePanel";
-import { MoonPhaseIndicator } from "./MoonPhaseIndicator";
+import { MicroWinInput } from "./MicroWinInput";
+import { MicroWinList } from "./MicroWinList";
+import { MicroWinCounter } from "./MicroWinCounter";
+import { MicroWinHistory } from "./MicroWinHistory";
 
 interface Goal {
   id: string;
@@ -49,10 +51,19 @@ interface Milestone {
   order_index: number;
 }
 
+interface MicroWin {
+  id: string;
+  goal_id: string;
+  text: string;
+  source: string;
+  created_at: string;
+}
+
 export const GoalTracker = () => {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [patterns, setPatterns] = useState<Pattern[]>([]);
   const [milestones, setMilestones] = useState<Record<string, Milestone[]>>({});
+  const [microWins, setMicroWins] = useState<Record<string, MicroWin[]>>({});
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
@@ -62,6 +73,7 @@ export const GoalTracker = () => {
   const [isReflectionOpen, setIsReflectionOpen] = useState(false);
   const [reflectingGoalId, setReflectingGoalId] = useState<string | null>(null);
   const [timelineRefreshTrigger, setTimelineRefreshTrigger] = useState(0);
+  const [historyGoalId, setHistoryGoalId] = useState<string | null>(null);
 
   const { data: goalsData, refetch } = useQuery({
     queryKey: ["goals"],
@@ -84,15 +96,17 @@ export const GoalTracker = () => {
 
   const fetchData = async () => {
     try {
-      const [goalsResult, patternsResult, milestonesResult] = await Promise.all([
+      const [goalsResult, patternsResult, milestonesResult, microWinsResult] = await Promise.all([
         supabase.from("goals").select("*").order("created_at", { ascending: false }),
         supabase.from("pattern_insights").select("id, title, pattern_type"),
         supabase.from("goal_milestones").select("*").order("order_index", { ascending: true }),
+        supabase.from("micro_wins").select("*").order("created_at", { ascending: false }),
       ]);
 
       if (goalsResult.error) throw goalsResult.error;
       if (patternsResult.error) throw patternsResult.error;
       if (milestonesResult.error) throw milestonesResult.error;
+      if (microWinsResult.error) throw microWinsResult.error;
 
       setGoals(goalsResult.data || []);
       setPatterns(patternsResult.data || []);
@@ -103,6 +117,13 @@ export const GoalTracker = () => {
         return acc;
       }, {} as Record<string, Milestone[]>);
       setMilestones(milestonesByGoal);
+
+      const winsByGoal = (microWinsResult.data || []).reduce((acc, win) => {
+        if (!acc[win.goal_id]) acc[win.goal_id] = [];
+        acc[win.goal_id].push(win);
+        return acc;
+      }, {} as Record<string, MicroWin[]>);
+      setMicroWins(winsByGoal);
       
       // Trigger timeline refresh
       setTimelineRefreshTrigger(prev => prev + 1);
@@ -255,7 +276,13 @@ export const GoalTracker = () => {
           {goals.map((goal) => {
             const { icon: GoalIcon, color } = getGoalTypeIcon(goal.goal_type);
             const goalMilestones = milestones[goal.id] || [];
+            const goalWins = microWins[goal.id] || [];
             const isOpen = openGoals.has(goal.id);
+            
+            // Check if goal is "quiet" (no wins in last 7 days)
+            const sevenDaysAgo = subDays(new Date(), 7);
+            const isQuietGoal = goalWins.length === 0 || 
+              !goalWins.some(w => new Date(w.created_at) > sevenDaysAgo);
             
             return (
               <Collapsible key={goal.id} open={isOpen} onOpenChange={() => toggleGoal(goal.id)} className="w-full max-w-full">
@@ -268,6 +295,7 @@ export const GoalTracker = () => {
                           <div className="flex items-center gap-2 flex-wrap">
                             <h3 className="text-lg sm:text-xl font-semibold break-words">{goal.title}</h3>
                             {getStatusBadge(goal.status)}
+                            <MicroWinCounter wins={goalWins} />
                           </div>
                           {goal.intention && <p className="text-sm text-muted-foreground italic break-words">"{goal.intention.substring(0, 120)}{goal.intention.length > 120 ? "..." : ""}"</p>}
                           <div className="flex flex-wrap gap-2 sm:gap-4 text-sm">
@@ -282,6 +310,27 @@ export const GoalTracker = () => {
 
                   <CollapsibleContent>
                     <div className="px-4 sm:px-6 pb-6 space-y-6 border-t pt-6 w-full max-w-full overflow-hidden">
+                      {/* Micro-Wins Section */}
+                      <div className="space-y-3 bg-accent/20 rounded-lg p-4">
+                        <div className="flex items-center gap-2">
+                          <Zap className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium">Micro-Wins</span>
+                        </div>
+                        <MicroWinInput
+                          goalId={goal.id}
+                          goalTitle={goal.title}
+                          goalDescription={goal.description}
+                          recentWins={goalWins.map(w => w.text)}
+                          isQuietGoal={isQuietGoal && goal.status === "active"}
+                          onWinAdded={fetchData}
+                        />
+                        <MicroWinList
+                          wins={goalWins}
+                          totalCount={goalWins.length}
+                          onViewAll={() => setHistoryGoalId(goal.id)}
+                        />
+                      </div>
+
                       {goal.description && <div className="space-y-2"><p className="text-sm font-medium">Journey Path</p><p className="text-muted-foreground break-words">{goal.description}</p></div>}
                       {goal.linked_patterns && goal.linked_patterns.length > 0 && (
                         <div className="space-y-2">
@@ -339,6 +388,16 @@ export const GoalTracker = () => {
           goalTitle={goals.find(g => g.id === reflectingGoalId)?.title}
           reflectionType="checkin"
           onComplete={fetchData}
+        />
+      )}
+
+      {historyGoalId && (
+        <MicroWinHistory
+          open={!!historyGoalId}
+          onOpenChange={(open) => !open && setHistoryGoalId(null)}
+          wins={microWins[historyGoalId] || []}
+          goalTitle={goals.find(g => g.id === historyGoalId)?.title || ""}
+          onUpdate={fetchData}
         />
       )}
     </div>

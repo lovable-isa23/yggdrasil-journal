@@ -1,9 +1,7 @@
-import { useState, useEffect } from "react";
 import { AuthGuard } from "@/components/AuthGuard";
 import { GoalTracker } from "@/components/GoalTracker";
 import { MoonPhaseIndicator } from "@/components/MoonPhaseIndicator";
 import { SpiritualGuidePanel } from "@/components/SpiritualGuidePanel";
-import { ReflectionPrompt } from "@/components/ReflectionPrompt";
 import { NPSTooltip } from "@/components/NPSTooltip";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,26 +9,8 @@ import { useNavigate } from "react-router-dom";
 import { LogOut, BookOpen, BarChart3, Settings as SettingsIcon, Target } from "lucide-react";
 import { PatternInsights } from "@/components/PatternInsights";
 import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
-
 const Goals = () => {
-  const [recentEntries, setRecentEntries] = useState<any[]>([]);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    fetchRecentEntries();
-  }, []);
-
-  const fetchRecentEntries = async () => {
-    const { data } = await supabase
-      .from("journal_entries")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(5);
-    
-    if (data) {
-      setRecentEntries(data);
-    }
-  };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -109,12 +89,9 @@ const Goals = () => {
             </p>
           </div>
 
-          {/* Moon Phase, Reflection & Spiritual Guide Section */}
+          {/* Moon Phase & Spiritual Guide Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
-            <div className="space-y-6">
-              <MoonPhaseIndicator />
-              <ReflectionPrompt recentEntries={recentEntries} />
-            </div>
+            <MoonPhaseIndicator />
             <SpiritualGuidePanel />
           </div>
 
