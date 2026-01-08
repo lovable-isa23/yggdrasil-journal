@@ -9,9 +9,7 @@ import { format, subDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { GoalDialog } from "./GoalDialog";
-import { MilestoneManager } from "./MilestoneManager";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
-import { PracticeManager } from "./PracticeManager";
 import { JourneyTimeline } from "./JourneyTimeline";
 import { WisdomCaptureDialog } from "./WisdomCaptureDialog";
 import { ReflectionDialog } from "./ReflectionDialog";
@@ -41,17 +39,6 @@ interface Pattern {
   pattern_type: string;
 }
 
-interface Milestone {
-  id: string;
-  goal_id: string;
-  title: string;
-  description: string | null;
-  target_date: string | null;
-  completed_at: string | null;
-  reflection: string | null;
-  order_index: number;
-}
-
 interface MicroWin {
   id: string;
   goal_id: string;
@@ -63,7 +50,6 @@ interface MicroWin {
 export const GoalTracker = () => {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [patterns, setPatterns] = useState<Pattern[]>([]);
-  const [milestones, setMilestones] = useState<Record<string, Milestone[]>>({});
   const [microWins, setMicroWins] = useState<Record<string, MicroWin[]>>({});
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -97,27 +83,18 @@ export const GoalTracker = () => {
 
   const fetchData = async () => {
     try {
-      const [goalsResult, patternsResult, milestonesResult, microWinsResult] = await Promise.all([
+      const [goalsResult, patternsResult, microWinsResult] = await Promise.all([
         supabase.from("goals").select("*").order("created_at", { ascending: false }),
         supabase.from("pattern_insights").select("id, title, pattern_type"),
-        supabase.from("goal_milestones").select("*").order("order_index", { ascending: true }),
         supabase.from("micro_wins").select("*").order("created_at", { ascending: false }),
       ]);
 
       if (goalsResult.error) throw goalsResult.error;
       if (patternsResult.error) throw patternsResult.error;
-      if (milestonesResult.error) throw milestonesResult.error;
       if (microWinsResult.error) throw microWinsResult.error;
 
       setGoals(goalsResult.data || []);
       setPatterns(patternsResult.data || []);
-      
-      const milestonesByGoal = (milestonesResult.data || []).reduce((acc, milestone) => {
-        if (!acc[milestone.goal_id]) acc[milestone.goal_id] = [];
-        acc[milestone.goal_id].push(milestone);
-        return acc;
-      }, {} as Record<string, Milestone[]>);
-      setMilestones(milestonesByGoal);
 
       const winsByGoal = (microWinsResult.data || []).reduce((acc, win) => {
         if (!acc[win.goal_id]) acc[win.goal_id] = [];
@@ -276,7 +253,6 @@ export const GoalTracker = () => {
         <div className="grid gap-4">
           {goals.map((goal) => {
             const { icon: GoalIcon, color } = getGoalTypeIcon(goal.goal_type);
-            const goalMilestones = milestones[goal.id] || [];
             const goalWins = microWins[goal.id] || [];
             const isOpen = openGoals.has(goal.id);
             
@@ -301,7 +277,6 @@ export const GoalTracker = () => {
                           {goal.intention && <p className="text-sm text-muted-foreground italic break-words">"{goal.intention.substring(0, 120)}{goal.intention.length > 120 ? "..." : ""}"</p>}
                           <div className="flex flex-wrap gap-2 sm:gap-4 text-sm">
                             {goal.target_date && <div className="flex items-center gap-2 text-muted-foreground"><CalendarIcon className="h-4 w-4" /><span>{format(new Date(goal.target_date), "MMM d, yyyy")}</span></div>}
-                            {goalMilestones.length > 0 && <Badge variant="outline">{goalMilestones.filter(m => m.completed_at).length}/{goalMilestones.length} milestones</Badge>}
                           </div>
                         </div>
                       </div>
@@ -346,10 +321,6 @@ export const GoalTracker = () => {
                           <div className="flex flex-wrap gap-2">{goal.linked_patterns.map((pattern: any) => <Badge key={pattern.id} variant="secondary">{pattern.title}</Badge>)}</div>
                         </div>
                       )}
-                      
-                      <MilestoneManager goalId={goal.id} milestones={goalMilestones} onUpdate={fetchData} />
-                      
-                      <PracticeManager goalId={goal.id} goalType={goal.goal_type} intention={goal.intention || undefined} />
                       
                       <JourneyTimeline goalId={goal.id} refreshTrigger={timelineRefreshTrigger} />
                       
