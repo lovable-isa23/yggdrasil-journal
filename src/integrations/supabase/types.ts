@@ -535,6 +535,41 @@ export type Database = {
         }
         Relationships: []
       }
+      micro_wins: {
+        Row: {
+          created_at: string
+          goal_id: string
+          id: string
+          source: string
+          text: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          goal_id: string
+          id?: string
+          source?: string
+          text: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          goal_id?: string
+          id?: string
+          source?: string
+          text?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "micro_wins_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nps_responses: {
         Row: {
           created_at: string
