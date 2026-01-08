@@ -83,11 +83,11 @@ export const TreeBranchItem = ({ branch, onUpdate, onDelete }: TreeBranchItemPro
   };
 
   return (
-    <div className="flex items-center gap-2 group">
+    <div className="flex flex-wrap items-start gap-2 group">
       <Button
         variant="ghost"
         size="icon"
-        className="h-6 w-6 flex-shrink-0"
+        className="h-6 w-6 flex-shrink-0 mt-0.5"
         onClick={cycleStatus}
         disabled={isUpdating}
       >
@@ -112,7 +112,7 @@ export const TreeBranchItem = ({ branch, onUpdate, onDelete }: TreeBranchItemPro
           <span
             onClick={() => setIsEditing(true)}
             className={cn(
-              "text-sm cursor-pointer hover:underline truncate block",
+              "text-sm cursor-pointer hover:underline break-words block",
               branch.status === "done" && "line-through text-muted-foreground"
             )}
           >

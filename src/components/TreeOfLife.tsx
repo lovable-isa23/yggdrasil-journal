@@ -310,31 +310,31 @@ export const TreeOfLife = ({ goalId, goalTitle, isOpen = false }: TreeOfLifeProp
     <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
       <div className="rounded-lg border bg-gradient-to-br from-emerald-50/50 to-amber-50/50 dark:from-emerald-950/20 dark:to-amber-950/20">
         <CollapsibleTrigger className="w-full p-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <TreeDeciduous className="h-4 w-4 text-emerald-600" />
+          <div className="flex items-center gap-2 flex-wrap">
+            <TreeDeciduous className="h-4 w-4 text-emerald-600 flex-shrink-0" />
             <span className="text-sm font-medium">Yggdrasil Tree</span>
             {branches.length > 0 && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="text-xs whitespace-nowrap">
                 🌿 {doneCount}/{branches.length} done
               </Badge>
             )}
             {daysToMilestone !== null && daysToMilestone > 0 && (
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-xs whitespace-nowrap">
                 📅 {daysToMilestone}d to milestone
               </Badge>
             )}
           </div>
-          <ChevronDown className={cn("h-4 w-4 transition-transform", isExpanded && "rotate-180")} />
+          <ChevronDown className={cn("h-4 w-4 transition-transform flex-shrink-0", isExpanded && "rotate-180")} />
         </CollapsibleTrigger>
 
         <CollapsibleContent>
           <div className="p-4 pt-0 space-y-4">
             {/* Root - Why this matters */}
             <div className="space-y-1">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Sprout className="h-3 w-3" />
+              <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                <Sprout className="h-3 w-3 flex-shrink-0" />
                 <span>Root · Why this matters</span>
-                <span className="ml-auto">{rootText.length}/140</span>
+                <span className="ml-auto whitespace-nowrap">{rootText.length}/140</span>
               </div>
               {editingField === "root" ? (
                 <Input
@@ -361,10 +361,10 @@ export const TreeOfLife = ({ goalId, goalTitle, isOpen = false }: TreeOfLifeProp
 
             {/* Trunk - Next milestone */}
             <div className="space-y-1">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <GitBranch className="h-3 w-3 rotate-90" />
+              <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                <GitBranch className="h-3 w-3 rotate-90 flex-shrink-0" />
                 <span>Trunk · Next milestone (30 days)</span>
-                <span className="ml-auto">{trunkTitle.length}/80</span>
+                <span className="ml-auto whitespace-nowrap">{trunkTitle.length}/80</span>
               </div>
               <div className="flex gap-2">
                 {editingField === "trunk" ? (
@@ -414,12 +414,12 @@ export const TreeOfLife = ({ goalId, goalTitle, isOpen = false }: TreeOfLifeProp
 
             {/* Branches - This week's actions */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <GitBranch className="h-3 w-3" />
+                  <GitBranch className="h-3 w-3 flex-shrink-0" />
                   <span>Branches · This week's actions</span>
                 </div>
-                <div className="flex gap-1">
+                <div className="flex gap-1 flex-wrap">
                   <Button
                     variant="ghost"
                     size="sm"
