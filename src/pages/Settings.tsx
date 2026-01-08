@@ -30,6 +30,8 @@ interface Preferences {
   enable_dbt: boolean;
   enable_stoic: boolean;
   enable_gnostic: boolean;
+  show_emotional_analysis: boolean;
+  show_framework_analysis: boolean;
 }
 
 const FRAMEWORK_CONFIGS = {
@@ -79,6 +81,8 @@ const Settings = () => {
     enable_dbt: true,
     enable_stoic: true,
     enable_gnostic: true,
+    show_emotional_analysis: true,
+    show_framework_analysis: true,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -133,6 +137,8 @@ const Settings = () => {
           enable_dbt: data.enable_dbt ?? true,
           enable_stoic: (data as any).enable_stoic ?? true,
           enable_gnostic: (data as any).enable_gnostic ?? true,
+          show_emotional_analysis: (data as any).show_emotional_analysis ?? true,
+          show_framework_analysis: (data as any).show_framework_analysis ?? true,
         });
       }
     } catch (error) {
@@ -337,6 +343,48 @@ const Settings = () => {
                       id="dark-mode"
                       checked={preferences.dark_mode}
                       onCheckedChange={() => handleToggle('dark_mode')}
+                      disabled={saving}
+                    />
+                  </div>
+                </div>
+              </Card>
+
+              {/* Insights Visibility */}
+              <Card className="p-6">
+                <h2 className="text-xl font-bold mb-4">Insights Visibility</h2>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Choose which sections appear on your Insights dashboard
+                </p>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label htmlFor="show-emotional" className="text-base font-medium flex items-center gap-2">
+                        🧠 Emotional Analysis
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Show mood tracking and sentiment analysis
+                      </p>
+                    </div>
+                    <Switch
+                      id="show-emotional"
+                      checked={preferences.show_emotional_analysis}
+                      onCheckedChange={() => handleToggle('show_emotional_analysis')}
+                      disabled={saving}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label htmlFor="show-framework" className="text-base font-medium flex items-center gap-2">
+                        📊 Framework Analysis
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Show psychological and spiritual framework insights
+                      </p>
+                    </div>
+                    <Switch
+                      id="show-framework"
+                      checked={preferences.show_framework_analysis}
+                      onCheckedChange={() => handleToggle('show_framework_analysis')}
                       disabled={saving}
                     />
                   </div>

@@ -2,12 +2,26 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Checkbox } from "./ui/checkbox";
 import { Badge } from "./ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Calendar as CalendarComponent } from "./ui/calendar";
-import { TreeBranchItem } from "./TreeBranchItem";
+import { SortableBranchItem } from "./SortableBranchItem";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import {
   TreeDeciduous,
   Sprout,
@@ -23,6 +37,7 @@ import {
 import { toast } from "sonner";
 import { format, startOfWeek, differenceInDays } from "date-fns";
 import { cn } from "@/lib/utils";
+import { Checkbox } from "./ui/checkbox";
 
 interface GoalTree {
   id: string;
@@ -42,6 +57,7 @@ interface Branch {
   due_date: string | null;
   status: "not_started" | "in_progress" | "done";
   created_at: string;
+  position: number;
 }
 
 interface TreeOfLifeProps {
@@ -58,6 +74,11 @@ export const TreeOfLife = ({ goalId, goalTitle, isOpen = false }: TreeOfLifeProp
   const [isGenerating, setIsGenerating] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [isTrunkDateOpen, setIsTrunkDateOpen] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   // Inline editing states
   const [editingField, setEditingField] = useState<string | null>(null);
@@ -99,7 +120,7 @@ export const TreeOfLife = ({ goalId, goalTitle, isOpen = false }: TreeOfLifeProp
         .select("*")
         .eq("goal_id", goalId)
         .eq("week_start_date", weekStartStr)
-        .order("created_at", { ascending: true });
+        .order("position", { ascending: true });
 
       if (branchError) throw branchError;
       if (branchError) throw branchError;
@@ -161,12 +182,14 @@ export const TreeOfLife = ({ goalId, goalTitle, isOpen = false }: TreeOfLifeProp
         return;
       }
 
+      const maxPosition = Math.max(0, ...branches.map(b => b.position || 0));
       const { error } = await supabase.from("goal_branches").insert({
         goal_id: goalId,
         user_id: user.id,
         week_start_date: weekStartStr,
         title: "New action",
         status: "not_started",
+        position: maxPosition + 1,
       });
 
       if (error) throw error;
@@ -174,6 +197,37 @@ export const TreeOfLife = ({ goalId, goalTitle, isOpen = false }: TreeOfLifeProp
     } catch (error) {
       console.error("Error adding branch:", error);
       toast.error("Failed to add action");
+    }
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = branches.findIndex(b => b.id === active.id);
+    const newIndex = branches.findIndex(b => b.id === over.id);
+    
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordered = arrayMove(branches, oldIndex, newIndex);
+    setBranches(reordered);
+
+    // Update positions in database
+    try {
+      const updates = reordered.map((branch, index) => ({
+        id: branch.id,
+        position: index,
+      }));
+
+      for (const update of updates) {
+        await supabase
+          .from("goal_branches")
+          .update({ position: update.position })
+          .eq("id", update.id);
+      }
+    } catch (error) {
+      console.error("Error updating positions:", error);
+      fetchTreeData(); // Revert on error
     }
   };
 
@@ -466,32 +520,43 @@ export const TreeOfLife = ({ goalId, goalTitle, isOpen = false }: TreeOfLifeProp
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {branches.map((branch) => (
-                    <TreeBranchItem
-                      key={branch.id}
-                      branch={branch}
-                      onUpdate={updateBranch}
-                      onDelete={deleteBranch}
-                    />
-                  ))}
-                  {branches.length > 0 && branches.length < 5 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={generateBranches}
-                      disabled={isGenerating}
-                      className="w-full h-7 text-xs gap-1"
-                    >
-                      {isGenerating ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <Sparkles className="h-3 w-3" />
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext
+                    items={branches.map(b => b.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-2">
+                      {branches.map((branch) => (
+                        <SortableBranchItem
+                          key={branch.id}
+                          branch={branch}
+                          onUpdate={updateBranch}
+                          onDelete={deleteBranch}
+                        />
+                      ))}
+                      {branches.length > 0 && branches.length < 5 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={generateBranches}
+                          disabled={isGenerating}
+                          className="w-full h-7 text-xs gap-1"
+                        >
+                          {isGenerating ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-3 w-3" />
+                          )}
+                          Generate more actions
+                        </Button>
                       )}
-                      Generate more actions
-                    </Button>
-                  )}
-                </div>
+                    </div>
+                  </SortableContext>
+                </DndContext>
               )}
 
               {branches.length > 0 && (
