@@ -19,6 +19,7 @@ import { MicroWinInput } from "./MicroWinInput";
 import { MicroWinList } from "./MicroWinList";
 import { MicroWinCounter } from "./MicroWinCounter";
 import { MicroWinHistory } from "./MicroWinHistory";
+import { TreeOfLife } from "./TreeOfLife";
 
 interface Goal {
   id: string;
@@ -310,6 +311,13 @@ export const GoalTracker = () => {
 
                   <CollapsibleContent>
                     <div className="px-4 sm:px-6 pb-6 space-y-6 border-t pt-6 w-full max-w-full overflow-hidden">
+                      {/* Tree of Life Section */}
+                      <TreeOfLife 
+                        goalId={goal.id} 
+                        goalTitle={goal.title}
+                        isOpen={goal.status === "active"}
+                      />
+
                       {/* Micro-Wins Section */}
                       <div className="space-y-3 bg-accent/20 rounded-lg p-4">
                         <div className="flex items-center gap-2">

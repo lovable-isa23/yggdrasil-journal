@@ -62,3 +62,6 @@ verify_jwt = true
 
 [functions.suggest-micro-win]
 verify_jwt = true
+
+[functions.suggest-branches]
+verify_jwt = true
