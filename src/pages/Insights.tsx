@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { AuthGuard } from "@/components/AuthGuard";
 import { KnowledgeGraph } from "@/components/KnowledgeGraph";
 import { MoodTracker } from "@/components/MoodTracker";
@@ -19,8 +20,38 @@ import { LogOut, BookOpen, Settings as SettingsIcon, BarChart3, Brain, TrendingU
 import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
 import { toast } from "sonner";
 
+interface VisibilityPrefs {
+  show_emotional_analysis: boolean;
+  show_framework_analysis: boolean;
+}
+
 const Insights = () => {
   const navigate = useNavigate();
+  const [visibilityPrefs, setVisibilityPrefs] = useState<VisibilityPrefs>({
+    show_emotional_analysis: true,
+    show_framework_analysis: true,
+  });
+
+  useEffect(() => {
+    const loadVisibilityPrefs = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data } = await supabase
+        .from("user_preferences")
+        .select("show_emotional_analysis, show_framework_analysis")
+        .eq("user_id", user.id)
+        .single();
+
+      if (data) {
+        setVisibilityPrefs({
+          show_emotional_analysis: (data as any).show_emotional_analysis ?? true,
+          show_framework_analysis: (data as any).show_framework_analysis ?? true,
+        });
+      }
+    };
+    loadVisibilityPrefs();
+  }, []);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -123,27 +154,31 @@ const Insights = () => {
             </section>
 
             {/* Emotional Analysis Section */}
-            <section>
-              <div className="flex items-center gap-2 mb-6">
-                <Brain className="h-6 w-6 text-primary" />
-                <h3 className="text-2xl font-bold">Emotional Analysis</h3>
-              </div>
-              <div className="grid gap-6 lg:grid-cols-2">
-                <MoodTracker />
-                <SentimentTracking />
-              </div>
-            </section>
+            {visibilityPrefs.show_emotional_analysis && (
+              <section>
+                <div className="flex items-center gap-2 mb-6">
+                  <Brain className="h-6 w-6 text-primary" />
+                  <h3 className="text-2xl font-bold">Emotional Analysis</h3>
+                </div>
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <MoodTracker />
+                  <SentimentTracking />
+                </div>
+              </section>
+            )}
 
             {/* Framework Analysis Section */}
-            <section>
-              <div className="flex items-center gap-2 mb-6">
-                <Layers className="h-6 w-6 text-primary" />
-                <h3 className="text-2xl font-bold">Framework Analysis</h3>
-              </div>
-              <div className="grid gap-6">
-                <FrameworkAnalytics />
-              </div>
-            </section>
+            {visibilityPrefs.show_framework_analysis && (
+              <section>
+                <div className="flex items-center gap-2 mb-6">
+                  <Layers className="h-6 w-6 text-primary" />
+                  <h3 className="text-2xl font-bold">Framework Analysis</h3>
+                </div>
+                <div className="grid gap-6">
+                  <FrameworkAnalytics />
+                </div>
+              </section>
+            )}
 
             {/* Pattern Discovery Section */}
             <section>

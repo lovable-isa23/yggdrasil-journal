@@ -159,6 +159,7 @@ export type Database = {
           due_date: string | null
           goal_id: string
           id: string
+          position: number | null
           status: string
           title: string
           updated_at: string
@@ -170,6 +171,7 @@ export type Database = {
           due_date?: string | null
           goal_id: string
           id?: string
+          position?: number | null
           status?: string
           title: string
           updated_at?: string
@@ -181,6 +183,7 @@ export type Database = {
           due_date?: string | null
           goal_id?: string
           id?: string
+          position?: number | null
           status?: string
           title?: string
           updated_at?: string
@@ -941,6 +944,8 @@ export type Database = {
           enable_tarot_tags: boolean | null
           enable_theravada: boolean | null
           id: string
+          show_emotional_analysis: boolean | null
+          show_framework_analysis: boolean | null
           updated_at: string
           user_id: string
         }
@@ -964,6 +969,8 @@ export type Database = {
           enable_tarot_tags?: boolean | null
           enable_theravada?: boolean | null
           id?: string
+          show_emotional_analysis?: boolean | null
+          show_framework_analysis?: boolean | null
           updated_at?: string
           user_id: string
         }
@@ -987,6 +994,8 @@ export type Database = {
           enable_tarot_tags?: boolean | null
           enable_theravada?: boolean | null
           id?: string
+          show_emotional_analysis?: boolean | null
+          show_framework_analysis?: boolean | null
           updated_at?: string
           user_id?: string
         }
