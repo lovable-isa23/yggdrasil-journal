@@ -115,6 +115,88 @@ export type Database = {
           },
         ]
       }
+      goal_branch_history: {
+        Row: {
+          archived_at: string
+          branches: Json
+          completion_rate: number | null
+          goal_id: string
+          id: string
+          user_id: string
+          week_start_date: string
+        }
+        Insert: {
+          archived_at?: string
+          branches: Json
+          completion_rate?: number | null
+          goal_id: string
+          id?: string
+          user_id: string
+          week_start_date: string
+        }
+        Update: {
+          archived_at?: string
+          branches?: Json
+          completion_rate?: number | null
+          goal_id?: string
+          id?: string
+          user_id?: string
+          week_start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_branch_history_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goal_branches: {
+        Row: {
+          created_at: string
+          due_date: string | null
+          goal_id: string
+          id: string
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+          week_start_date: string
+        }
+        Insert: {
+          created_at?: string
+          due_date?: string | null
+          goal_id: string
+          id?: string
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+          week_start_date: string
+        }
+        Update: {
+          created_at?: string
+          due_date?: string | null
+          goal_id?: string
+          id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          week_start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_branches_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       goal_milestones: {
         Row: {
           completed_at: string | null
@@ -263,6 +345,53 @@ export type Database = {
             foreignKeyName: "goal_reflections_goal_id_fkey"
             columns: ["goal_id"]
             isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goal_trees: {
+        Row: {
+          created_at: string
+          fruit_achieved: boolean | null
+          fruit_text: string | null
+          goal_id: string
+          id: string
+          root_text: string | null
+          trunk_target_date: string | null
+          trunk_title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          fruit_achieved?: boolean | null
+          fruit_text?: string | null
+          goal_id: string
+          id?: string
+          root_text?: string | null
+          trunk_target_date?: string | null
+          trunk_title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          fruit_achieved?: boolean | null
+          fruit_text?: string | null
+          goal_id?: string
+          id?: string
+          root_text?: string | null
+          trunk_target_date?: string | null
+          trunk_title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_trees_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: true
             referencedRelation: "goals"
             referencedColumns: ["id"]
           },
