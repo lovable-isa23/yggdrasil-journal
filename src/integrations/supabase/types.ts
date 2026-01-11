@@ -52,6 +52,7 @@ export type Database = {
       }
       entry_insights: {
         Row: {
+          archetype_tags: Json | null
           chakra_tags: Json | null
           created_at: string
           depth_score: number | null
@@ -70,6 +71,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          archetype_tags?: Json | null
           chakra_tags?: Json | null
           created_at?: string
           depth_score?: number | null
@@ -88,6 +90,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          archetype_tags?: Json | null
           chakra_tags?: Json | null
           created_at?: string
           depth_score?: number | null

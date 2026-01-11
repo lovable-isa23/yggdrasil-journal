@@ -18,6 +18,7 @@ const Signup = lazy(() => import("./pages/Signup"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const UpdatePassword = lazy(() => import("./pages/UpdatePassword"));
 const Journal = lazy(() => import("./pages/Journal"));
+const Entries = lazy(() => import("./pages/Entries"));
 const Insights = lazy(() => import("./pages/Insights"));
 const ImportHistory = lazy(() => import("./pages/ImportHistory"));
 const Settings = lazy(() => import("./pages/Settings"));
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/update-password" element={<UpdatePassword />} />
               <Route path="/journal" element={<Journal />} />
+              <Route path="/entries" element={<Entries />} />
               <Route path="/insights" element={<Insights />} />
               <Route path="/import-history" element={<ImportHistory />} />
               <Route path="/settings" element={<Settings />} />
