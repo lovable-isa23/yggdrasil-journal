@@ -707,6 +707,7 @@ Respond with ONLY a valid JSON object in this exact format:
       chakra_tags: analysis.chakra_tags || [],
       tarot_tags: analysis.tarot_tags || [],
       sacred_geometry: analysis.sacred_geometry || [],
+      archetype_tags: analysis.archetype_tags || [],
       depth_score: depthScore,
       frameworks_applied: analysis.interpretation?.frameworks_applied || [],
     };
