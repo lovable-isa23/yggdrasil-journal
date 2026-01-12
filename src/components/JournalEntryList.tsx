@@ -68,6 +68,11 @@ interface JournalEntryListProps {
     selectedMoods: string[];
     selectedTags: string[];
     hasMedia?: boolean;
+    searchQuery?: string;
+    dateRange?: {
+      start: Date | null;
+      end: Date | null;
+    };
   };
   sortOption?: 'date-desc' | 'date-asc' | 'word-count-desc' | 'word-count-asc' | 'favorites-first';
   onEntriesLoaded?: (total: number, filtered: number) => void;
@@ -256,6 +261,34 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
         result = result.filter(entry => 
           entry.audio_url || entry.image_url || entry.transcription_source
         );
+      }
+
+      // Search filter
+      if (filters.searchQuery && filters.searchQuery.trim().length > 0) {
+        const query = filters.searchQuery.toLowerCase().trim();
+        result = result.filter(entry => {
+          const titleMatch = entry.title?.toLowerCase().includes(query);
+          const contentMatch = entry.content?.toLowerCase().includes(query);
+          return titleMatch || contentMatch;
+        });
+      }
+
+      // Date range filter
+      if (filters.dateRange?.start || filters.dateRange?.end) {
+        result = result.filter(entry => {
+          const entryDate = parseLocalDate(entry.entry_date);
+          if (filters.dateRange?.start && entryDate < filters.dateRange.start) {
+            return false;
+          }
+          if (filters.dateRange?.end) {
+            const endOfDay = new Date(filters.dateRange.end);
+            endOfDay.setHours(23, 59, 59, 999);
+            if (entryDate > endOfDay) {
+              return false;
+            }
+          }
+          return true;
+        });
       }
     }
 
