@@ -36,7 +36,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, startOfWeek, differenceInDays } from "date-fns";
-import { cn } from "@/lib/utils";
+import { cn, parseLocalDate } from "@/lib/utils";
 import { Checkbox } from "./ui/checkbox";
 
 interface GoalTree {
@@ -349,7 +349,7 @@ export const TreeOfLife = ({ goalId, goalTitle, isOpen = false }: TreeOfLifeProp
   const doneCount = branches.filter((b) => b.status === "done").length;
   const branchProgress = branches.length > 0 ? Math.round((doneCount / branches.length) * 100) : 0;
   const daysToMilestone = tree?.trunk_target_date
-    ? differenceInDays(new Date(tree.trunk_target_date), new Date())
+    ? differenceInDays(parseLocalDate(tree.trunk_target_date), new Date())
     : null;
 
   if (loading) {
@@ -447,14 +447,14 @@ export const TreeOfLife = ({ goalId, goalTitle, isOpen = false }: TreeOfLifeProp
                     <Button variant="outline" size="sm" className="gap-1">
                       <Calendar className="h-3 w-3" />
                       {tree?.trunk_target_date
-                        ? format(new Date(tree.trunk_target_date), "MMM d")
+                        ? format(parseLocalDate(tree.trunk_target_date), "MMM d")
                         : "Target"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="end">
                     <CalendarComponent
                       mode="single"
-                      selected={tree?.trunk_target_date ? new Date(tree.trunk_target_date) : undefined}
+                      selected={tree?.trunk_target_date ? parseLocalDate(tree.trunk_target_date) : undefined}
                       onSelect={(date) => {
                         saveField("trunk_target_date", date ? format(date, "yyyy-MM-dd") : null);
                         setIsTrunkDateOpen(false);

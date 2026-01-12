@@ -6,9 +6,9 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Moon, Sun, Smartphone, Monitor, RefreshCw, Loader2 } from "lucide-react";
+import { AppNavbar } from "@/components/AppNavbar";
+import { Moon, Sun, RefreshCw, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Progress } from "@/components/ui/progress";
 
@@ -292,35 +292,15 @@ const Settings = () => {
   return (
     <AuthGuard>
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
-        {/* Header */}
-        <header className="border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-50">
-          <div className="container mx-auto px-4 sm:px-6 py-4">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate("/journal")}
-                  className="gap-2"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  <span className="hidden sm:inline">Back</span>
-                </Button>
-                <img 
-                  src={yggdrasilLogo} 
-                  alt="Yggdrasil" 
-                  className="h-8 w-8 sm:h-10 sm:w-10 object-contain flex-shrink-0"
-                />
-                <h1 className="text-lg sm:text-2xl font-bold text-primary truncate">
-                  Settings
-                </h1>
-              </div>
-            </div>
-          </div>
-        </header>
+        <AppNavbar />
 
         {/* Main Content */}
         <main className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 max-w-4xl">
+          <div className="mb-8">
+            <h2 className="text-3xl font-bold">Settings</h2>
+            <p className="text-muted-foreground mt-1">Customize your Yggdrasil experience</p>
+          </div>
+
           {loading ? (
             <div className="text-center">Loading preferences...</div>
           ) : (
@@ -439,7 +419,7 @@ const Settings = () => {
                         Chakra System
                       </Label>
                       <p className="text-sm text-muted-foreground">
-                        Add chakra energy center tags to your insights
+                        Energy centers and their balance states
                       </p>
                     </div>
                     <Switch
@@ -450,13 +430,13 @@ const Settings = () => {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between py-3 border-b">
+                  <div className="flex items-center justify-between">
                     <div className="space-y-1">
                       <Label htmlFor="tarot-tags" className="text-base font-medium">
-                        Tarot System
+                        Tarot Archetypes
                       </Label>
                       <p className="text-sm text-muted-foreground">
-                        Add tarot archetypal tags to your insights
+                        Major arcana symbolism and meanings
                       </p>
                     </div>
                     <Switch
@@ -467,30 +447,13 @@ const Settings = () => {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between py-3 border-b">
-                    <div className="space-y-1">
-                      <Label htmlFor="sacred-geometry" className="text-base font-medium">
-                        Sacred Geometry
-                      </Label>
-                      <p className="text-sm text-muted-foreground">
-                        Identify geometric patterns and divine proportions in your experiences
-                      </p>
-                    </div>
-                    <Switch
-                      id="sacred-geometry"
-                      checked={preferences.enable_sacred_geometry}
-                      onCheckedChange={() => handleToggle('enable_sacred_geometry')}
-                      disabled={saving}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between py-3">
+                  <div className="flex items-center justify-between">
                     <div className="space-y-1">
                       <Label htmlFor="archetype-tags" className="text-base font-medium">
                         Jungian Archetypes
                       </Label>
                       <p className="text-sm text-muted-foreground">
-                        Identify archetypal patterns (Hero, Shadow, Anima/Animus, Wise Old Man, etc.)
+                        Archetypal patterns and figures in your entries
                       </p>
                     </div>
                     <Switch
@@ -500,133 +463,61 @@ const Settings = () => {
                       disabled={saving}
                     />
                   </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label htmlFor="sacred-geometry" className="text-base font-medium">
+                        Sacred Geometry
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Geometric symbolism and patterns
+                      </p>
+                    </div>
+                    <Switch
+                      id="sacred-geometry"
+                      checked={preferences.enable_sacred_geometry}
+                      onCheckedChange={() => handleToggle('enable_sacred_geometry')}
+                      disabled={saving}
+                    />
+                  </div>
                 </div>
               </Card>
 
-              {/* Apply Feature Updates - Hidden
+              {/* Re-analyze Section */}
               <Card className="p-6">
-                <h2 className="text-xl font-bold mb-4">Apply Feature Updates</h2>
+                <h2 className="text-xl font-bold mb-4">Apply Updates to Entries</h2>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Apply any feature updates (like new frameworks or analysis improvements) to your existing journal entries
+                  Re-analyze all your journal entries with the current framework and tag settings.
+                  This will update insights for entries created before you changed these settings.
                 </p>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div className="space-y-1 flex-1">
-                    <Label className="text-base font-medium flex items-center gap-2">
-                      <RefreshCw className="h-4 w-4" />
-                      Apply Updates to All Entries
-                    </Label>
-                    <p className="text-sm text-muted-foreground">
-                      Re-analyze entries with the latest framework improvements and diversity requirements
-                    </p>
-                  </div>
-                  <Button
-                    onClick={handleReanalyzeAll}
-                    disabled={reanalyzing || saving}
-                    className="gap-2"
-                  >
-                    {reanalyzing ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Updating {reanalyzeProgress}/{reanalyzeTotalEntries}
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="h-4 w-4" />
-                        Apply Updates
-                      </>
-                    )}
-                  </Button>
-                </div>
-                {reanalyzing && (
-                  <div className="mt-4 space-y-2">
-                    <Progress value={(reanalyzeProgress / reanalyzeTotalEntries) * 100} className="w-full" />
-                    <p className="text-xs text-muted-foreground text-center">
-                      This may take a few minutes. Please don't close this page.
-                    </p>
+                
+                {reanalyzing && reanalyzeTotalEntries > 0 && (
+                  <div className="mb-4 space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Analyzing entries...</span>
+                      <span>{reanalyzeProgress} / {reanalyzeTotalEntries}</span>
+                    </div>
+                    <Progress value={(reanalyzeProgress / reanalyzeTotalEntries) * 100} />
                   </div>
                 )}
-              </Card>
-              */}
-
-              {/* Install App */}
-              <Card className="p-6">
-                <h2 className="text-xl font-bold mb-4">Install Yggdrasil as an App</h2>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Access Yggdrasil directly from your home screen for a native app experience with offline access and faster loading
-                </p>
-
-                <Accordion type="single" collapsible className="w-full">
-                  <AccordionItem value="iphone">
-                    <AccordionTrigger className="text-base font-medium">
-                      <div className="flex items-center gap-2">
-                        <Smartphone className="h-4 w-4" />
-                        iPhone (Safari or Chrome)
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="space-y-3 text-sm">
-                      <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 mb-3">
-                        <p className="text-foreground font-medium flex items-center gap-2">
-                          💡 Works with both Safari and Chrome on iOS
-                        </p>
-                      </div>
-                      <ol className="space-y-2 list-decimal list-inside">
-                        <li>Open this page in <strong>Safari or Chrome</strong></li>
-                        <li>Tap the <strong>Share</strong> button <span className="inline-flex items-center justify-center w-5 h-5 text-xs bg-blue-100 dark:bg-blue-900/30 rounded">↑</span> at the bottom of your screen</li>
-                        <li>Scroll down and tap <strong>"Add to Home Screen"</strong></li>
-                        <li>Edit the name if desired, then tap <strong>"Add"</strong></li>
-                        <li>Find the Yggdrasil icon on your home screen!</li>
-                      </ol>
-                    </AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem value="android">
-                    <AccordionTrigger className="text-base font-medium">
-                      <div className="flex items-center gap-2">
-                        <Smartphone className="h-4 w-4" />
-                        Android (Chrome/Edge)
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="space-y-3 text-sm">
-                      <ol className="space-y-2 list-decimal list-inside">
-                        <li>Open this page in <strong>Chrome</strong> or <strong>Edge</strong></li>
-                        <li>Tap the menu (three dots) in the top right corner</li>
-                        <li>Tap <strong>"Add to Home screen"</strong> or <strong>"Install app"</strong></li>
-                        <li>Confirm the installation</li>
-                        <li>The Yggdrasil icon will appear on your home screen</li>
-                      </ol>
-                    </AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem value="desktop">
-                    <AccordionTrigger className="text-base font-medium">
-                      <div className="flex items-center gap-2">
-                        <Monitor className="h-4 w-4" />
-                        Desktop (Chrome/Edge/Brave)
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="space-y-3 text-sm">
-                      <ol className="space-y-2 list-decimal list-inside">
-                        <li><strong>Chrome/Edge:</strong> Look for the install icon <span className="inline-flex items-center justify-center w-5 h-5 text-xs bg-blue-100 dark:bg-blue-900/30 rounded">⊕</span> in the address bar</li>
-                        <li>Click the install button and follow the prompts</li>
-                        <li>The app will open in its own window and appear in your applications</li>
-                      </ol>
-                      <p className="text-muted-foreground">
-                        <strong>Note:</strong> Firefox doesn't currently support PWA installation on desktop
-                      </p>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-
-                <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-                  <h3 className="font-medium mb-2 text-sm">Benefits of Installing:</h3>
-                  <ul className="space-y-1 text-sm text-muted-foreground">
-                    <li>✓ Faster loading times</li>
-                    <li>✓ Works offline (view past entries)</li>
-                    <li>✓ Native app-like experience</li>
-                    <li>✓ No app store needed</li>
-                    <li>✓ Takes up minimal storage</li>
-                  </ul>
-                </div>
+                
+                <Button
+                  onClick={handleReanalyzeAll}
+                  disabled={reanalyzing}
+                  className="gap-2"
+                >
+                  {reanalyzing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4" />
+                      Re-analyze All Entries
+                    </>
+                  )}
+                </Button>
               </Card>
             </div>
           )}
