@@ -1,152 +1,107 @@
 
-
-## Plan: Enhance Yggi Chat with Conversation History Context and UI Fix
+## Plan: Full-Page Yggi Chat on Mobile
 
 ### Overview
-This plan addresses three requests:
-1. **Include past conversations in AI context** - So Yggi can reference previous chats and build on past insights
-2. **Enable multi-entry/per-category analyses** - Allow Yggi to provide deeper cross-entry insights
-3. **Remove duplicate close button** - Fix the desktop Sheet UI showing two X buttons
+Replace the mobile Drawer with navigation to a dedicated full-page `/chat` route. This eliminates all mobile keyboard issues by using a standard page layout. Desktop will keep the current Sheet (side popup) behavior.
 
 ---
 
-### Part 1: Include Past Conversation History in Context
-
-**Current Behavior:**
-- Each conversation is saved to `yggi_conversations` table
-- The edge function receives only the CURRENT conversation's messages
-- Past conversations with valuable insights are not available to Yggi
-
-**Changes to `supabase/functions/yggi-chat/index.ts`:**
-
-Add a new query to fetch recent past conversations and include key insights from them in the system prompt.
+### Architecture
 
 ```text
-Current data fetched:
-- journal_entries (id, entry_date, mood_type)
-- entry_insights (summary, themes, emotions, etc.)
-- pattern_insights
-- knowledge_relationships
-- goals
-- user_preferences
+Mobile Flow:
+[Floating Button] --> navigate("/chat") --> [Full-screen chat page]
 
-NEW - Also fetch:
-- yggi_conversations (last 5 conversations, excluding current)
+Desktop Flow (unchanged):
+[Floating Button] --> [Sheet popup slides in from right]
 ```
 
-**Implementation:**
-1. Fetch last 5 past conversations from `yggi_conversations`
-2. Extract key insights/questions discussed (summarize from messages)
-3. Add a new section to the context summary:
+---
+
+### Changes
+
+#### 1. Create New Chat Page
+**New file: `src/pages/Chat.tsx`**
+
+A full-page chat experience protected by AuthGuard:
+- Full viewport height with flex layout
+- Header with back button, title, and "New Conversation" button
+- Scrollable message area
+- Fixed input footer with safe-area padding for iOS
+
+The page will reuse the same chat logic (message handling, streaming, conversation loading) currently in YggiChat.tsx.
+
+---
+
+#### 2. Update YggiChat Component
+**File: `src/components/YggiChat.tsx`**
+
+Simplify the mobile behavior:
+- On mobile: The floating button navigates to `/chat` instead of opening a Drawer
+- On desktop: Keep the existing Sheet behavior unchanged
+- Remove all Drawer-related code and mobile keyboard handling (no longer needed)
 
 ```text
-PREVIOUS CONVERSATIONS WITH YOU:
-- [Date]: Discussed inferiority complex from mother, explored DBT opposite action
-- [Date]: Talked about relationship patterns with Josh
-- [Date]: Explored shadow work and self-worth
-```
+Before:
+if (isMobile) {
+  return <Drawer>...</Drawer>
+}
+return <Sheet>...</Sheet>
 
-This allows Yggi to say things like: "Last time we talked about your mom's influence - how has that been sitting with you?"
+After:
+if (isMobile) {
+  return (
+    <Button onClick={() => navigate("/chat")}>
+      🌱
+    </Button>
+  )
+}
+return <Sheet>...</Sheet>
+```
 
 ---
 
-### Part 2: Enable Multi-Entry/Per-Category Deep Analysis
+#### 3. Add Route
+**File: `src/App.tsx`**
 
-**Current Limitation:**
-- Yggi's system prompt focuses on immediate, short responses (1-2 paragraphs)
-- Context includes entry summaries but not grouped analysis
-
-**Changes to System Prompt:**
-
-1. **Increase max_tokens** from 400 to 800 for deeper analyses when requested
-2. **Add category grouping** to the context summary:
+Add the new chat route with lazy loading:
 
 ```text
-ENTRIES BY CATEGORY:
-- Relationship (Josh): 8 entries - Key themes: criticism, inadequacy, trapped
-- Family (Mom): 3 entries - Key themes: rejection, abandonment, not good enough
-- Self-Work: 5 entries - Key themes: productivity anxiety, self-pressure
+const Chat = lazy(() => import("./pages/Chat"));
 
-CROSS-CATEGORY PATTERNS:
-- Criticism from Josh triggers same feelings as childhood rejection
-- Inadequacy appears across all categories (15 mentions)
+<Route path="/chat" element={<Chat />} />
 ```
 
-3. **Update Yggi's instructions** to allow deeper analysis when user asks:
+---
+
+#### 4. Hide Floating Button on Chat Page
+**File: `src/components/YggiChat.tsx`**
+
+Update the visibility check to hide the floating button when already on the chat page:
 
 ```text
-When the user asks for analysis across entries or patterns, you may provide longer responses (up to 3-4 paragraphs) with specific examples from their entries.
+if (!user || location.pathname === '/' || location.pathname === '/chat') {
+  return null;
+}
 ```
 
 ---
 
-### Part 3: Remove Duplicate Close Button on Desktop
+### Technical Details
 
-**Problem:**
-- `SheetContent` component has a built-in X button (line 60-63 in sheet.tsx)
-- `HeaderContent` in YggiChat adds another X button (lines 350-355)
-- Result: Two X buttons visible on desktop
-
-**Solution Options:**
-
-| Option | Approach | Pros | Cons |
-|--------|----------|------|------|
-| A | Remove the HeaderContent close button for desktop | Simple, keeps native Sheet button | Header layout changes |
-| B | Hide the built-in Sheet close button | Custom control over positioning | Requires modifying Sheet component |
-| C | Create a variant SheetContent without built-in close | Clean separation | More component complexity |
-
-**Recommended: Option A** - Conditionally render the close button in HeaderContent only for mobile (where it's useful in the drawer header).
-
-**Changes to `src/components/YggiChat.tsx`:**
-
-```typescript
-// In HeaderContent, only show close button on mobile
-const HeaderContent = ({ 
-  CloseComponent, 
-  showCloseButton = true 
-}: { 
-  CloseComponent: typeof DrawerClose | typeof SheetClose;
-  showCloseButton?: boolean;
-}) => (
-  <div className="flex items-center justify-between">
-    <div>...</div>
-    <div className="flex items-center gap-2">
-      <Button variant="outline" size="sm" onClick={startNewConversation}>
-        <Plus className="h-4 w-4 mr-1" />
-        New
-      </Button>
-      {showCloseButton && (
-        <CloseComponent asChild>
-          <Button variant="ghost" size="icon">
-            <X className="h-4 w-4" />
-          </Button>
-        </CloseComponent>
-      )}
-    </div>
-  </div>
-);
-
-// Mobile (Drawer): show close button
-<HeaderContent CloseComponent={DrawerClose} showCloseButton={true} />
-
-// Desktop (Sheet): hide close button (use built-in)
-<HeaderContent CloseComponent={SheetClose} showCloseButton={false} />
-```
+| File | Action | Purpose |
+|------|--------|---------|
+| `src/pages/Chat.tsx` | Create | Full-page mobile chat experience |
+| `src/components/YggiChat.tsx` | Modify | Mobile: navigate to /chat; Desktop: keep Sheet |
+| `src/App.tsx` | Modify | Add /chat route |
 
 ---
 
-### Files to Modify
+### Benefits
 
-| File | Changes |
-|------|---------|
-| `supabase/functions/yggi-chat/index.ts` | Fetch past conversations, add category grouping, update system prompt |
-| `src/components/YggiChat.tsx` | Pass `showCloseButton={false}` for desktop Sheet |
-
----
-
-### Expected Results
-
-1. **Conversation Continuity**: Yggi will remember past conversations and can reference previous insights, creating a sense of ongoing relationship
-2. **Deeper Analysis**: Users can ask Yggi for multi-entry analysis like "What patterns do you see in my relationship entries?" and get comprehensive responses
-3. **Clean UI**: Only one close button visible on desktop (the built-in Sheet button in the top-right corner)
+1. **No keyboard glitches** - Standard page layout handles mobile keyboards natively
+2. **Full screen real estate** - Better mobile UX with more space for messages
+3. **Back navigation** - Users can use the back button or swipe to return
+4. **Code simplification** - Removes complex viewport tracking and keyboard handling logic
+5. **Consistent patterns** - Follows existing page structure (AuthGuard, AppNavbar pattern)
 
