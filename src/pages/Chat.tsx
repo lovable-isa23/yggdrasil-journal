@@ -1,22 +1,14 @@
 import { useState, useRef, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetFooter,
-  SheetHeader,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Send, X, Plus } from "lucide-react";
+import { Loader2, Send, ArrowLeft, Plus } from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import type { User } from "@supabase/supabase-js";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { AuthGuard } from "@/components/AuthGuard";
 
 type Message = {
   id: string;
@@ -24,21 +16,16 @@ type Message = {
   content: string;
 };
 
-export function YggiChat() {
-  const location = useLocation();
+function ChatContent() {
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
   const [user, setUser] = useState<User | null>(null);
-  const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Check authentication status and load conversation
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -125,15 +112,9 @@ export function YggiChat() {
     }
   };
 
-  // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-
-  // Don't show on homepage, chat page, or when not logged in
-  if (!user || location.pathname === '/' || location.pathname === '/chat') {
-    return null;
-  }
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -276,153 +257,129 @@ export function YggiChat() {
     }
   };
 
-  // Trigger button (shared between mobile and desktop)
-  const TriggerButton = (
-    <Button
-      className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:scale-110 transition-transform z-50 bg-[hsl(30,40%,50%)] hover:bg-[hsl(30,40%,45%)] text-white"
-      size="icon"
-      aria-label="Chat with Yggi"
-    >
-      <span className="text-2xl">🌱</span>
-    </Button>
-  );
-
-  // Mobile: navigate to full-page chat
-  if (isMobile) {
-    return (
-      <Button
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:scale-110 transition-transform z-50 bg-[hsl(30,40%,50%)] hover:bg-[hsl(30,40%,45%)] text-white"
-        size="icon"
-        aria-label="Chat with Yggi"
-        onClick={() => navigate("/chat")}
-      >
-        <span className="text-2xl">🌱</span>
-      </Button>
-    );
-  }
-
-  // Desktop: use Sheet (right sidebar)
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        {TriggerButton}
-      </SheetTrigger>
-      <SheetContent 
-        side="right" 
-        className="w-[400px] sm:w-[450px] p-0 flex flex-col"
-      >
-        <SheetHeader className="border-b p-4 flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2 text-lg font-semibold">
-                <span className="text-xl">🌱</span>
-                Chat with Yggi
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Your spiritual guide with full knowledge of your journey
+    <div className="flex flex-col h-[100dvh] bg-background">
+      {/* Header */}
+      <header className="flex items-center justify-between px-4 py-3 border-b bg-background flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(-1)}
+            aria-label="Go back"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🌱</span>
+            <span className="font-semibold">Chat with Yggi</span>
+          </div>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={startNewConversation}
+          disabled={isLoading || messages.length === 0}
+        >
+          <Plus className="h-4 w-4 mr-1" />
+          New
+        </Button>
+      </header>
+
+      {/* Messages */}
+      <ScrollArea className="flex-1 p-4">
+        <div className="space-y-4">
+          {messages.length === 0 && (
+            <div className="text-center text-muted-foreground py-8">
+              <p className="text-sm">
+                Ask Yggi anything about your journey, patterns, or insights
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={startNewConversation}
-                disabled={isLoading || messages.length === 0}
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                New
-              </Button>
-              <SheetClose asChild>
-                <Button variant="ghost" size="icon">
-                  <X className="h-4 w-4" />
-                </Button>
-              </SheetClose>
-            </div>
-          </div>
-        </SheetHeader>
+          )}
 
-        <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-          <div className="space-y-4">
-            {messages.length === 0 && (
-              <div className="text-center text-muted-foreground py-8">
-                <p className="text-sm">
-                  Ask Yggi anything about your journey, patterns, or insights
-                </p>
-              </div>
-            )}
-
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex gap-3 ${
-                  message.role === "user" ? "justify-end" : "justify-start"
-                }`}
-              >
-                {message.role === "assistant" && (
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                    <span>🌱</span>
-                  </div>
-                )}
-                <div
-                  className={`rounded-lg px-4 py-3 max-w-[80%] ${
-                    message.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
-                  }`}
-                >
-                  {message.role === "assistant" ? (
-                    <div className="prose prose-sm dark:prose-invert max-w-none">
-                      <ReactMarkdown>{message.content || "..."}</ReactMarkdown>
-                    </div>
-                  ) : (
-                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                  )}
-                </div>
-              </div>
-            ))}
-
-            {isLoading && (
-              <div className="flex gap-3 justify-start">
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              className={`flex gap-3 ${
+                message.role === "user" ? "justify-end" : "justify-start"
+              }`}
+            >
+              {message.role === "assistant" && (
                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center">
                   <span>🌱</span>
                 </div>
-                <div className="rounded-lg px-4 py-3 bg-muted">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                </div>
-              </div>
-            )}
-
-            <div ref={messagesEndRef} />
-          </div>
-        </ScrollArea>
-
-        <SheetFooter className="border-t p-4 flex-shrink-0 bg-background">
-          <div className="flex gap-2 w-full">
-            <Textarea
-              ref={textareaRef}
-              placeholder="Ask Yggi anything..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={isLoading}
-              className="min-h-[60px] resize-none"
-              rows={2}
-            />
-            <Button
-              onClick={handleSend}
-              disabled={!input.trim() || isLoading}
-              size="icon"
-              className="h-[60px] w-[60px] flex-shrink-0"
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
               )}
-            </Button>
-          </div>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+              <div
+                className={`rounded-lg px-4 py-3 max-w-[80%] ${
+                  message.role === "user"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted"
+                }`}
+              >
+                {message.role === "assistant" ? (
+                  <div className="prose prose-sm dark:prose-invert max-w-none">
+                    <ReactMarkdown>{message.content || "..."}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                )}
+              </div>
+            </div>
+          ))}
+
+          {isLoading && messages[messages.length - 1]?.content === "" && (
+            <div className="flex gap-3 justify-start">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                <span>🌱</span>
+              </div>
+              <div className="rounded-lg px-4 py-3 bg-muted">
+                <Loader2 className="h-4 w-4 animate-spin" />
+              </div>
+            </div>
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
+      </ScrollArea>
+
+      {/* Input Footer */}
+      <div 
+        className="border-t p-4 bg-background flex-shrink-0"
+        style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+      >
+        <div className="flex gap-2">
+          <Textarea
+            ref={textareaRef}
+            placeholder="Ask Yggi anything..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={isLoading}
+            className="min-h-[60px] resize-none"
+            rows={2}
+          />
+          <Button
+            onClick={handleSend}
+            disabled={!input.trim() || isLoading}
+            size="icon"
+            className="h-[60px] w-[60px] flex-shrink-0"
+          >
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function Chat() {
+  return (
+    <AuthGuard>
+      <ChatContent />
+    </AuthGuard>
   );
 }

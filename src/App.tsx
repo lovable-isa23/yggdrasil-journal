@@ -25,6 +25,7 @@ const Settings = lazy(() => import("./pages/Settings"));
 const Goals = lazy(() => import("./pages/Goals"));
 const TrialExpired = lazy(() => import("./pages/TrialExpired"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
+const Chat = lazy(() => import("./pages/Chat"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -54,6 +55,7 @@ const App = () => (
               <Route path="/goals" element={<Goals />} />
               <Route path="/trial-expired" element={<TrialExpired />} />
               <Route path="/payment-success" element={<PaymentSuccess />} />
+              <Route path="/chat" element={<Chat />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
