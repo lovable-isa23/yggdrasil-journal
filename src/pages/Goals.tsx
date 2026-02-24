@@ -27,15 +27,13 @@ const Goals = () => {
             </p>
           </div>
 
-          {/* Moon Phase & Spiritual Guide Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <MoonPhaseIndicator />
+          {/* Moon Phase, Astrology & Spiritual Guide Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
+            <div className="space-y-6">
+              <MoonPhaseIndicator />
+              <AstrologyIndicator />
+            </div>
             <SpiritualGuidePanel />
-          </div>
-
-          {/* Astrology Section */}
-          <div className="mb-12">
-            <AstrologyIndicator />
           </div>
 
           {/* Goal Tracker */}

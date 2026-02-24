@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
@@ -6,7 +7,7 @@ import { Button } from "./ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Calendar } from "./ui/calendar";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
-import { Loader2, Heart, TrendingUp, TrendingDown, Minus, Calendar as CalendarIcon, X } from "lucide-react";
+import { Loader2, Heart, TrendingUp, TrendingDown, Minus, Calendar as CalendarIcon, X, ExternalLink } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { format, isWithinInterval, subDays } from "date-fns";
 import { useDataSufficiency } from "@/hooks/use-data-sufficiency";
@@ -30,8 +31,10 @@ interface RelatedEntry {
 }
 
 export const SentimentTracking = () => {
+  const navigate = useNavigate();
   const [sentimentData, setSentimentData] = useState<SentimentData[]>([]);
   const [allSentimentData, setAllSentimentData] = useState<SentimentData[]>([]);
+  const [entryIdsByDate, setEntryIdsByDate] = useState<Map<string, string[]>>(new Map());
   const [loading, setLoading] = useState(true);
   const [selectedEmotion, setSelectedEmotion] = useState<string | null>(null);
   const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 30));
@@ -70,7 +73,15 @@ export const SentimentTracking = () => {
 
       const sentimentMap = new Map<string, SentimentData>();
 
+      const dateToEntryIds = new Map<string, string[]>();
+
       entries?.forEach(entry => {
+        // Track entry IDs by date
+        if (!dateToEntryIds.has(entry.entry_date)) {
+          dateToEntryIds.set(entry.entry_date, []);
+        }
+        dateToEntryIds.get(entry.entry_date)!.push(entry.id);
+
         const insight = insights?.find(i => i.entry_id === entry.id);
         if (insight && insight.emotions) {
           const emotions = new Map<string, number>();
@@ -91,6 +102,7 @@ export const SentimentTracking = () => {
         }
       });
 
+      setEntryIdsByDate(dateToEntryIds);
       const allData = Array.from(sentimentMap.values());
       setAllSentimentData(allData);
       filterSentimentData(allData, startDate, endDate);
@@ -152,6 +164,13 @@ export const SentimentTracking = () => {
     setSelectedItem(item);
     
     try {
+      // Get the set of valid entry IDs from the current filtered date range
+      const validEntryIds = new Set<string>();
+      sentimentData.forEach(sd => {
+        const ids = entryIdsByDate.get(sd.date);
+        if (ids) ids.forEach(id => validEntryIds.add(id));
+      });
+
       // Fetch decrypted entries to get readable content
       const { data: decryptedData, error: decryptError } = await supabase.functions.invoke("decrypt-entries");
       
@@ -172,6 +191,8 @@ export const SentimentTracking = () => {
       const itemLower = item.toLowerCase();
       const matchingEntryIds = insights
         ?.filter(i => {
+          // Only consider entries within the current date range
+          if (!validEntryIds.has(i.entry_id)) return false;
           const list = itemType === 'theme' 
             ? ((i.themes as string[]) || []).map(t => t.toLowerCase())
             : ((i.entities as string[]) || []).map(e => e.toLowerCase());
@@ -465,10 +486,20 @@ export const SentimentTracking = () => {
               <p className="text-sm text-muted-foreground">No entries found mentioning this item</p>
             ) : (
               relatedEntries.map((entry) => (
-                <Card key={entry.id} className="p-4">
+                <Card 
+                  key={entry.id} 
+                  className="p-4 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+                  onClick={() => {
+                    setSelectedItem(null);
+                    navigate("/entries", { state: { scrollToEntryId: entry.id } });
+                  }}
+                >
                   <div className="space-y-2">
                     <div className="flex items-start justify-between gap-2">
-                      <h4 className="font-semibold text-sm">{entry.title}</h4>
+                      <h4 className="font-semibold text-sm flex items-center gap-1">
+                        {entry.title}
+                        <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                      </h4>
                       <Badge variant="outline" className="text-xs shrink-0">
                         {format(new Date(entry.entry_date), "MMM dd, yyyy")}
                       </Badge>
