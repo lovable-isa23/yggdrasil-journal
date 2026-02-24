@@ -1,145 +1,73 @@
 
 
-## Plan: Multi-Feature Enhancement for Goals, Yggi, Quantum Discovery, and Astrology
+## Plan: Insights Page Fixes and Enhancements
 
-This plan covers 9 distinct improvements across several files.
-
----
-
-### 1. Show Archived/Completed Goals
-
-**Problem**: The GoalTracker query fetches all goals but `handleDeleteGoal` permanently deletes them. Users can't see archived goals.
-
-**Solution**:
-- Change `handleDeleteGoal` to set `status: 'archived'` instead of deleting
-- Add a toggle/section at the bottom of GoalTracker to show/hide archived and completed goals
-- Filter the main goal list to show only `active` goals by default, with a "Show completed & archived" toggle
-
-**File**: `src/components/GoalTracker.tsx`
-- Add state `showArchived` (default false)
-- Split goals into `activeGoals` and `archivedGoals`
-- Render archived goals in a separate collapsible section with muted styling
-- Update `handleDeleteGoal` to use `.update({ status: 'archived', archived_reason: 'User archived' })` instead of `.delete()`
-
----
-
-### 2. Include Goals and Insights/Interpretations in Yggi Context
-
-**Problem**: Yggi currently fetches goals but only `active` ones and doesn't include interpretations from `entry_insights`.
-
-**Solution**:
-- Fetch ALL goals (remove `.eq('status', 'active')` filter) so Yggi knows completed/archived journey history
-- Include `interpretation` data from `entry_insights` in the context summary
-- Add goal descriptions and completion reflections to the context
-
-**File**: `supabase/functions/yggi-chat/index.ts`
-- Remove `.eq('status', 'active')` from goals query, fetch all goals
-- Add goal descriptions and completion reflections to the ACTIVE INTENTIONS section
-- Add a new "COMPLETED JOURNEYS" section for completed/archived goals
-- Include interpretation summaries from recent insights in the RECENT REFLECTIONS section
-- Increase `max_tokens` from 400 to 800
-
----
-
-### 3. Allow Clearing of Date Picker in GoalDialog
-
-**Problem**: Once a date is selected in the GoalDialog, there's no way to clear it.
-
-**Solution**: Add a clear button next to the date display.
-
-**File**: `src/components/GoalDialog.tsx`
-- Add `pointer-events-auto` to the Calendar component
-- When a date is selected, show an "X" button next to the date text to clear it
-- Add `onSelect` handler that allows setting `undefined`
-
----
-
-### 4. Make Micro-Wins Collapsible
-
-**Problem**: The Micro-Wins section is always expanded inside goal cards, taking up space.
-
-**Solution**: Wrap it in a Collapsible component similar to TreeOfLife.
-
-**File**: `src/components/GoalTracker.tsx`
-- Wrap the micro-wins section in a `Collapsible` with a trigger header showing the win count
-- Default to collapsed state
-
----
-
-### 5. Diversify Goal Icon When Suggesting Goals from Patterns
-
-**Problem**: The `SpiritualGuidePanel` goal suggestion dialog uses the same `Target` icon for all goals regardless of type.
-
-**Solution**: Map `goal_type` from the AI response to the correct journey type icons.
-
-**Files**:
-- `src/components/SpiritualGuidePanel.tsx`: Add a `getGoalTypeIcon` helper (matching GoalTracker's logic) and use it in the suggestion cards
-- `supabase/functions/suggest-goals/index.ts`: Update the `goal_type` enum to match the app's actual types (`shadow-work`, `spiritual-practice`, `emotional-healing`, `manifestation`, `creative-expression`, `relationship-work`, `general`) instead of the current mismatched types (`spiritual`, `personal`, `health`, etc.)
-
----
-
-### 6. Fix Hidden Connections Theme Limiting and Relevance
-
-**Problem**: Themes are sliced alphabetically (`.slice(0, 25)`) rather than by relevance. Connection paths don't start from the chosen theme.
-
-**Solution**:
-- In the edge function, sort available themes by strength before limiting
-- On the frontend, pass pre-sorted themes to the dropdown
-- Update the connection path display to always start from the selected dropdown theme
-
-**Files**:
-- `supabase/functions/quantum-discovery/index.ts`: Already sorts by strength (top 16 nodes). No changes needed here.
-- `src/components/PatternInsights.tsx`: When building `availableThemes`, sort by relevance/frequency rather than alphabetically before passing to QuantumDiscovery
-- `src/components/QuantumDiscovery.tsx`: Remove the `.slice(0, 25)` cutoff (themes are already pre-sorted by relevance). Ensure connection path visualization starts from the dropdown-selected theme.
-
----
-
-### 7. Fix Sidebar Entry Navigation Links
-
-**Problem**: QuantumDiscovery navigates to `/journal` (line 74) instead of `/entries`. PatternInsights sidebar entries are not clickable at all.
-
-**Solution**:
-- `src/components/QuantumDiscovery.tsx`: Change `navigate("/journal", ...)` to `navigate("/entries", ...)`
-- `src/components/PatternInsights.tsx`: Make sidebar entry cards clickable, navigating to `/entries` with `scrollToEntryId` state (matching the pattern used in QuantumDiscovery and SentimentTracking)
-
----
-
-### 8. Add Astrology/Zodiac Section
-
-**Problem**: Users want astrology notes (zodiac, planetary alignments) alongside the moon phases.
-
-**Solution**: Create a new component and utility module for basic astrological data.
-
-**New file**: `src/lib/astrology.ts`
-- Calculate current zodiac sign based on date
-- Provide basic planetary day/hour associations (Sun=Sunday, Moon=Monday, etc.)
-- Include current zodiac season guidance
-- Calculate rising sign approximation based on time of day
-
-**New file**: `src/components/AstrologyIndicator.tsx`
-- Card component similar to MoonPhaseIndicator
-- Display current zodiac sign with emoji and element (Fire/Water/Earth/Air)
-- Show planetary ruler of the day
-- Include spiritual guidance based on current astrological energy
-- Show zodiac element and modality (Cardinal/Fixed/Mutable)
+### 1. Move Astrology Container (Goals Page Layout)
 
 **File**: `src/pages/Goals.tsx`
-- Add `AstrologyIndicator` below MoonPhaseIndicator in the grid (or as a separate card below)
+
+Move `AstrologyIndicator` from its own full-width section into the existing 2-column grid, placing it under `MoonPhaseIndicator` (left column) while `SpiritualGuidePanel` stays on the right.
+
+Change the grid from `grid-cols-1 lg:grid-cols-2` with 2 items to a layout where:
+- Left column: MoonPhaseIndicator + AstrologyIndicator (stacked)
+- Right column: SpiritualGuidePanel
+
+Remove the separate `<div className="mb-12">` wrapper for AstrologyIndicator.
 
 ---
 
-### 9. Summary of All File Changes
+### 2. Add Tooltip on Yggi Floating Button
 
-| File | Action | Changes |
+**File**: `src/components/YggiChat.tsx`
+
+Wrap both the mobile and desktop floating buttons in a `Tooltip` (from `@radix-ui/react-tooltip`) with the label "Yggi the Guide".
+
+---
+
+### 3. Reverse Word Trend Count X-Axis
+
+**File**: `src/components/StatisticsDashboard.tsx`
+
+The data in `calculateWordCounts` is already sorted chronologically (oldest first), which means the rightmost bar is the most recent -- this is correct. However, the `filterWordCountData` function formats dates but does not explicitly sort. Add `.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())` before formatting to ensure chronological left-to-right order is preserved after filtering.
+
+If the current behavior shows newest on the left, the fix is to ensure the sort is ascending (oldest to newest) so the most recent date appears on the right.
+
+---
+
+### 4. Make Sidebar Journal Entries Clickable (Sentiment Tracking)
+
+**File**: `src/components/SentimentTracking.tsx`
+
+Add `useNavigate` from `react-router-dom`. Make each entry `Card` in the sidebar clickable with an `onClick` handler that navigates to `/entries` with `{ state: { scrollToEntryId: entry.id } }` and closes the sheet.
+
+---
+
+### 5. Fix Tag Count Mismatch in Sentiment Tracking Sidebar
+
+**Root Cause**: The badge count (e.g., "self-worth (5)") comes from `sentimentData` which is filtered by the selected date range. But `handleItemClick` fetches ALL entries and ALL insights (unfiltered), so clicking a theme shows entries from outside the date range too.
+
+**Fix in `src/components/SentimentTracking.tsx`**:
+
+In `handleItemClick`, filter the insights query to only include entry IDs that are within the current date range. Specifically:
+- Get the set of entry IDs from `sentimentData` (the already-filtered dataset)
+- Only match against those entry IDs when finding related entries
+- This ensures the sidebar entries match the count shown on the badge
+
+The fix:
+1. Collect entry IDs from the filtered `sentimentData` by cross-referencing with the entries fetched during `fetchSentimentData`
+2. In `handleItemClick`, after fetching all insights, filter `matchingEntryIds` to only those that exist in the current filtered date range
+3. Store entry date info alongside sentiment data so we can filter properly
+
+Alternatively (simpler approach): store a map of date-to-entryIds during fetch, then in `handleItemClick`, compute the set of valid entry IDs from the current `sentimentData` dates, and only show entries whose dates are in that set.
+
+---
+
+### Summary of File Changes
+
+| File | Action | Purpose |
 |------|--------|---------|
-| `src/components/GoalTracker.tsx` | Modify | Archive instead of delete; show archived goals toggle; make micro-wins collapsible |
-| `supabase/functions/yggi-chat/index.ts` | Modify | Include all goals + interpretations in context; increase max_tokens to 800 |
-| `src/components/GoalDialog.tsx` | Modify | Add date picker clear button + pointer-events-auto |
-| `src/components/SpiritualGuidePanel.tsx` | Modify | Use diversified goal type icons in suggestions |
-| `supabase/functions/suggest-goals/index.ts` | Modify | Fix goal_type enum to match app types |
-| `src/components/QuantumDiscovery.tsx` | Modify | Remove theme slice limit; fix navigation to /entries |
-| `src/components/PatternInsights.tsx` | Modify | Sort themes by relevance; make sidebar entries clickable with navigation |
-| `src/lib/astrology.ts` | Create | Zodiac/planetary calculations and guidance |
-| `src/components/AstrologyIndicator.tsx` | Create | Astrology display card |
-| `src/pages/Goals.tsx` | Modify | Add AstrologyIndicator below moon phases |
+| `src/pages/Goals.tsx` | Modify | Move astrology under moon phase in left column |
+| `src/components/YggiChat.tsx` | Modify | Add "Yggi the Guide" tooltip to floating button |
+| `src/components/StatisticsDashboard.tsx` | Modify | Ensure chronological sort (newest on right) |
+| `src/components/SentimentTracking.tsx` | Modify | Make sidebar entries clickable + fix tag count mismatch |
 
