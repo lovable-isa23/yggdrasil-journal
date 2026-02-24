@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import type { User } from "@supabase/supabase-js";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type Message = {
   id: string;
@@ -290,23 +291,37 @@ export function YggiChat() {
   // Mobile: navigate to full-page chat
   if (isMobile) {
     return (
-      <Button
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:scale-110 transition-transform z-50 bg-[hsl(30,40%,50%)] hover:bg-[hsl(30,40%,45%)] text-white"
-        size="icon"
-        aria-label="Chat with Yggi"
-        onClick={() => navigate("/chat")}
-      >
-        <span className="text-2xl">🌱</span>
-      </Button>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:scale-110 transition-transform z-50 bg-[hsl(30,40%,50%)] hover:bg-[hsl(30,40%,45%)] text-white"
+              size="icon"
+              aria-label="Chat with Yggi"
+              onClick={() => navigate("/chat")}
+            >
+              <span className="text-2xl">🌱</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="left">Yggi the Guide</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     );
   }
 
   // Desktop: use Sheet (right sidebar)
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        {TriggerButton}
-      </SheetTrigger>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <SheetTrigger asChild>
+              {TriggerButton}
+            </SheetTrigger>
+          </TooltipTrigger>
+          <TooltipContent side="left">Yggi the Guide</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
       <SheetContent 
         side="right" 
         className="w-[400px] sm:w-[450px] p-0 flex flex-col"

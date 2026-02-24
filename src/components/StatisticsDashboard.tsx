@@ -149,10 +149,12 @@ export const StatisticsDashboard = () => {
       });
     }
 
-    const formatted = filtered.map(stat => ({
-      ...stat,
-      date: new Date(stat.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-    }));
+    const formatted = filtered
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .map(stat => ({
+        ...stat,
+        date: new Date(stat.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      }));
 
     setWordCountData(formatted);
   };
