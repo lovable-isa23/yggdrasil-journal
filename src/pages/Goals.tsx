@@ -1,6 +1,7 @@
 import { AuthGuard } from "@/components/AuthGuard";
 import { GoalTracker } from "@/components/GoalTracker";
 import { MoonPhaseIndicator } from "@/components/MoonPhaseIndicator";
+import { AstrologyIndicator } from "@/components/AstrologyIndicator";
 import { SpiritualGuidePanel } from "@/components/SpiritualGuidePanel";
 import { NPSTooltip } from "@/components/NPSTooltip";
 import { AppNavbar } from "@/components/AppNavbar";
@@ -27,9 +28,14 @@ const Goals = () => {
           </div>
 
           {/* Moon Phase & Spiritual Guide Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             <MoonPhaseIndicator />
             <SpiritualGuidePanel />
+          </div>
+
+          {/* Astrology Section */}
+          <div className="mb-12">
+            <AstrologyIndicator />
           </div>
 
           {/* Goal Tracker */}

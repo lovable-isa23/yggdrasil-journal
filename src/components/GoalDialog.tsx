@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Calendar } from "./ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Badge } from "./ui/badge";
-import { CalendarIcon, Sparkles, Target, BookOpen, Heart, Lightbulb, Palette, Users, Loader2 } from "lucide-react";
+import { CalendarIcon, Sparkles, Target, BookOpen, Heart, Lightbulb, Palette, Users, Loader2, X } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { getCurrentMoonPhase } from "@/lib/moon-phases";
@@ -280,28 +280,40 @@ export const GoalDialog = ({ open, onOpenChange, onSave, editingGoal, patterns }
 
               <div className="space-y-2">
                 <Label>Target Completion</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
+                <div className="flex gap-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "flex-1 justify-start text-left font-normal h-12",
+                          !formData.targetDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.targetDate ? format(formData.targetDate, "PPP") : "Choose a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 pointer-events-auto">
+                      <Calendar
+                        mode="single"
+                        selected={formData.targetDate}
+                        onSelect={(date) => setFormData(prev => ({ ...prev, targetDate: date }))}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  {formData.targetDate && (
                     <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal h-12",
-                        !formData.targetDate && "text-muted-foreground"
-                      )}
+                      variant="ghost"
+                      size="icon"
+                      className="h-12 w-12 flex-shrink-0"
+                      onClick={() => setFormData(prev => ({ ...prev, targetDate: undefined }))}
                     >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.targetDate ? format(formData.targetDate, "PPP") : "Choose a date"}
+                      <X className="h-4 w-4" />
                     </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={formData.targetDate}
-                      onSelect={(date) => setFormData(prev => ({ ...prev, targetDate: date }))}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                  )}
+                </div>
                 <p className="text-sm text-muted-foreground">Optional: When do you envision completing this journey?</p>
               </div>
             </div>

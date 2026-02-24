@@ -47,7 +47,7 @@ serve(async (req) => {
       supabase.from('entry_insights').select('summary, themes, emotions, keywords, depth_score, frameworks_applied, interpretation').eq('user_id', user.id).order('created_at', { ascending: false }),
       supabase.from('pattern_insights').select('title, description, pattern_type, confidence_score, actionable_insight').eq('user_id', user.id).order('created_at', { ascending: false }),
       supabase.from('knowledge_relationships').select('source_item, target_item, relationship_type, strength, pattern_description').eq('user_id', user.id).order('created_at', { ascending: false }).limit(50),
-      supabase.from('goals').select('title, description, goal_type, phase, status, intention').eq('user_id', user.id).eq('status', 'active'),
+      supabase.from('goals').select('title, description, goal_type, phase, status, intention, completion_reflection, archived_reason').eq('user_id', user.id),
       supabase.from('user_preferences').select('*').eq('user_id', user.id).single()
     ]);
 
@@ -99,13 +99,30 @@ serve(async (req) => {
       pattern: r.pattern_description
     })) || [];
 
-    // Get active goals
-    const activeGoals = goals?.map(g => ({
+    // Separate active and completed/archived goals
+    const activeGoals = goals?.filter(g => g.status === 'active' || g.status === 'paused').map(g => ({
       title: g.title,
       type: g.goal_type,
       phase: g.phase,
-      intention: g.intention
+      intention: g.intention,
+      description: g.description
     })) || [];
+
+    const completedGoals = goals?.filter(g => g.status === 'completed' || g.status === 'archived').map(g => ({
+      title: g.title,
+      type: g.goal_type,
+      status: g.status,
+      reflection: g.completion_reflection
+    })) || [];
+
+    // Get interpretation highlights from insights
+    const interpretationHighlights = insights?.slice(0, 5)
+      .filter(i => i.interpretation)
+      .map(i => {
+        const interp = i.interpretation as any;
+        return interp?.overall || interp?.summary || null;
+      })
+      .filter(Boolean) || [];
 
     // Build context string
     const contextSummary = `
@@ -128,7 +145,13 @@ KEY CONNECTIONS IN THEIR INNER WORLD:
 ${strongConnections.map(c => `- ${c.from} ↔ ${c.to} (${c.type})`).join('\n') || 'Building their knowledge web'}
 
 ACTIVE INTENTIONS:
-${activeGoals.map(g => `- ${g.title} (${g.type}, Phase: ${g.phase})`).join('\n') || 'Setting intentions'}
+${activeGoals.map(g => `- ${g.title} (${g.type}, Phase: ${g.phase})${g.description ? ': ' + g.description.substring(0, 100) : ''}`).join('\n') || 'Setting intentions'}
+
+COMPLETED JOURNEYS:
+${completedGoals.map(g => `- ${g.title} (${g.status})${g.reflection ? ' — Reflection: ' + g.reflection.substring(0, 100) : ''}`).join('\n') || 'None yet'}
+
+DEEPER INTERPRETATIONS:
+${interpretationHighlights.slice(0, 3).map((h, i) => `${i + 1}. ${typeof h === 'string' ? h.substring(0, 150) : ''}`).join('\n') || 'Building deeper understanding'}
 
 PREFERENCES:
 ${preferences ? `Sacred Geometry: ${preferences.enable_sacred_geometry ? 'Enabled' : 'Disabled'}, Chakra Tags: ${preferences.enable_chakra_tags ? 'Enabled' : 'Disabled'}, Tarot: ${preferences.enable_tarot_tags ? 'Enabled' : 'Disabled'}` : 'Default settings'}
@@ -165,7 +188,7 @@ Keep responses focused and immediately actionable. What matters right now? What'
         ],
         stream: true,
         temperature: 0.7,
-        max_tokens: 400
+        max_tokens: 800
       }),
     });
 

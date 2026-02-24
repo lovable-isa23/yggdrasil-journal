@@ -71,7 +71,7 @@ ${JSON.stringify(patternsSummary, null, 2)}
 Provide goal suggestions in the following format:
 - Title (concise, inspiring)
 - Description (2-3 sentences explaining why this goal matters)
-- Goal Type (one of: spiritual, personal, health, career, relationship, creative, learning, general)
+- Goal Type (one of: shadow-work, spiritual-practice, emotional-healing, manifestation, creative-expression, relationship-work, general)
 - Linked Pattern IDs (array of pattern IDs that relate to this goal)
 
 Return a valid JSON array of goal objects.`;
@@ -115,7 +115,7 @@ Provide thoughtful, personalized goal suggestions in valid JSON format.`
                       description: { type: "string" },
                       goal_type: { 
                         type: "string",
-                        enum: ["spiritual", "personal", "health", "career", "relationship", "creative", "learning", "general"]
+                        enum: ["shadow-work", "spiritual-practice", "emotional-healing", "manifestation", "creative-expression", "relationship-work", "general"]
                       },
                       linked_pattern_ids: {
                         type: "array",

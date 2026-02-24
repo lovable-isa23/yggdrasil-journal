@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
-import { Sparkles, Heart, Lightbulb, Loader2, Target, Plus } from "lucide-react";
+import { Sparkles, Heart, Lightbulb, Loader2, Target, Plus, BookOpen, Palette, Users, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -241,15 +241,26 @@ export const SpiritualGuidePanel = () => {
         </DialogHeader>
         <ScrollArea className="max-h-[60vh] pr-4">
           <div className="space-y-4">
-            {goalSuggestions.map((goal, index) => (
+             {goalSuggestions.map((goal, index) => {
+              const goalIcons: Record<string, { icon: any; color: string }> = {
+                "shadow-work": { icon: Sparkles, color: "text-purple-500" },
+                "spiritual-practice": { icon: Target, color: "text-blue-500" },
+                "emotional-healing": { icon: Heart, color: "text-pink-500" },
+                "manifestation": { icon: Lightbulb, color: "text-yellow-500" },
+                "creative-expression": { icon: Palette, color: "text-orange-500" },
+                "relationship-work": { icon: Users, color: "text-green-500" },
+                "general": { icon: BookOpen, color: "text-muted-foreground" },
+              };
+              const { icon: GoalIcon, color } = goalIcons[goal.goal_type] || { icon: Target, color: "text-primary" };
+              return (
               <Card key={index} className="p-4 border-primary/20">
                 <div className="flex items-start gap-3">
-                  <Target className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                  <GoalIcon className={`h-5 w-5 mt-1 flex-shrink-0 ${color}`} />
                   <div className="flex-1 space-y-3">
                     <div className="flex items-start justify-between gap-2">
                       <h4 className="font-semibold text-lg">{goal.title}</h4>
                       <Badge variant="secondary" className="capitalize">
-                        {goal.goal_type}
+                        {goal.goal_type.replace("-", " ")}
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">{goal.description}</p>
@@ -269,7 +280,8 @@ export const SpiritualGuidePanel = () => {
                   </div>
                 </div>
               </Card>
-            ))}
+              );
+            })}
             {goalSuggestions.length === 0 && (
               <p className="text-center text-muted-foreground py-8">
                 All suggestions have been saved! ✨
