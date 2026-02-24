@@ -3,11 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Loader2, TrendingUp, Lightbulb, Calendar, RefreshCw, ChevronDown } from "lucide-react";
+import { Loader2, TrendingUp, Lightbulb, Calendar, RefreshCw, ChevronDown, ExternalLink } from "lucide-react";
 import { Skeleton } from "./ui/skeleton";
 import { toast } from "sonner";
 import { Progress } from "./ui/progress";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
+import { useNavigate } from "react-router-dom";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
 import { format } from "date-fns";
 import { useDataSufficiency } from "@/hooks/use-data-sufficiency";
@@ -28,6 +29,7 @@ interface Pattern {
 }
 
 export const PatternInsights = () => {
+  const navigate = useNavigate();
   const [patterns, setPatterns] = useState<Pattern[]>([]);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
@@ -116,12 +118,27 @@ export const PatternInsights = () => {
         splitItem(rel.target_item).forEach(t => themes.add(t.toLowerCase()));
       });
       
-      // Capitalize first letter of each theme
-      const formatted = Array.from(themes)
-        .map(t => t.charAt(0).toUpperCase() + t.slice(1))
-        .sort();
+      // Count frequency per theme for relevance sorting
+      const themeCounts: Record<string, number> = {};
+      data?.forEach((rel) => {
+        const strength = rel.weighted_strength || 1;
+        splitItem(rel.source_item).forEach(t => {
+          const key = t.toLowerCase();
+          themeCounts[key] = (themeCounts[key] || 0) + strength;
+        });
+        splitItem(rel.target_item).forEach(t => {
+          const key = t.toLowerCase();
+          themeCounts[key] = (themeCounts[key] || 0) + strength;
+        });
+      });
+
+      // Sort by relevance (weighted frequency) instead of alphabetically
+      const formatted = Object.entries(themeCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 25)
+        .map(([t]) => t.charAt(0).toUpperCase() + t.slice(1));
       
-      setAvailableThemes(formatted.slice(0, 30));
+      setAvailableThemes(formatted);
     } catch (error) {
       console.error("Error fetching themes:", error);
     }
@@ -466,11 +483,21 @@ export const PatternInsights = () => {
               )
             ) : (
               relatedEntries.map((entry) => (
-                <Card key={entry.id} className="p-4">
+                <Card 
+                  key={entry.id} 
+                  className="p-4 cursor-pointer hover:bg-muted/50 transition-colors group"
+                  onClick={() => {
+                    setSelectedItem(null);
+                    navigate("/entries", { state: { scrollToEntryId: entry.id } });
+                  }}
+                >
                   <div className="space-y-2">
                     <div className="flex items-start justify-between gap-2">
-                      <h4 className="font-semibold text-sm">{entry.title}</h4>
-                      <Badge variant="outline" className="text-xs">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <h4 className="font-semibold text-sm truncate">{entry.title}</h4>
+                        <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                      </div>
+                      <Badge variant="outline" className="text-xs shrink-0">
                         {format(new Date(entry.entry_date), "MMM dd, yyyy")}
                       </Badge>
                     </div>

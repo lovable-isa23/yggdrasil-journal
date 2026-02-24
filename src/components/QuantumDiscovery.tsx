@@ -71,7 +71,7 @@ export const QuantumDiscovery = ({ availableThemes = [] }: QuantumDiscoveryProps
 
   const handleNavigateToEntry = (entryId: string) => {
     setSelectedDiscovery(null);
-    navigate("/journal", { state: { scrollToEntryId: entryId } });
+    navigate("/entries", { state: { scrollToEntryId: entryId } });
   };
 
   const runQuantumDiscovery = async () => {
@@ -221,7 +221,7 @@ export const QuantumDiscovery = ({ availableThemes = [] }: QuantumDiscoveryProps
                 </SelectTrigger>
               <SelectContent className="max-h-[300px]">
                   <SelectItem value="__any__">Any theme</SelectItem>
-                  {availableThemes.slice(0, 25).map((theme) => (
+                  {availableThemes.map((theme) => (
                     <SelectItem key={theme} value={theme}>
                       {theme}
                     </SelectItem>

@@ -179,13 +179,16 @@ export const GoalTracker = () => {
 
   const handleDeleteGoal = async (id: string) => {
     try {
-      const { error } = await supabase.from("goals").delete().eq("id", id);
+      const { error } = await supabase
+        .from("goals")
+        .update({ status: "archived", archived_reason: "User archived" })
+        .eq("id", id);
       if (error) throw error;
       toast.success("Journey archived");
       fetchData();
     } catch (error) {
-      console.error("Error deleting goal:", error);
-      toast.error("Failed to delete journey");
+      console.error("Error archiving goal:", error);
+      toast.error("Failed to archive journey");
     }
   };
 
@@ -198,11 +201,27 @@ export const GoalTracker = () => {
     });
   };
 
+  const [showArchived, setShowArchived] = useState(false);
+  const [openMicroWins, setOpenMicroWins] = useState<Set<string>>(new Set());
+
+  const activeGoals = goals.filter(g => g.status === "active" || g.status === "paused");
+  const archivedGoals = goals.filter(g => g.status === "completed" || g.status === "archived");
+
+  const toggleMicroWins = (id: string) => {
+    setOpenMicroWins(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) newSet.delete(id);
+      else newSet.add(id);
+      return newSet;
+    });
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "active": return <Badge variant="default" className="gap-1"><TrendingUp className="h-3 w-3" />In Journey</Badge>;
       case "completed": return <Badge variant="secondary" className="gap-1 bg-green-500/10 text-green-700 dark:text-green-400"><CheckCircle2 className="h-3 w-3" />Integrated</Badge>;
       case "paused": return <Badge variant="outline">Resting</Badge>;
+      case "archived": return <Badge variant="outline" className="gap-1 text-muted-foreground"><Trash2 className="h-3 w-3" />Archived</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
@@ -243,109 +262,164 @@ export const GoalTracker = () => {
 
       {loading ? (
         <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-      ) : goals.length === 0 ? (
+      ) : activeGoals.length === 0 && archivedGoals.length === 0 ? (
         <Card className="p-12 text-center">
           <Sparkles className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
           <h3 className="text-lg font-semibold mb-2">No journeys yet</h3>
           <p className="text-muted-foreground mb-4">Begin your spiritual journey by setting your first sacred intention</p>
         </Card>
       ) : (
-        <div className="grid gap-4">
-          {goals.map((goal) => {
-            const { icon: GoalIcon, color } = getGoalTypeIcon(goal.goal_type);
-            const goalWins = microWins[goal.id] || [];
-            const isOpen = openGoals.has(goal.id);
-            
-            // Check if goal is "quiet" (no wins in last 7 days)
-            const sevenDaysAgo = subDays(new Date(), 7);
-            const isQuietGoal = goalWins.length === 0 || 
-              !goalWins.some(w => new Date(w.created_at) > sevenDaysAgo);
-            
-            return (
-              <Collapsible key={goal.id} open={isOpen} onOpenChange={() => toggleGoal(goal.id)} className="w-full max-w-full">
-                <Card className="w-full max-w-full overflow-hidden hover:shadow-lg transition-shadow">
-                  <CollapsibleTrigger className="w-full p-4 sm:p-6 text-left">
-                    <div className="flex items-start justify-between gap-2 sm:gap-4">
-                      <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
-                        <div className={cn("p-2 rounded-lg border border-border/30 flex-shrink-0", color)} style={{ backgroundColor: '#F9F0E5' }}><GoalIcon className="h-5 w-5" /></div>
-                        <div className="flex-1 min-w-0 space-y-2">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="text-lg sm:text-xl font-semibold break-words">{goal.title}</h3>
-                            {getStatusBadge(goal.status)}
-                            <MicroWinCounter wins={goalWins} />
-                          </div>
-                          {goal.intention && <p className="text-sm text-muted-foreground italic break-words">"{goal.intention.substring(0, 120)}{goal.intention.length > 120 ? "..." : ""}"</p>}
-                          <div className="flex flex-wrap gap-2 sm:gap-4 text-sm">
-                            {goal.target_date && <div className="flex items-center gap-2 text-muted-foreground"><CalendarIcon className="h-4 w-4" /><span>{format(new Date(goal.target_date), "MMM d, yyyy")}</span></div>}
+        <div className="space-y-6">
+          {/* Active Goals */}
+          <div className="grid gap-4">
+            {activeGoals.map((goal) => {
+              const { icon: GoalIcon, color } = getGoalTypeIcon(goal.goal_type);
+              const goalWins = microWins[goal.id] || [];
+              const isOpen = openGoals.has(goal.id);
+              const isMicroWinsOpen = openMicroWins.has(goal.id);
+              
+              const sevenDaysAgo = subDays(new Date(), 7);
+              const isQuietGoal = goalWins.length === 0 || 
+                !goalWins.some(w => new Date(w.created_at) > sevenDaysAgo);
+              
+              return (
+                <Collapsible key={goal.id} open={isOpen} onOpenChange={() => toggleGoal(goal.id)} className="w-full max-w-full">
+                  <Card className="w-full max-w-full overflow-hidden hover:shadow-lg transition-shadow">
+                    <CollapsibleTrigger className="w-full p-4 sm:p-6 text-left">
+                      <div className="flex items-start justify-between gap-2 sm:gap-4">
+                        <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
+                          <div className={cn("p-2 rounded-lg border border-border/30 flex-shrink-0", color)} style={{ backgroundColor: '#F9F0E5' }}><GoalIcon className="h-5 w-5" /></div>
+                          <div className="flex-1 min-w-0 space-y-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="text-lg sm:text-xl font-semibold break-words">{goal.title}</h3>
+                              {getStatusBadge(goal.status)}
+                              <MicroWinCounter wins={goalWins} />
+                            </div>
+                            {goal.intention && <p className="text-sm text-muted-foreground italic break-words">"{goal.intention.substring(0, 120)}{goal.intention.length > 120 ? "..." : ""}"</p>}
+                            <div className="flex flex-wrap gap-2 sm:gap-4 text-sm">
+                              {goal.target_date && <div className="flex items-center gap-2 text-muted-foreground"><CalendarIcon className="h-4 w-4" /><span>{format(new Date(goal.target_date), "MMM d, yyyy")}</span></div>}
+                            </div>
                           </div>
                         </div>
+                        <ChevronDown className={cn("h-5 w-5 text-muted-foreground transition-transform duration-200 flex-shrink-0", isOpen && "rotate-180")} />
                       </div>
-                      <ChevronDown className={cn("h-5 w-5 text-muted-foreground transition-transform duration-200 flex-shrink-0", isOpen && "rotate-180")} />
-                    </div>
-                  </CollapsibleTrigger>
+                    </CollapsibleTrigger>
 
-                  <CollapsibleContent>
-                    <div className="px-4 sm:px-6 pb-6 space-y-6 border-t pt-6 w-full max-w-full overflow-hidden">
-                      {/* Tree of Life Section */}
-                      <TreeOfLife 
-                        goalId={goal.id} 
-                        goalTitle={goal.title}
-                        isOpen={goal.status === "active"}
-                      />
-
-                      {/* Micro-Wins Section */}
-                      <div className="space-y-3 bg-accent/20 rounded-lg p-4">
-                        <div className="flex items-center gap-2">
-                          <Zap className="h-4 w-4 text-primary" />
-                          <span className="text-sm font-medium">Micro-Wins</span>
-                        </div>
-                        <MicroWinInput
-                          goalId={goal.id}
+                    <CollapsibleContent>
+                      <div className="px-4 sm:px-6 pb-6 space-y-6 border-t pt-6 w-full max-w-full overflow-hidden">
+                        <TreeOfLife 
+                          goalId={goal.id} 
                           goalTitle={goal.title}
-                          goalDescription={goal.description}
-                          recentWins={goalWins.map(w => w.text)}
-                          isQuietGoal={isQuietGoal && goal.status === "active"}
-                          onWinAdded={fetchData}
+                          isOpen={goal.status === "active"}
                         />
-                        <MicroWinList
-                          wins={goalWins}
-                          totalCount={goalWins.length}
-                          onViewAll={() => setHistoryGoalId(goal.id)}
-                        />
-                      </div>
 
-                      {goal.description && <div className="space-y-2"><p className="text-sm font-medium">Journey Path</p><p className="text-muted-foreground break-words">{goal.description}</p></div>}
-                      {goal.linked_patterns && goal.linked_patterns.length > 0 && (
-                        <div className="space-y-2">
-                          <p className="text-sm font-medium">Connected Patterns</p>
-                          <div className="flex flex-wrap gap-2">{goal.linked_patterns.map((pattern: any) => <Badge key={pattern.id} variant="secondary">{pattern.title}</Badge>)}</div>
-                        </div>
-                      )}
-                      
-                      <JourneyTimeline goalId={goal.id} refreshTrigger={timelineRefreshTrigger} />
-                      
-                      <div className="flex flex-wrap gap-2 pt-4 border-t">
-                        <Button variant="outline" size="sm" onClick={() => { setReflectingGoalId(goal.id); setIsReflectionOpen(true); }}>
-                          <Heart className="h-4 w-4 mr-2" />Reflect
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => { setEditingGoal(goal); setIsDialogOpen(true); }}>
-                          <Edit2 className="h-4 w-4 mr-2" />Edit
-                        </Button>
-                        {goal.status === "active" && (
-                          <Button variant="outline" size="sm" onClick={() => handleCompleteGoal(goal)}>
-                            <CheckCircle2 className="h-4 w-4 mr-2" />Complete
-                          </Button>
+                        {/* Collapsible Micro-Wins Section */}
+                        <Collapsible open={isMicroWinsOpen} onOpenChange={() => toggleMicroWins(goal.id)}>
+                          <div className="bg-accent/20 rounded-lg p-4">
+                            <CollapsibleTrigger className="w-full flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Zap className="h-4 w-4 text-primary" />
+                                <span className="text-sm font-medium">Micro-Wins</span>
+                                {goalWins.length > 0 && (
+                                  <Badge variant="secondary" className="text-xs">{goalWins.length}</Badge>
+                                )}
+                              </div>
+                              <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform duration-200", isMicroWinsOpen && "rotate-180")} />
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="mt-3 space-y-3">
+                              <MicroWinInput
+                                goalId={goal.id}
+                                goalTitle={goal.title}
+                                goalDescription={goal.description}
+                                recentWins={goalWins.map(w => w.text)}
+                                isQuietGoal={isQuietGoal && goal.status === "active"}
+                                onWinAdded={fetchData}
+                              />
+                              <MicroWinList
+                                wins={goalWins}
+                                totalCount={goalWins.length}
+                                onViewAll={() => setHistoryGoalId(goal.id)}
+                              />
+                            </CollapsibleContent>
+                          </div>
+                        </Collapsible>
+
+                        {goal.description && <div className="space-y-2"><p className="text-sm font-medium">Journey Path</p><p className="text-muted-foreground break-words">{goal.description}</p></div>}
+                        {goal.linked_patterns && goal.linked_patterns.length > 0 && (
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium">Connected Patterns</p>
+                            <div className="flex flex-wrap gap-2">{goal.linked_patterns.map((pattern: any) => <Badge key={pattern.id} variant="secondary">{pattern.title}</Badge>)}</div>
+                          </div>
                         )}
-                        <Button variant="outline" size="sm" onClick={() => handleDeleteGoal(goal.id)}>
-                          <Trash2 className="h-4 w-4 mr-2" />Archive
-                        </Button>
+                        
+                        <JourneyTimeline goalId={goal.id} refreshTrigger={timelineRefreshTrigger} />
+                        
+                        <div className="flex flex-wrap gap-2 pt-4 border-t">
+                          <Button variant="outline" size="sm" onClick={() => { setReflectingGoalId(goal.id); setIsReflectionOpen(true); }}>
+                            <Heart className="h-4 w-4 mr-2" />Reflect
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => { setEditingGoal(goal); setIsDialogOpen(true); }}>
+                            <Edit2 className="h-4 w-4 mr-2" />Edit
+                          </Button>
+                          {goal.status === "active" && (
+                            <Button variant="outline" size="sm" onClick={() => handleCompleteGoal(goal)}>
+                              <CheckCircle2 className="h-4 w-4 mr-2" />Complete
+                            </Button>
+                          )}
+                          <Button variant="outline" size="sm" onClick={() => handleDeleteGoal(goal.id)}>
+                            <Trash2 className="h-4 w-4 mr-2" />Archive
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  </CollapsibleContent>
-                </Card>
-              </Collapsible>
-            );
-          })}
+                    </CollapsibleContent>
+                  </Card>
+                </Collapsible>
+              );
+            })}
+          </div>
+
+          {/* Archived/Completed Goals Section */}
+          {archivedGoals.length > 0 && (
+            <Collapsible open={showArchived} onOpenChange={setShowArchived}>
+              <CollapsibleTrigger className="flex items-center gap-2 w-full py-3 text-muted-foreground hover:text-foreground transition-colors">
+                <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", showArchived && "rotate-180")} />
+                <span className="text-sm font-medium">Completed & Archived ({archivedGoals.length})</span>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="grid gap-3 mt-2">
+                  {archivedGoals.map((goal) => {
+                    const { icon: GoalIcon, color } = getGoalTypeIcon(goal.goal_type);
+                    const isOpen = openGoals.has(goal.id);
+                    
+                    return (
+                      <Collapsible key={goal.id} open={isOpen} onOpenChange={() => toggleGoal(goal.id)} className="w-full">
+                        <Card className="w-full opacity-70 hover:opacity-100 transition-opacity">
+                          <CollapsibleTrigger className="w-full p-4 text-left">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <GoalIcon className={cn("h-4 w-4 flex-shrink-0", color)} />
+                                <h3 className="font-medium truncate">{goal.title}</h3>
+                                {getStatusBadge(goal.status)}
+                              </div>
+                              <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform duration-200 flex-shrink-0", isOpen && "rotate-180")} />
+                            </div>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <div className="px-4 pb-4 space-y-3 border-t pt-3">
+                              {goal.intention && <p className="text-sm text-muted-foreground italic">"{goal.intention}"</p>}
+                              {goal.description && <p className="text-sm text-muted-foreground">{goal.description}</p>}
+                              {goal.target_date && <div className="flex items-center gap-2 text-xs text-muted-foreground"><CalendarIcon className="h-3 w-3" />{format(new Date(goal.target_date), "MMM d, yyyy")}</div>}
+                              <JourneyTimeline goalId={goal.id} refreshTrigger={timelineRefreshTrigger} />
+                            </div>
+                          </CollapsibleContent>
+                        </Card>
+                      </Collapsible>
+                    );
+                  })}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
         </div>
       )}
 
