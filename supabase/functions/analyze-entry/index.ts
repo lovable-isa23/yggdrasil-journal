@@ -251,7 +251,7 @@ Respond with ONLY a JSON object: {"depth_score": X, "reasoning": "brief explanat
     }
 
     // Phase 2: Apply frameworks conditionally based on depth
-    const applyFrameworks = depthScore >= 5;
+    const applyFrameworks = depthScore >= 3;
 
     // Categorize frameworks for diversity requirement
     const spiritualFrameworks = ['theravada', 'advaita', 'taoist'].filter(fw => enabledFrameworks[fw as keyof typeof enabledFrameworks]);
@@ -476,7 +476,7 @@ Style: Validate the emotion while encouraging change, hold dialectics ("both/and
 - Synthesize insights rather than listing frameworks separately
 - Apply 2-5 frameworks per entry for comprehensive psychological/spiritual depth
 
-**MINIMUM REQUIREMENT**: Every entry analysis MUST apply at least 2 different framework lenses. For deeper entries (depth ≥ 5), aim for 3-5 frameworks. The frameworks_applied array MUST contain 2-5 canonical framework keys.
+**MINIMUM REQUIREMENT**: ${depthScore >= 7 ? 'You MUST include at least 3 entries in frameworks_applied. For this deep entry, apply 3-5 different framework lenses for comprehensive analysis.' : depthScore >= 5 ? 'You MUST include at least 2 entries in frameworks_applied. Apply 2-4 different framework lenses.' : 'Apply at least 1-2 framework lenses where relevant.'} The frameworks_applied array MUST contain canonical framework keys.
 
 **CATEGORY DIVERSITY REQUIREMENT** - For entries with depth ≥ 5, ensure variety across categories:
 ${spiritualFrameworks.length > 0 ? `- Spiritual (${spiritualFrameworks.join(', ')}): Apply at least one if relevant` : ''}
@@ -711,6 +711,14 @@ Respond with ONLY a valid JSON object in this exact format:
       depth_score: depthScore,
       frameworks_applied: analysis.interpretation?.frameworks_applied || [],
     };
+
+    // Post-processing validation: warn if framework minimums not met
+    const frameworksApplied = insightData.frameworks_applied as string[];
+    if (depthScore >= 7 && frameworksApplied.length < 3) {
+      console.warn(`[FRAMEWORK WARNING] Depth ${depthScore} entry should have 3+ frameworks, got ${frameworksApplied.length}`);
+    } else if (depthScore >= 5 && frameworksApplied.length < 2) {
+      console.warn(`[FRAMEWORK WARNING] Depth ${depthScore} entry should have 2+ frameworks, got ${frameworksApplied.length}`);
+    }
 
     // Upsert - update if exists, insert if not
     const { error: upsertError } = await supabase

@@ -11,6 +11,8 @@ import { NPSTooltip } from "@/components/NPSTooltip";
 import { AppNavbar } from "@/components/AppNavbar";
 import { FrameworkAnalytics } from "@/components/FrameworkAnalytics";
 import { PatternInsights } from "@/components/PatternInsights";
+import { ChakraAnalytics } from "@/components/ChakraAnalytics";
+import { TarotAnalytics } from "@/components/TarotAnalytics";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,12 +22,16 @@ import { toast } from "sonner";
 interface VisibilityPrefs {
   show_emotional_analysis: boolean;
   show_framework_analysis: boolean;
+  enable_chakra_tags: boolean;
+  enable_tarot_tags: boolean;
 }
 
 const Insights = () => {
   const [visibilityPrefs, setVisibilityPrefs] = useState<VisibilityPrefs>({
     show_emotional_analysis: true,
     show_framework_analysis: true,
+    enable_chakra_tags: false,
+    enable_tarot_tags: false,
   });
 
   useEffect(() => {
@@ -35,7 +41,7 @@ const Insights = () => {
 
       const { data } = await supabase
         .from("user_preferences")
-        .select("show_emotional_analysis, show_framework_analysis")
+        .select("show_emotional_analysis, show_framework_analysis, enable_chakra_tags, enable_tarot_tags")
         .eq("user_id", user.id)
         .single();
 
@@ -43,6 +49,8 @@ const Insights = () => {
         setVisibilityPrefs({
           show_emotional_analysis: (data as any).show_emotional_analysis ?? true,
           show_framework_analysis: (data as any).show_framework_analysis ?? true,
+          enable_chakra_tags: (data as any).enable_chakra_tags ?? false,
+          enable_tarot_tags: (data as any).enable_tarot_tags ?? false,
         });
       }
     };
@@ -101,6 +109,12 @@ const Insights = () => {
                   <MoodTracker />
                   <SentimentTracking />
                 </div>
+                {(visibilityPrefs.enable_chakra_tags || visibilityPrefs.enable_tarot_tags) && (
+                  <div className="grid gap-6 lg:grid-cols-2 mt-6">
+                    {visibilityPrefs.enable_chakra_tags && <ChakraAnalytics />}
+                    {visibilityPrefs.enable_tarot_tags && <TarotAnalytics />}
+                  </div>
+                )}
               </section>
             )}
 

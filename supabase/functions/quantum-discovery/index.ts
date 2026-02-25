@@ -37,17 +37,48 @@ interface ConnectionPath {
   description?: string;
 }
 
-// Classical random walk with path tracking
+// BFS shortest path from startNode to targetNode
+function bfsShortestPath(
+  adjacency: Map<number, number[]>,
+  startNode: number,
+  targetNode: number
+): number[] | null {
+  if (startNode === targetNode) return [startNode];
+  const visited = new Set<number>([startNode]);
+  const parent = new Map<number, number>();
+  const queue: number[] = [startNode];
+
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    for (const neighbor of adjacency.get(current) || []) {
+      if (visited.has(neighbor)) continue;
+      visited.add(neighbor);
+      parent.set(neighbor, current);
+      if (neighbor === targetNode) {
+        // Reconstruct path
+        const path: number[] = [targetNode];
+        let node = targetNode;
+        while (parent.has(node)) {
+          node = parent.get(node)!;
+          path.unshift(node);
+        }
+        return path;
+      }
+      queue.push(neighbor);
+    }
+  }
+  return null;
+}
+
+// Classical random walk (visit counting only, no path tracking)
 function classicalRandomWalk(
   nodes: string[],
   edges: GraphEdge[],
   startNode: number,
-  steps: number = 100
-): { discoveries: Discovery[]; paths: Map<number, number[]> } {
+  steps: number = 200
+): { discoveries: Discovery[] } {
   const visits = new Map<number, number>();
-  const paths = new Map<number, number[]>(); // Track paths to each node
   let current = startNode;
-  let currentPath: number[] = [startNode];
   
   // Build adjacency list
   const adjacency = new Map<number, { target: number; weight: number }[]>();
@@ -63,16 +94,9 @@ function classicalRandomWalk(
   for (let i = 0; i < steps; i++) {
     visits.set(current, (visits.get(current) || 0) + 1);
     
-    // Store the shortest path to this node
-    if (!paths.has(current) || currentPath.length < (paths.get(current)?.length || Infinity)) {
-      paths.set(current, [...currentPath]);
-    }
-    
     const neighbors = adjacency.get(current) || [];
     if (neighbors.length === 0) {
-      // Teleport to random node if stuck
       current = Math.floor(Math.random() * nodes.length);
-      currentPath = [startNode, current];
       continue;
     }
     
@@ -84,7 +108,6 @@ function classicalRandomWalk(
       rand -= neighbor.weight;
       if (rand <= 0) {
         current = neighbor.target;
-        currentPath = [...currentPath.slice(0, 3), current]; // Keep path short
         break;
       }
     }
@@ -103,15 +126,13 @@ function classicalRandomWalk(
     const score = visitCount / steps;
     const isDirectNeighbor = directNeighbors.has(nodeIdx);
     
-    // Boost score for non-direct neighbors (interesting discoveries)
     const adjustedScore = isDirectNeighbor ? score * 0.5 : score * 1.5;
     
-    // Determine type based on connection pattern with adjusted thresholds for diversity
     let type: "quantum_discovered" | "reinforced" | "classical_fallback" = "classical_fallback";
-    if (!isDirectNeighbor && adjustedScore > 0.05) {
-      type = "quantum_discovered"; // Hidden gem - not directly connected but frequently visited
-    } else if (isDirectNeighbor && adjustedScore > 0.03) {
-      type = "reinforced"; // Strong direct connection
+    if (!isDirectNeighbor && adjustedScore > 0.08) {
+      type = "quantum_discovered";
+    } else if (isDirectNeighbor && adjustedScore > 0.05) {
+      type = "reinforced";
     }
     
     discoveries.push({
@@ -123,7 +144,6 @@ function classicalRandomWalk(
 
   return {
     discoveries: discoveries.sort((a, b) => b.score - a.score).slice(0, 5),
-    paths
   };
 }
 
@@ -147,7 +167,6 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    // Get user from token
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     
@@ -161,16 +180,14 @@ serve(async (req) => {
 
     console.log(`Processing quantum discovery for user: ${user.id}`);
 
-    // Get optional start theme from request body
     let startTheme: string | null = null;
     try {
       const body = await req.json();
       startTheme = body.start_theme || null;
     } catch {
-      // No body or invalid JSON, use default
+      // No body or invalid JSON
     }
 
-// Fetch user's knowledge relationships with entry_ids and pattern descriptions
     const { data: relationships, error: relError } = await supabase
       .from("knowledge_relationships")
       .select("source_item, target_item, weighted_strength, strength, entry_ids, pattern_description, context")
@@ -208,7 +225,7 @@ serve(async (req) => {
       );
     }
 
-    // Take top 16 nodes by total strength (quantum simulation limit)
+    // Take top 16 nodes by total strength
     const sortedNodes = Array.from(nodeStrengths.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 16)
@@ -216,24 +233,30 @@ serve(async (req) => {
 
     console.log(`Selected top ${sortedNodes.length} nodes for quantum walk`);
 
-    // Create node index map
     const nodeIndex = new Map<string, number>();
     sortedNodes.forEach((name, idx) => nodeIndex.set(name, idx));
 
-    // Build edges for selected nodes
-    const edges: GraphEdge[] = [];
+    // Build edges with bidirectional deduplication
+    const edgeSet = new Map<string, GraphEdge>();
     for (const rel of relationships) {
       const sourceIdx = nodeIndex.get(rel.source_item);
       const targetIdx = nodeIndex.get(rel.target_item);
       
-      if (sourceIdx !== undefined && targetIdx !== undefined) {
-        edges.push({
-          source: sourceIdx,
-          target: targetIdx,
-          weight: rel.weighted_strength || rel.strength || 1
-        });
+      if (sourceIdx !== undefined && targetIdx !== undefined && sourceIdx !== targetIdx) {
+        const lo = Math.min(sourceIdx, targetIdx);
+        const hi = Math.max(sourceIdx, targetIdx);
+        const key = `${lo}|${hi}`;
+        const weight = rel.weighted_strength || rel.strength || 1;
+        
+        if (edgeSet.has(key)) {
+          // Combine weights for bidirectional edges
+          edgeSet.get(key)!.weight += weight;
+        } else {
+          edgeSet.set(key, { source: lo, target: hi, weight });
+        }
       }
     }
+    const edges = Array.from(edgeSet.values());
 
     // Determine start node
     let startNodeIdx = 0;
@@ -251,10 +274,9 @@ serve(async (req) => {
     };
 
     let discoveries: Discovery[];
-    let discoveryPaths = new Map<number, number[]>();
     let method: "quantum" | "classical_fallback" = "quantum";
 
-    // Build relationship lookup maps for entry_ids and descriptions
+    // Build relationship lookup maps
     const relationshipMap = new Map<string, { entry_ids: string[]; description?: string }>();
     for (const rel of relationships) {
       const key = `${rel.source_item.toLowerCase()}|${rel.target_item.toLowerCase()}`;
@@ -262,8 +284,22 @@ serve(async (req) => {
       const entry_ids = (rel.entry_ids || []) as string[];
       const description = rel.pattern_description || rel.context;
       
-      relationshipMap.set(key, { entry_ids, description });
-      relationshipMap.set(reverseKey, { entry_ids, description });
+      // Only set if not already present (avoid overwriting with weaker data)
+      if (!relationshipMap.has(key)) {
+        relationshipMap.set(key, { entry_ids, description });
+      } else {
+        // Merge entry_ids
+        const existing = relationshipMap.get(key)!;
+        existing.entry_ids = [...new Set([...existing.entry_ids, ...entry_ids])];
+        if (!existing.description && description) existing.description = description;
+      }
+      if (!relationshipMap.has(reverseKey)) {
+        relationshipMap.set(reverseKey, { entry_ids, description });
+      } else {
+        const existing = relationshipMap.get(reverseKey)!;
+        existing.entry_ids = [...new Set([...existing.entry_ids, ...entry_ids])];
+        if (!existing.description && description) existing.description = description;
+      }
     }
 
     // Try quantum service first
@@ -303,20 +339,17 @@ serve(async (req) => {
         } else {
           const walkResult = classicalRandomWalk(sortedNodes, edges, startNodeIdx);
           discoveries = walkResult.discoveries;
-          discoveryPaths = walkResult.paths;
           method = "classical_fallback";
         }
       } catch (fetchError: unknown) {
         clearTimeout(timeoutId);
         const walkResult = classicalRandomWalk(sortedNodes, edges, startNodeIdx);
         discoveries = walkResult.discoveries;
-        discoveryPaths = walkResult.paths;
         method = "classical_fallback";
       }
     } else {
       const walkResult = classicalRandomWalk(sortedNodes, edges, startNodeIdx);
       discoveries = walkResult.discoveries;
-      discoveryPaths = walkResult.paths;
       method = "classical_fallback";
     }
 
@@ -326,17 +359,29 @@ serve(async (req) => {
       d.node.toLowerCase() !== startNodeName
     );
 
-    // Enrich discoveries with paths, entry_ids, and insights
+    // Build simple adjacency for BFS (undirected, unweighted)
+    const bfsAdjacency = new Map<number, number[]>();
+    for (let i = 0; i < sortedNodes.length; i++) {
+      bfsAdjacency.set(i, []);
+    }
+    for (const edge of edges) {
+      bfsAdjacency.get(edge.source)?.push(edge.target);
+      bfsAdjacency.get(edge.target)?.push(edge.source);
+    }
+
+    // Enrich discoveries with BFS paths, entry_ids, and insights
     const enrichedDiscoveries = discoveries.map((d: any) => {
       const discoveredNodeIdx = nodeIndex.get(d.node);
-      const pathIndices = discoveredNodeIdx !== undefined ? discoveryPaths.get(discoveredNodeIdx) : undefined;
       
-      // Build connection path
+      // Use BFS to find shortest path from start to discovered node
+      const pathIndices = discoveredNodeIdx !== undefined 
+        ? bfsShortestPath(bfsAdjacency, startNodeIdx, discoveredNodeIdx) 
+        : null;
+      
       const connectionPath: ConnectionPath[] = [];
       let allEntryIds: string[] = [];
       
       if (pathIndices && pathIndices.length > 1) {
-        // We have a path - use it to build the connection chain
         for (let i = 0; i < pathIndices.length - 1; i++) {
           const fromNode = sortedNodes[pathIndices[i]];
           const toNode = sortedNodes[pathIndices[i + 1]];
@@ -349,13 +394,12 @@ serve(async (req) => {
             description: relData?.description
           });
           
-          // Collect entry_ids from this relationship
           if (relData?.entry_ids) {
             allEntryIds = [...allEntryIds, ...relData.entry_ids];
           }
         }
       } else {
-        // No path tracked - check for direct relationship
+        // No BFS path found - check for direct relationship
         const directKey = `${sortedNodes[startNodeIdx].toLowerCase()}|${d.node.toLowerCase()}`;
         const directRel = relationshipMap.get(directKey);
         
@@ -367,7 +411,7 @@ serve(async (req) => {
           });
           allEntryIds = directRel.entry_ids || [];
         } else {
-          // Find any relationship containing this node to get entry_ids
+          // Fallback: find any relationship for entry_ids
           for (const rel of relationships) {
             if (rel.source_item.toLowerCase() === d.node.toLowerCase() || 
                 rel.target_item.toLowerCase() === d.node.toLowerCase()) {
@@ -378,7 +422,6 @@ serve(async (req) => {
         }
       }
       
-      // Deduplicate entry_ids
       allEntryIds = [...new Set(allEntryIds)];
       
       // Generate insight based on path
@@ -387,7 +430,6 @@ serve(async (req) => {
         const intermediates = connectionPath.slice(0, -1).map(p => p.to);
         insight = `Connected through ${intermediates.join(' → ')}`;
         
-        // Add description from the most relevant relationship
         const relevantPath = connectionPath.find(p => p.description);
         if (relevantPath?.description) {
           insight += `: ${relevantPath.description}`;
