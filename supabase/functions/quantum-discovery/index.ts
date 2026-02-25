@@ -225,13 +225,26 @@ serve(async (req) => {
       );
     }
 
-    // Take top 16 nodes by total strength
-    const sortedNodes = Array.from(nodeStrengths.entries())
+    // Take top 16 nodes by total strength, ensuring start theme is included
+    let sortedNodes = Array.from(nodeStrengths.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 16)
       .map(([name]) => name);
 
-    console.log(`Selected top ${sortedNodes.length} nodes for quantum walk`);
+    // Ensure the user-selected start theme is in the node set (case-insensitive)
+    if (startTheme) {
+      const startThemeLower = startTheme.toLowerCase();
+      const existingMatch = sortedNodes.find(n => n.toLowerCase() === startThemeLower);
+      if (!existingMatch) {
+        // Find the actual node name from nodeStrengths (case-insensitive)
+        const actualName = Array.from(nodeStrengths.keys()).find(k => k.toLowerCase() === startThemeLower);
+        if (actualName) {
+          sortedNodes[sortedNodes.length - 1] = actualName; // Replace weakest node
+        }
+      }
+    }
+
+    console.log(`Selected top ${sortedNodes.length} nodes for quantum walk:`, sortedNodes);
 
     const nodeIndex = new Map<string, number>();
     sortedNodes.forEach((name, idx) => nodeIndex.set(name, idx));
@@ -249,7 +262,6 @@ serve(async (req) => {
         const weight = rel.weighted_strength || rel.strength || 1;
         
         if (edgeSet.has(key)) {
-          // Combine weights for bidirectional edges
           edgeSet.get(key)!.weight += weight;
         } else {
           edgeSet.set(key, { source: lo, target: hi, weight });
@@ -258,10 +270,14 @@ serve(async (req) => {
     }
     const edges = Array.from(edgeSet.values());
 
-    // Determine start node
+    // Determine start node (case-insensitive)
     let startNodeIdx = 0;
-    if (startTheme && nodeIndex.has(startTheme)) {
-      startNodeIdx = nodeIndex.get(startTheme)!;
+    if (startTheme) {
+      const startThemeLower = startTheme.toLowerCase();
+      const matchIdx = sortedNodes.findIndex(n => n.toLowerCase() === startThemeLower);
+      if (matchIdx >= 0) {
+        startNodeIdx = matchIdx;
+      }
     }
 
     console.log(`Starting walk from node: ${sortedNodes[startNodeIdx]}`);
