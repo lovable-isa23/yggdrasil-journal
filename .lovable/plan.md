@@ -1,28 +1,96 @@
 
 
-## Plan: Fix Missing Connection Paths for Hidden Gems
+## Plan: Improve Insights Page Load Times
 
-### Root Cause
+### Problem Analysis
 
-The issue is in the edge function's path reconstruction logic. "Hidden Gem" (`quantum_discovered`) nodes are by definition **not** direct neighbors of the start node. Two problems cause missing paths:
+The Insights page currently has **severe redundant data fetching**. Every component mounts simultaneously on page load and independently fetches overlapping data:
 
-1. **Random walk teleportation**: When a node has no neighbors during the walk, the code teleports randomly (`current = Math.floor(Math.random() * nodes.length)` at line 99). A node discovered via teleportation has no actual edge path, so BFS returns `null`.
+| Data Source | Components That Fetch It |
+|---|---|
+| `supabase.auth.getUser()` | FrameworkAnalytics, ChakraAnalytics, TarotAnalytics, useDataSufficiency (x5) |
+| `decrypt-entries` edge function | StatisticsDashboard, KnowledgeGraph, PatternInsights (on click), SentimentTracking (on click) |
+| `entry_insights` table | MoodTracker, SentimentTracking, FrameworkAnalytics, ChakraAnalytics, TarotAnalytics, KnowledgeGraph |
+| `journal_entries` table | MoodTracker, SentimentTracking, StatisticsDashboard, KnowledgeGraph |
+| `useDataSufficiency()` RPC | StatisticsDashboard, MoodTracker, SentimentTracking, PatternInsights, KnowledgeGraph |
 
-2. **Fallback doesn't create a path**: When BFS returns null (lines 417-438), the fallback only creates a `connectionPath` entry if there's a **direct relationship** between start and discovered node. But hidden gems are specifically nodes that are NOT direct neighbors, so this fallback produces an empty path too.
+That's **5+ redundant auth calls**, **5+ redundant insight fetches**, and **4+ redundant entry fetches** all firing on initial page load.
 
-### Fix
+---
 
-**File**: `supabase/functions/quantum-discovery/index.ts`
+### Fix 1: Lazy-Load Below-Fold Sections (Biggest Win)
 
-1. **Skip teleported visits**: In `classicalRandomWalk`, don't count visits that arrive via teleportation (the `Math.random()` branch). Only count visits reached through actual edges. This prevents surfacing nodes with no real graph connection.
+**New file**: `src/components/LazySection.tsx`
 
-2. **Synthetic path for unreachable-but-related nodes**: When BFS returns null but the node was legitimately discovered, create a synthetic connection path: `startNode → discoveredNode` with a description like "Indirectly connected through shared journal patterns". This ensures hidden gems always display a visible path.
+A wrapper component using `IntersectionObserver` that only mounts its children when scrolled into the viewport. Shows a lightweight skeleton placeholder until then.
 
-3. **Multi-hop fallback path**: Before the synthetic path, try a 2-hop search: check if any intermediate node connects both start and discovered node via edges. If found, show `startNode → intermediate → discoveredNode` for a more meaningful path.
+**Changes to `src/pages/Insights.tsx`**:
+- Wrap each section (Emotional Analysis, Framework Analysis, Pattern Discovery, Visualizations, Manage Data) in `<LazySection>` 
+- Only the Overview (StatisticsDashboard) loads immediately since it's above the fold
+- This prevents 4-5 components from fetching data until the user scrolls to them
 
-### Summary
+---
 
-| File | Changes |
-|------|---------|
-| `supabase/functions/quantum-discovery/index.ts` | Skip teleportation visits in walk; add 2-hop fallback path when BFS fails; add synthetic path as last resort |
+### Fix 2: Shared Insights Data Provider
+
+**New file**: `src/contexts/InsightsDataContext.tsx`
+
+A context provider that fetches the common data **once** and shares it:
+- `getUser()` -- called once
+- `entry_insights` -- fetched once, shared to MoodTracker, SentimentTracking, FrameworkAnalytics, ChakraAnalytics, TarotAnalytics
+- `journal_entries` (id + entry_date) -- fetched once, shared
+- `useDataSufficiency` result -- computed once, shared
+
+Each component receives pre-fetched data via context instead of making its own queries.
+
+---
+
+### Fix 3: Update Components to Use Shared Data
+
+Modify these components to accept data via props or context instead of fetching independently:
+
+| Component | Remove | Use Instead |
+|---|---|---|
+| `MoodTracker` | Own fetch of `entry_insights` + `journal_entries` | Context data |
+| `SentimentTracking` | Own fetch of `journal_entries` + `entry_insights` | Context data |
+| `FrameworkAnalytics` | Own `getUser()` + `entry_insights` fetch | Context data |
+| `ChakraAnalytics` | Own `getUser()` + `entry_insights` fetch | Context data |
+| `TarotAnalytics` | Own `getUser()` + `entry_insights` fetch | Context data |
+
+Each component keeps its own processing/aggregation logic but receives raw data from the shared provider.
+
+`StatisticsDashboard` and `KnowledgeGraph` keep their own fetches since they need different data (decrypt-entries, knowledge_relationships) -- but `KnowledgeGraph` benefits from lazy-loading since it's far below the fold.
+
+---
+
+### Fix 4: Deduplicate useDataSufficiency
+
+Currently 5 components each call the `get_entry_depth_counts` RPC independently.
+
+- Call `useDataSufficiency()` once in `InsightsDataContext`
+- Pass `hasMinimumData`, `totalEntries`, etc. through context
+- Remove individual `useDataSufficiency()` calls from child components
+
+---
+
+### Expected Impact
+
+- **Initial page load**: ~15 network requests reduced to ~3-4 (auth + insights + entries + RPC)
+- **Below-fold sections**: Zero requests until scrolled into view
+- **Perceived speed**: Overview section renders much faster since it doesn't compete with 10+ parallel requests
+
+---
+
+### Summary of File Changes
+
+| File | Action | Purpose |
+|---|---|---|
+| `src/components/LazySection.tsx` | Create | IntersectionObserver wrapper for deferred mounting |
+| `src/contexts/InsightsDataContext.tsx` | Create | Shared data provider for insights, entries, user, data sufficiency |
+| `src/pages/Insights.tsx` | Modify | Wrap sections in LazySection, add InsightsDataProvider |
+| `src/components/MoodTracker.tsx` | Modify | Accept shared data via props/context instead of own fetch |
+| `src/components/SentimentTracking.tsx` | Modify | Accept shared data via props/context instead of own fetch |
+| `src/components/FrameworkAnalytics.tsx` | Modify | Accept shared data via props/context instead of own fetch |
+| `src/components/ChakraAnalytics.tsx` | Modify | Accept shared data via props/context instead of own fetch |
+| `src/components/TarotAnalytics.tsx` | Modify | Accept shared data via props/context instead of own fetch |
 
