@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
@@ -10,9 +10,9 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Loader2, Heart, TrendingUp, TrendingDown, Minus, Calendar as CalendarIcon, X, ExternalLink } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { format, isWithinInterval, subDays } from "date-fns";
-import { useDataSufficiency } from "@/hooks/use-data-sufficiency";
 import { InsufficientDataPrompt } from "@/components/InsufficientDataPrompt";
 import { toast } from "sonner";
+import { useInsightsData } from "@/contexts/InsightsDataContext";
 
 interface SentimentData {
   date: string;
@@ -32,6 +32,7 @@ interface RelatedEntry {
 
 export const SentimentTracking = () => {
   const navigate = useNavigate();
+  const { insights: sharedInsights, entries: sharedEntries, loading: sharedLoading, hasMinimumData, totalEntries, deepEntries, analyzedEntries, needsAnalysis } = useInsightsData();
   const [sentimentData, setSentimentData] = useState<SentimentData[]>([]);
   const [allSentimentData, setAllSentimentData] = useState<SentimentData[]>([]);
   const [entryIdsByDate, setEntryIdsByDate] = useState<Map<string, string[]>>(new Map());
@@ -39,79 +40,50 @@ export const SentimentTracking = () => {
   const [selectedEmotion, setSelectedEmotion] = useState<string | null>(null);
   const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 30));
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
-  const { hasMinimumData, totalEntries, deepEntries, analyzedEntries, needsAnalysis } = useDataSufficiency();
   
   // State for clickable themes/entities sidebar
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [relatedEntries, setRelatedEntries] = useState<RelatedEntry[]>([]);
 
+  // Process shared data instead of fetching independently
   useEffect(() => {
-    fetchSentimentData();
-  }, []);
+    if (sharedLoading) return;
+    
+    const sentimentMap = new Map<string, SentimentData>();
+    const dateToEntryIds = new Map<string, string[]>();
 
-  useEffect(() => {
-    if (allSentimentData.length > 0) {
-      filterSentimentData(allSentimentData, startDate, endDate);
-    }
-  }, [startDate, endDate]);
+    sharedEntries.forEach(entry => {
+      if (!dateToEntryIds.has(entry.entry_date)) {
+        dateToEntryIds.set(entry.entry_date, []);
+      }
+      dateToEntryIds.get(entry.entry_date)!.push(entry.id);
 
-  const fetchSentimentData = async () => {
-    try {
-      const { data: entries, error: entriesError } = await supabase
-        .from("journal_entries")
-        .select("id, entry_date")
-        .order("entry_date", { ascending: true });
+      const insight = sharedInsights.find(i => i.entry_id === entry.id);
+      if (insight && insight.emotions) {
+        const emotions = new Map<string, number>();
+        let totalIntensity = 0;
 
-      if (entriesError) throw entriesError;
+        (insight.emotions as Array<{ emotion: string; intensity: number }>).forEach(({ emotion, intensity }) => {
+          emotions.set(emotion, intensity);
+          totalIntensity += intensity;
+        });
 
-      const { data: insights, error: insightsError } = await supabase
-        .from("entry_insights")
-        .select("*")
-        .in("entry_id", entries?.map(e => e.id) || []);
+        sentimentMap.set(entry.entry_date, {
+          date: entry.entry_date,
+          averageIntensity: totalIntensity / (insight.emotions as any[]).length,
+          emotions,
+          themes: (insight.themes || []) as string[],
+          entities: (insight.entities || []) as string[],
+        });
+      }
+    });
 
-      if (insightsError) throw insightsError;
-
-      const sentimentMap = new Map<string, SentimentData>();
-
-      const dateToEntryIds = new Map<string, string[]>();
-
-      entries?.forEach(entry => {
-        // Track entry IDs by date
-        if (!dateToEntryIds.has(entry.entry_date)) {
-          dateToEntryIds.set(entry.entry_date, []);
-        }
-        dateToEntryIds.get(entry.entry_date)!.push(entry.id);
-
-        const insight = insights?.find(i => i.entry_id === entry.id);
-        if (insight && insight.emotions) {
-          const emotions = new Map<string, number>();
-          let totalIntensity = 0;
-
-          (insight.emotions as Array<{ emotion: string; intensity: number }>).forEach(({ emotion, intensity }) => {
-            emotions.set(emotion, intensity);
-            totalIntensity += intensity;
-          });
-
-          sentimentMap.set(entry.entry_date, {
-            date: entry.entry_date,
-            averageIntensity: totalIntensity / (insight.emotions as any[]).length,
-            emotions,
-            themes: (insight.themes || []) as string[],
-            entities: (insight.entities || []) as string[],
-          });
-        }
-      });
-
-      setEntryIdsByDate(dateToEntryIds);
-      const allData = Array.from(sentimentMap.values());
-      setAllSentimentData(allData);
-      filterSentimentData(allData, startDate, endDate);
-    } catch (error) {
-      console.error("Error fetching sentiment data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    setEntryIdsByDate(dateToEntryIds);
+    const allData = Array.from(sentimentMap.values());
+    setAllSentimentData(allData);
+    filterSentimentData(allData, startDate, endDate);
+    setLoading(false);
+  }, [sharedInsights, sharedEntries, sharedLoading]);
 
   const filterSentimentData = (data: SentimentData[], start?: Date, end?: Date) => {
     let filtered = data;

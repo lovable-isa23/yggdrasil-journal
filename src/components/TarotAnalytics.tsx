@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useInsightsData } from "@/contexts/InsightsDataContext";
 
 interface TarotTag {
   card: string;
@@ -10,47 +10,24 @@ interface TarotTag {
 }
 
 export const TarotAnalytics = () => {
-  const [loading, setLoading] = useState(true);
-  const [tarotData, setTarotData] = useState<{ card: string; count: number }[]>([]);
+  const { insights, loading } = useInsightsData();
 
-  useEffect(() => {
-    const fetchTarotData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: insights } = await supabase
-        .from("entry_insights")
-        .select("tarot_tags")
-        .eq("user_id", user.id)
-        .not("tarot_tags", "eq", "[]");
-
-      if (!insights) {
-        setLoading(false);
-        return;
+  const tarotData = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const insight of insights) {
+      const tags = insight.tarot_tags as unknown as TarotTag[] | null;
+      if (!tags || !Array.isArray(tags)) continue;
+      for (const tag of tags) {
+        const name = tag.card;
+        if (name) counts.set(name, (counts.get(name) || 0) + 1);
       }
+    }
 
-      const counts = new Map<string, number>();
-      for (const insight of insights) {
-        const tags = insight.tarot_tags as unknown as TarotTag[] | null;
-        if (!tags || !Array.isArray(tags)) continue;
-        for (const tag of tags) {
-          const name = tag.card;
-          if (name) counts.set(name, (counts.get(name) || 0) + 1);
-        }
-      }
-
-      // Sort by frequency, take top 15
-      const data = Array.from(counts.entries())
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 15)
-        .map(([card, count]) => ({ card, count }));
-
-      setTarotData(data);
-      setLoading(false);
-    };
-
-    fetchTarotData();
-  }, []);
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 15)
+      .map(([card, count]) => ({ card, count }));
+  }, [insights]);
 
   if (loading) {
     return (

@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useInsightsData } from "@/contexts/InsightsDataContext";
 
 interface ChakraTag {
   chakra: string;
@@ -19,51 +19,26 @@ const CHAKRA_ORDER = [
   { name: "Root", color: "hsl(0, 65%, 50%)" },
 ];
 
-const CHAKRA_COLOR_MAP = new Map(CHAKRA_ORDER.map(c => [c.name, c.color]));
-
 export const ChakraAnalytics = () => {
-  const [loading, setLoading] = useState(true);
-  const [chakraData, setChakraData] = useState<{ chakra: string; count: number; color: string }[]>([]);
+  const { insights, loading } = useInsightsData();
 
-  useEffect(() => {
-    const fetchChakraData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: insights } = await supabase
-        .from("entry_insights")
-        .select("chakra_tags")
-        .eq("user_id", user.id)
-        .not("chakra_tags", "eq", "[]");
-
-      if (!insights) {
-        setLoading(false);
-        return;
+  const chakraData = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const insight of insights) {
+      const tags = insight.chakra_tags as unknown as ChakraTag[] | null;
+      if (!tags || !Array.isArray(tags)) continue;
+      for (const tag of tags) {
+        const name = tag.chakra;
+        if (name) counts.set(name, (counts.get(name) || 0) + 1);
       }
+    }
 
-      const counts = new Map<string, number>();
-      for (const insight of insights) {
-        const tags = insight.chakra_tags as unknown as ChakraTag[] | null;
-        if (!tags || !Array.isArray(tags)) continue;
-        for (const tag of tags) {
-          const name = tag.chakra;
-          if (name) counts.set(name, (counts.get(name) || 0) + 1);
-        }
-      }
-
-      // Order by chakra hierarchy (Crown at top, Root at bottom)
-      const data = CHAKRA_ORDER.map(c => ({
-        chakra: c.name,
-        count: counts.get(c.name) || 0,
-        color: c.color,
-      }));
-
-      setChakraData(data);
-      setLoading(false);
-    };
-
-    fetchChakraData();
-  }, []);
+    return CHAKRA_ORDER.map(c => ({
+      chakra: c.name,
+      count: counts.get(c.name) || 0,
+      color: c.color,
+    }));
+  }, [insights]);
 
   const hasData = chakraData.some(d => d.count > 0);
 

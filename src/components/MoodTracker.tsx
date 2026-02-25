@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format, subDays, isWithinInterval } from "date-fns";
@@ -8,8 +7,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, RefreshCw, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useDataSufficiency } from "@/hooks/use-data-sufficiency";
 import { InsufficientDataPrompt } from "@/components/InsufficientDataPrompt";
+import { useInsightsData } from "@/contexts/InsightsDataContext";
 
 type EmotionData = {
   emotion: string;
@@ -23,7 +22,6 @@ type MoodPoint = {
 };
 
 const POSITIVE_EMOTIONS = [
-  // Base forms
   "happy", "happiness", "joy", "joyful", "joyous",
   "excited", "excitement", "exciting",
   "grateful", "gratitude", "thankful",
@@ -37,7 +35,6 @@ const POSITIVE_EMOTIONS = [
   "loved", "love", "loving",
   "satisfied", "satisfaction",
   "relieved", "relief",
-  // Additional positive emotions
   "calm", "calmness",
   "curious", "curiosity",
   "motivated", "motivation",
@@ -55,7 +52,6 @@ const POSITIVE_EMOTIONS = [
 ];
 
 const NEGATIVE_EMOTIONS = [
-  // Base forms
   "sad", "sadness",
   "angry", "anger",
   "anxious", "anxiety",
@@ -70,7 +66,6 @@ const NEGATIVE_EMOTIONS = [
   "disappointed", "disappointment",
   "hopeless", "hopelessness",
   "overwhelmed",
-  // Additional negative emotions
   "hurt", "hurting",
   "lost",
   "tired", "tiredness", "exhausted", "exhaustion",
@@ -87,119 +82,61 @@ const NEGATIVE_EMOTIONS = [
   "despair", "despairing"
 ];
 
+const calculateMoodScore = (emotions: EmotionData[]): number => {
+  if (!emotions || emotions.length === 0) return 0;
+  let score = 0;
+  let totalIntensity = 0;
+
+  emotions.forEach(({ emotion, intensity }) => {
+    const emotionLower = emotion.toLowerCase();
+    const isPositive = POSITIVE_EMOTIONS.some(pos => emotionLower.includes(pos) || pos.includes(emotionLower));
+    const isNegative = NEGATIVE_EMOTIONS.some(neg => emotionLower.includes(neg) || neg.includes(emotionLower));
+    
+    if (isPositive && !isNegative) {
+      score += intensity;
+      totalIntensity += intensity;
+    } else if (isNegative && !isPositive) {
+      score -= intensity;
+      totalIntensity += intensity;
+    }
+  });
+
+  if (totalIntensity === 0) return 0;
+  return (score / totalIntensity) * 10;
+};
+
 export const MoodTracker = () => {
-  const [moodData, setMoodData] = useState<MoodPoint[]>([]);
-  const [allMoodData, setAllMoodData] = useState<MoodPoint[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { insights, entries, loading, hasMinimumData, totalEntries, deepEntries, analyzedEntries, needsAnalysis } = useInsightsData();
   const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 30));
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
-  const { hasMinimumData, totalEntries, deepEntries, analyzedEntries, needsAnalysis } = useDataSufficiency();
 
-  useEffect(() => {
-    fetchMoodData();
-  }, []);
+  const allMoodData = useMemo(() => {
+    const entryDateMap = new Map(entries.map(e => [e.id, e.entry_date]));
 
-  useEffect(() => {
-    filterMoodData();
-  }, [startDate, endDate, allMoodData]);
+    return insights
+      .filter(insight => insight.emotions && Array.isArray(insight.emotions) && insight.entry_id)
+      .map(insight => {
+        const emotions = insight.emotions as EmotionData[];
+        const moodScore = calculateMoodScore(emotions);
+        const entryDate = entryDateMap.get(insight.entry_id);
+        const date = entryDate ? new Date(entryDate) : new Date(insight.created_at);
 
-  const calculateMoodScore = (emotions: EmotionData[]): number => {
-    if (!emotions || emotions.length === 0) return 0;
+        return {
+          date: date.toISOString(),
+          mood: moodScore,
+          displayDate: format(date, "MMM d")
+        };
+      })
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [insights, entries]);
 
-    let score = 0;
-    let totalIntensity = 0;
-
-    emotions.forEach(({ emotion, intensity }) => {
-      const emotionLower = emotion.toLowerCase();
-      
-      // Bidirectional check: emotion contains word OR word contains emotion
-      const isPositive = POSITIVE_EMOTIONS.some(pos => 
-        emotionLower.includes(pos) || pos.includes(emotionLower)
-      );
-      const isNegative = NEGATIVE_EMOTIONS.some(neg => 
-        emotionLower.includes(neg) || neg.includes(emotionLower)
-      );
-      
-      if (isPositive && !isNegative) {
-        score += intensity;
-        totalIntensity += intensity;
-      } else if (isNegative && !isPositive) {
-        score -= intensity;
-        totalIntensity += intensity;
-      }
-      // Neutral emotions don't affect the score
-    });
-
-    // Normalize to -10 to +10 scale
-    if (totalIntensity === 0) return 0;
-    return (score / totalIntensity) * 10;
-  };
-
-  const fetchMoodData = async () => {
-    try {
-      const { data: insightsData, error: insightsError } = await supabase
-        .from("entry_insights")
-        .select("entry_id, emotions, created_at");
-
-      if (insightsError) throw insightsError;
-
-      const { data: entriesData, error: entriesError } = await supabase
-        .from("journal_entries")
-        .select("id, entry_date");
-
-      if (entriesError) throw entriesError;
-
-      const entryDateMap = new Map(
-        entriesData.map(entry => [entry.id, entry.entry_date])
-      );
-
-      const moodPoints: MoodPoint[] = insightsData
-        .filter(insight => insight.emotions && Array.isArray(insight.emotions) && insight.entry_id)
-        .map(insight => {
-          const emotions = insight.emotions as EmotionData[];
-          const moodScore = calculateMoodScore(emotions);
-          const entryDate = entryDateMap.get(insight.entry_id);
-          const date = entryDate ? new Date(entryDate) : new Date(insight.created_at);
-
-          return {
-            date: date.toISOString(),
-            mood: moodScore,
-            displayDate: format(date, "MMM d")
-          };
-        })
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-      setAllMoodData(moodPoints);
-    } catch (error) {
-      console.error("Error fetching mood data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filterMoodData = () => {
-    if (!startDate || !endDate) {
-      setMoodData(allMoodData);
-      return;
-    }
-
-    const filtered = allMoodData.filter(point => {
+  const moodData = useMemo(() => {
+    if (!startDate || !endDate) return allMoodData;
+    return allMoodData.filter(point => {
       const pointDate = new Date(point.date);
       return isWithinInterval(pointDate, { start: startDate, end: endDate });
     });
-
-    setMoodData(filtered);
-  };
-
-  const handleClearFilters = () => {
-    setStartDate(subDays(new Date(), 30));
-    setEndDate(new Date());
-  };
-
-  const handleShowAll = () => {
-    setStartDate(undefined);
-    setEndDate(undefined);
-  };
+  }, [allMoodData, startDate, endDate]);
 
   if (loading) {
     return (
@@ -235,51 +172,30 @@ export const MoodTracker = () => {
   }
 
   return (
-      <Card className="p-6">
-        <div className="space-y-4">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-2">
-              <Heart className="h-5 w-5 text-primary" />
-              <div>
-                <h3 className="text-xl font-normal">Mood Over Time</h3>
-                <p className="text-sm text-muted-foreground">
-                  Tracking emotional intensity from negative (-10) to positive (+10)
-                </p>
-              </div>
+    <Card className="p-6">
+      <div className="space-y-4">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-2">
+            <Heart className="h-5 w-5 text-primary" />
+            <div>
+              <h3 className="text-xl font-normal">Mood Over Time</h3>
+              <p className="text-sm text-muted-foreground">
+                Tracking emotional intensity from negative (-10) to positive (+10)
+              </p>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={fetchMoodData}
-              className="h-8 w-8"
-            >
-              <RefreshCw className="h-4 w-4" />
-            </Button>
           </div>
+        </div>
 
         <div className="flex items-center gap-2 flex-nowrap overflow-x-auto pb-1">
           <Popover>
             <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className={cn(
-                  "shrink-0 text-left font-normal",
-                  !startDate && "text-muted-foreground"
-                )}
-              >
+              <Button variant="outline" size="sm" className={cn("shrink-0 text-left font-normal", !startDate && "text-muted-foreground")}>
                 <CalendarIcon className="mr-1 h-4 w-4" />
                 {startDate ? format(startDate, "MMM d") : "Start"}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0 z-50 pointer-events-auto" align="start">
-              <Calendar
-                mode="single"
-                selected={startDate}
-                onSelect={setStartDate}
-                initialFocus
-                className="pointer-events-auto"
-              />
+              <Calendar mode="single" selected={startDate} onSelect={setStartDate} initialFocus className="pointer-events-auto" />
             </PopoverContent>
           </Popover>
 
@@ -287,34 +203,21 @@ export const MoodTracker = () => {
 
           <Popover>
             <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className={cn(
-                  "shrink-0 text-left font-normal",
-                  !endDate && "text-muted-foreground"
-                )}
-              >
+              <Button variant="outline" size="sm" className={cn("shrink-0 text-left font-normal", !endDate && "text-muted-foreground")}>
                 <CalendarIcon className="mr-1 h-4 w-4" />
                 {endDate ? format(endDate, "MMM d") : "End"}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0 z-50 pointer-events-auto" align="start">
-              <Calendar
-                mode="single"
-                selected={endDate}
-                onSelect={setEndDate}
-                initialFocus
-                className="pointer-events-auto"
-              />
+              <Calendar mode="single" selected={endDate} onSelect={setEndDate} initialFocus className="pointer-events-auto" />
             </PopoverContent>
           </Popover>
 
-          <Button variant="ghost" size="sm" onClick={handleClearFilters} className="shrink-0">
+          <Button variant="ghost" size="sm" onClick={() => { setStartDate(subDays(new Date(), 30)); setEndDate(new Date()); }} className="shrink-0">
             Clear
           </Button>
 
-          <Button variant="ghost" size="sm" onClick={handleShowAll} className="shrink-0">
+          <Button variant="ghost" size="sm" onClick={() => { setStartDate(undefined); setEndDate(undefined); }} className="shrink-0">
             Show all
           </Button>
         </div>
