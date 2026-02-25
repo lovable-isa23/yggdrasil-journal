@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -7,6 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, TrendingUp, BarChart3 } from "lucide-react";
 import { format, subMonths, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useInsightsData } from "@/contexts/InsightsDataContext";
 import {
   LineChart,
   Line,
@@ -74,52 +74,25 @@ interface FrameworkStat {
 }
 
 export const FrameworkAnalytics = () => {
-  const [insights, setInsights] = useState<InsightData[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { insights: sharedInsights, entries: sharedEntries, loading } = useInsightsData();
   const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
     from: subMonths(new Date(), 6),
     to: new Date(),
   });
   const [visibleFrameworks, setVisibleFrameworks] = useState<Set<string>>(new Set(Object.keys(FRAMEWORK_CONFIG)));
 
-  useEffect(() => {
-    fetchInsights();
-  }, []);
-
-  const fetchInsights = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Join with journal_entries to get entry_date
-      const { data, error } = await supabase
-        .from('entry_insights')
-        .select(`
-          id, 
-          frameworks_applied,
-          journal_entries!inner(entry_date)
-        `)
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-      
-      // Transform data to flatten entry_date
-      const transformed = (data || []).map(d => ({
+  // Transform shared data to InsightData format
+  const insights = useMemo((): InsightData[] => {
+    const entryDateMap = new Map(sharedEntries.map(e => [e.id, e.entry_date]));
+    return sharedInsights
+      .map(d => ({
         id: d.id,
-        entry_date: (d.journal_entries as any)?.entry_date || '',
+        entry_date: entryDateMap.get(d.entry_id) || '',
         frameworks_applied: (d.frameworks_applied as string[] | null) || null,
-      })).filter(d => d.entry_date); // Filter out any without entry_date
-      
-      // Sort by entry_date
-      transformed.sort((a, b) => a.entry_date.localeCompare(b.entry_date));
-      
-      setInsights(transformed);
-    } catch (error) {
-      console.error('Error fetching insights:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      }))
+      .filter(d => d.entry_date)
+      .sort((a, b) => a.entry_date.localeCompare(b.entry_date));
+  }, [sharedInsights, sharedEntries]);
 
   // Calculate data date range for display
   const dataDateRange = useMemo(() => {
