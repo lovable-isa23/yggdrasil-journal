@@ -53,6 +53,13 @@ interface JournalEntry {
   linked_goals?: string[];
   linked_entries?: string[];
   import_batch_id?: string | null;
+  // Insight fields
+  frameworks_applied?: any[];
+  chakra_tags?: any[];
+  tarot_tags?: any[];
+  sacred_geometry?: any[];
+  summary?: string | null;
+  interpretation?: any;
 }
 
 interface Goal {
@@ -73,9 +80,13 @@ interface JournalEntryListProps {
       start: Date | null;
       end: Date | null;
     };
+    selectedFrameworks?: string[];
+    selectedChakras?: string[];
+    selectedTarot?: string[];
+    selectedGeometry?: string[];
   };
   sortOption?: 'date-desc' | 'date-asc' | 'word-count-desc' | 'word-count-asc' | 'favorites-first';
-  onEntriesLoaded?: (total: number, filtered: number) => void;
+  onEntriesLoaded?: (total: number, filtered: number, entries?: any[]) => void;
   onReply?: (entryId: string, entryTitle: string) => void;
   filterImportId?: string;
   scrollToEntryId?: string;
@@ -263,13 +274,100 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
         );
       }
 
-      // Search filter
+      // Search filter — searches titles, content, and insight data
       if (filters.searchQuery && filters.searchQuery.trim().length > 0) {
         const query = filters.searchQuery.toLowerCase().trim();
         result = result.filter(entry => {
           const titleMatch = entry.title?.toLowerCase().includes(query);
           const contentMatch = entry.content?.toLowerCase().includes(query);
-          return titleMatch || contentMatch;
+          const summaryMatch = entry.summary?.toLowerCase().includes(query);
+          
+          // Search interpretation text fields
+          let interpretationMatch = false;
+          if (entry.interpretation) {
+            const interp = entry.interpretation;
+            const interpText = typeof interp === 'string' ? interp : JSON.stringify(interp);
+            interpretationMatch = interpText.toLowerCase().includes(query);
+          }
+          
+          // Search chakra tags
+          const chakraMatch = Array.isArray(entry.chakra_tags) && entry.chakra_tags.some((c: any) => {
+            const name = typeof c === 'string' ? c : c?.name || c?.chakra || '';
+            return name.toLowerCase().includes(query);
+          });
+          
+          // Search tarot tags
+          const tarotMatch = Array.isArray(entry.tarot_tags) && entry.tarot_tags.some((t: any) => {
+            const name = typeof t === 'string' ? t : t?.name || t?.card || '';
+            return name.toLowerCase().includes(query);
+          });
+          
+          // Search sacred geometry
+          const geometryMatch = Array.isArray(entry.sacred_geometry) && entry.sacred_geometry.some((g: any) => {
+            const name = typeof g === 'string' ? g : g?.name || g?.pattern || '';
+            return name.toLowerCase().includes(query);
+          });
+          
+          // Search frameworks
+          const frameworkMatch = Array.isArray(entry.frameworks_applied) && entry.frameworks_applied.some((f: any) => {
+            const text = typeof f === 'string' ? f : (f?.key || f?.canonical_key || f?.name || '');
+            return text.toLowerCase().includes(query);
+          });
+          
+          return titleMatch || contentMatch || summaryMatch || interpretationMatch || 
+                 chakraMatch || tarotMatch || geometryMatch || frameworkMatch;
+        });
+      }
+
+      // Framework lens filter
+      if (filters.selectedFrameworks && filters.selectedFrameworks.length > 0) {
+        result = result.filter(entry => {
+          if (!Array.isArray(entry.frameworks_applied)) return false;
+          return filters.selectedFrameworks!.some(fwKey =>
+            entry.frameworks_applied!.some((f: any) => {
+              const key = typeof f === 'string' ? f : f?.key || f?.canonical_key;
+              return key === fwKey;
+            })
+          );
+        });
+      }
+
+      // Chakra filter
+      if (filters.selectedChakras && filters.selectedChakras.length > 0) {
+        result = result.filter(entry => {
+          if (!Array.isArray(entry.chakra_tags)) return false;
+          return filters.selectedChakras!.some(c =>
+            entry.chakra_tags!.some((tag: any) => {
+              const name = typeof tag === 'string' ? tag : tag?.name || tag?.chakra;
+              return name === c;
+            })
+          );
+        });
+      }
+
+      // Tarot filter
+      if (filters.selectedTarot && filters.selectedTarot.length > 0) {
+        result = result.filter(entry => {
+          if (!Array.isArray(entry.tarot_tags)) return false;
+          return filters.selectedTarot!.some(card =>
+            entry.tarot_tags!.some((tag: any) => {
+              const name = typeof tag === 'string' ? tag : tag?.name || tag?.card;
+              return name === card;
+            })
+          );
+        });
+      }
+
+      // Sacred geometry filter
+      if (filters.selectedGeometry && filters.selectedGeometry.length > 0) {
+        result = result.filter(entry => {
+          if (!Array.isArray(entry.sacred_geometry)) return false;
+          return filters.selectedGeometry!.some(pattern =>
+            entry.sacred_geometry!.some((g: any) => {
+              const name = typeof g === 'string' ? g : g?.name || g?.pattern;
+              return name === pattern;
+            })
+          );
         });
       }
 
@@ -342,7 +440,7 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
 
   useEffect(() => {
     if (onEntriesLoaded) {
-      onEntriesLoaded(entries.length, filteredAndSortedEntries.length);
+      onEntriesLoaded(entries.length, filteredAndSortedEntries.length, entries);
     }
   }, [entries.length, filteredAndSortedEntries.length, onEntriesLoaded]);
 
