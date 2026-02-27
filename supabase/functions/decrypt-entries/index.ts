@@ -99,7 +99,7 @@ serve(async (req) => {
       .from('journal_entries')
       .select(`
         *,
-        entry_insights!left(depth_score)
+        entry_insights!left(depth_score, frameworks_applied, chakra_tags, tarot_tags, sacred_geometry, summary, interpretation)
       `)
       .eq('user_id', user.id)
       .order('entry_date', { ascending: false });
@@ -118,10 +118,17 @@ serve(async (req) => {
         const decryptedTitle = await decrypt(entry.title, encryptionKey);
         const decryptedContent = await decrypt(entry.content, encryptionKey);
         
-        // Extract depth_score from joined entry_insights
-        const depth_score = entry.entry_insights?.depth_score ?? null;
+        // Extract fields from joined entry_insights
+        const insights = entry.entry_insights;
+        const depth_score = insights?.depth_score ?? null;
+        const frameworks_applied = insights?.frameworks_applied ?? [];
+        const chakra_tags = insights?.chakra_tags ?? [];
+        const tarot_tags = insights?.tarot_tags ?? [];
+        const sacred_geometry = insights?.sacred_geometry ?? [];
+        const summary = insights?.summary ?? null;
+        const interpretation = insights?.interpretation ?? null;
         
-        // Remove the nested entry_insights object and flatten depth_score
+        // Remove the nested entry_insights object and flatten
         const { entry_insights, ...entryData } = entry;
         
         return {
@@ -129,7 +136,12 @@ serve(async (req) => {
           title: decryptedTitle,
           content: decryptedContent,
           depth_score,
-          // Explicitly include source columns
+          frameworks_applied,
+          chakra_tags,
+          tarot_tags,
+          sacred_geometry,
+          summary,
+          interpretation,
           source_type: entry.source_type || 'manual',
           source_practice_id: entry.source_practice_id || null,
           source_milestone_id: entry.source_milestone_id || null,
