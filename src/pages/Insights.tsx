@@ -4,9 +4,6 @@ import { KnowledgeGraph } from "@/components/KnowledgeGraph";
 import { MoodTracker } from "@/components/MoodTracker";
 import { StatisticsDashboard } from "@/components/StatisticsDashboard";
 import { SentimentTracking } from "@/components/SentimentTracking";
-import { ReportExport } from "@/components/ReportExport";
-import { DataExport } from "@/components/DataExport";
-import { DataImport } from "@/components/DataImport";
 import { NPSTooltip } from "@/components/NPSTooltip";
 import { AppNavbar } from "@/components/AppNavbar";
 import { FrameworkAnalytics } from "@/components/FrameworkAnalytics";
@@ -16,10 +13,8 @@ import { TarotAnalytics } from "@/components/TarotAnalytics";
 import { LazySection } from "@/components/LazySection";
 import { InsightsDataProvider } from "@/contexts/InsightsDataContext";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { BarChart3, Brain, TrendingUp, FileText, Sparkles, Upload, Layers } from "lucide-react";
-import { toast } from "sonner";
+import { BarChart3, Brain, TrendingUp, Sparkles, Layers } from "lucide-react";
 
 interface VisibilityPrefs {
   show_emotional_analysis: boolean;
@@ -58,13 +53,6 @@ const Insights = () => {
     };
     loadVisibilityPrefs();
   }, []);
-
-  const handleImportComplete = () => {
-    toast("Import Complete", {
-      description: "Your entries have been imported. Refreshing insights...",
-    });
-    setTimeout(() => window.location.reload(), 1500);
-  };
 
   return (
     <AuthGuard>
@@ -163,49 +151,6 @@ const Insights = () => {
                 </section>
               </LazySection>
 
-              {/* Manage Your Data Section - lazy loaded */}
-              <LazySection height="200px">
-                <section>
-                  <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-secondary/5">
-                    <CardHeader>
-                      <CardTitle className="text-xl flex items-center gap-2">
-                        <FileText className="h-5 w-5" />
-                        Manage Your Data
-                      </CardTitle>
-                      <CardDescription>
-                        Import old journals or export your insights
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      <div className="grid gap-6 sm:grid-cols-2">
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2">
-                            <Upload className="h-4 w-4 text-primary" />
-                            <h4 className="text-sm font-semibold">Import Old Journals</h4>
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            Upload multiple files at once (.txt, .md, .json, .pdf)
-                          </p>
-                          <DataImport onImportComplete={handleImportComplete} />
-                        </div>
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-4 w-4 text-primary" />
-                            <h4 className="text-sm font-semibold">Export Your Data</h4>
-                          </div>
-                          <p className="text-xs text-muted-foreground mb-2">
-                            Download entries and comprehensive insights reports
-                          </p>
-                          <div className="space-y-2">
-                            <DataExport />
-                            <ReportExport />
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </section>
-              </LazySection>
             </div>
           </main>
         </div>
