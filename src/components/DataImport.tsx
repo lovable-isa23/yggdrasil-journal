@@ -33,6 +33,7 @@ export const DataImport = ({ onImportComplete }: { onImportComplete: () => void 
   const [isImporting, setIsImporting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentFile, setCurrentFile] = useState<string>("");
+  const [dialogOpen, setDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { startLoading, updateProgress, stopLoading } = useLoading();
