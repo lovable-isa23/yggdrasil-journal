@@ -16,10 +16,8 @@ import { TarotAnalytics } from "@/components/TarotAnalytics";
 import { LazySection } from "@/components/LazySection";
 import { InsightsDataProvider } from "@/contexts/InsightsDataContext";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { BarChart3, Brain, TrendingUp, FileText, Sparkles, Upload, Layers } from "lucide-react";
-import { toast } from "sonner";
+import { BarChart3, Brain, TrendingUp, Sparkles, Layers } from "lucide-react";
 
 interface VisibilityPrefs {
   show_emotional_analysis: boolean;
