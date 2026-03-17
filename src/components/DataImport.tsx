@@ -306,6 +306,7 @@ export const DataImport = ({ onImportComplete }: { onImportComplete: () => void 
       }
 
       onImportComplete();
+      setDialogOpen(false);
       
       // Reset file input
       if (fileInputRef.current) {
