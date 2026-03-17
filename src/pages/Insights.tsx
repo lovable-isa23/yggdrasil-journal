@@ -54,13 +54,6 @@ const Insights = () => {
     loadVisibilityPrefs();
   }, []);
 
-  const handleImportComplete = () => {
-    toast("Import Complete", {
-      description: "Your entries have been imported. Refreshing insights...",
-    });
-    setTimeout(() => window.location.reload(), 1500);
-  };
-
   return (
     <AuthGuard>
       <InsightsDataProvider>
