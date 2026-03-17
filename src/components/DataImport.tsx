@@ -5,6 +5,7 @@ import { Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import { useLoading } from "@/contexts/LoadingContext";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 
 interface ParsedEntry {
   title: string;
