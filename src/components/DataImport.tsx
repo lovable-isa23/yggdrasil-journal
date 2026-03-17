@@ -5,6 +5,7 @@ import { Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import { useLoading } from "@/contexts/LoadingContext";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 
 interface ParsedEntry {
   title: string;
@@ -32,6 +33,7 @@ export const DataImport = ({ onImportComplete }: { onImportComplete: () => void 
   const [isImporting, setIsImporting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentFile, setCurrentFile] = useState<string>("");
+  const [dialogOpen, setDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { startLoading, updateProgress, stopLoading } = useLoading();
@@ -304,6 +306,7 @@ export const DataImport = ({ onImportComplete }: { onImportComplete: () => void 
       }
 
       onImportComplete();
+      setDialogOpen(false);
       
       // Reset file input
       if (fileInputRef.current) {
@@ -325,7 +328,7 @@ export const DataImport = ({ onImportComplete }: { onImportComplete: () => void 
   };
 
   return (
-    <div className="space-y-3">
+    <div>
       <input
         ref={fileInputRef}
         type="file"
@@ -335,35 +338,48 @@ export const DataImport = ({ onImportComplete }: { onImportComplete: () => void 
         disabled={isImporting}
         multiple
       />
-      <div className="space-y-2">
-        <Button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isImporting}
-          variant="outline"
-          className="w-full gap-2"
-        >
-          <Upload className="h-4 w-4" />
-          {isImporting ? "Importing..." : "Select Files to Import"}
-        </Button>
-        {!isImporting && (
-          <div className="text-xs text-muted-foreground space-y-1">
-            <p>
-              <span className="font-medium">Supports:</span> .txt, .md, .json, .pdf
-            </p>
-            <p>
-              <span className="font-medium">Multiple files allowed</span>
-            </p>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogTrigger asChild>
+          <Button variant="outline" className="w-full gap-2">
+            <Upload className="h-4 w-4" />
+            Import Files
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Import Files</DialogTitle>
+            <DialogDescription>
+              Upload your journal entries from external sources.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="text-sm text-muted-foreground space-y-1">
+              <p>
+                <span className="font-medium">Supports:</span> .txt, .md, .json, .pdf
+              </p>
+              <p>
+                <span className="font-medium">Multiple files allowed</span>
+              </p>
+            </div>
+            <Button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isImporting}
+              className="w-full gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              {isImporting ? "Importing..." : "Choose Files"}
+            </Button>
+            {isImporting && (
+              <div className="space-y-2">
+                <Progress value={progress} className="h-2" />
+                <p className="text-sm text-muted-foreground">
+                  Processing: {currentFile}
+                </p>
+              </div>
+            )}
           </div>
-        )}
-      </div>
-      {isImporting && (
-        <div className="space-y-2">
-          <Progress value={progress} className="h-2" />
-          <p className="text-sm text-muted-foreground">
-            Processing: {currentFile}
-          </p>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
