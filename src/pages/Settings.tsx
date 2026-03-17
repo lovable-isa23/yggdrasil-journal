@@ -524,6 +524,41 @@ const Settings = () => {
               </Card>
             </div>
           )}
+
+          {/* Data Management */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold">📂 Data Management</h2>
+            <Card className="p-6">
+              <div className="grid gap-6 sm:grid-cols-2">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Upload className="h-4 w-4 text-primary" />
+                    <h4 className="text-sm font-semibold">Import Old Journals</h4>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Upload multiple files at once (.txt, .md, .json, .pdf)
+                  </p>
+                  <DataImport onImportComplete={() => {
+                    toast.success("Import complete! Refreshing...");
+                    setTimeout(() => window.location.reload(), 1500);
+                  }} />
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-primary" />
+                    <h4 className="text-sm font-semibold">Export Your Data</h4>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Download entries and comprehensive insights reports
+                  </p>
+                  <div className="space-y-2">
+                    <DataExport />
+                    <ReportExport />
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
         </main>
       </div>
     </AuthGuard>

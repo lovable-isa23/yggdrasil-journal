@@ -36,7 +36,7 @@ export const LiveDemoSection = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<DemoResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const debounceRef = useRef<NodeJS.Timeout>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const isMobile = useIsMobile();
 
   const parseText = useCallback(async (text: string) => {
