@@ -260,6 +260,7 @@ export const JournalEditor = ({ onEntryCreated, replyToEntry, onReplyHandled }: 
       if (encryptError) throw encryptError;
 
       toast.success("Journal entry created (AES-256 encrypted)!");
+      localStorage.removeItem(DRAFT_KEY);
       reset();
       setSelectedGoals([]);
       setSelectedEntries([]);
