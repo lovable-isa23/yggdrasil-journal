@@ -13,13 +13,25 @@ import { CalendarIcon, Target, X, MessageSquareReply, Link2, ChevronDown } from 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { format } from "date-fns";
 import { cn, preserveNewlines } from "@/lib/utils";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { journalEntrySchema, type JournalEntryFormData } from "@/lib/validations";
 import { AudioRecorder } from "@/components/AudioRecorder";
 import { ImageUploader } from "@/components/ImageUploader";
 import { EntryLinkSelector } from "@/components/EntryLinkSelector";
+
+const DRAFT_KEY = 'yggdrasil-journal-draft';
+const DRAFT_TTL = 3 * 24 * 60 * 60 * 1000; // 3 days
+
+interface DraftData {
+  title: string;
+  content: string;
+  entryDate: string;
+  selectedGoals: string[];
+  selectedEntries: string[];
+  savedAt: number;
+}
 
 interface JournalEditorProps {
   onEntryCreated: () => void;
@@ -42,6 +54,7 @@ interface RecentEntry {
 
 export const JournalEditor = ({ onEntryCreated, replyToEntry, onReplyHandled }: JournalEditorProps) => {
   const titleInputRef = useRef<HTMLInputElement>(null);
+  const draftRestoredRef = useRef(false);
   const [entryDate, setEntryDate] = useState<Date>(() => {
     const today = new Date();
     today.setHours(12, 0, 0, 0);
@@ -74,10 +87,62 @@ export const JournalEditor = ({ onEntryCreated, replyToEntry, onReplyHandled }: 
   const title = watch("title");
   const content = watch("content");
 
+  // Restore draft from localStorage on mount
   useEffect(() => {
     fetchGoals();
     fetchRecentEntries();
+
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) {
+        const draft: DraftData = JSON.parse(raw);
+        if (Date.now() - draft.savedAt < DRAFT_TTL) {
+          if (draft.title || draft.content) {
+            reset({ title: draft.title || "", content: draft.content || "" });
+            if (draft.entryDate) {
+              const restored = new Date(draft.entryDate);
+              if (!isNaN(restored.getTime())) setEntryDate(restored);
+            }
+            if (draft.selectedGoals?.length) setSelectedGoals(draft.selectedGoals);
+            if (draft.selectedEntries?.length) setSelectedEntries(draft.selectedEntries);
+            draftRestoredRef.current = true;
+            toast.info("Draft restored");
+          }
+        } else {
+          localStorage.removeItem(DRAFT_KEY);
+        }
+      }
+    } catch { /* ignore corrupt data */ }
   }, []);
+
+  // Auto-save draft with debounce
+  useEffect(() => {
+    // Skip the initial render after restore to avoid immediate re-save
+    if (draftRestoredRef.current) {
+      draftRestoredRef.current = false;
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      if (!title && !content) {
+        localStorage.removeItem(DRAFT_KEY);
+        return;
+      }
+      const draft: DraftData = {
+        title: title || "",
+        content: content || "",
+        entryDate: entryDate.toISOString(),
+        selectedGoals,
+        selectedEntries,
+        savedAt: Date.now(),
+      };
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      } catch { /* storage full */ }
+    }, 500);
+
+    return () => clearTimeout(timeout);
+  }, [title, content, entryDate, selectedGoals, selectedEntries]);
 
   useEffect(() => {
     if (replyToEntry) {
@@ -195,6 +260,7 @@ export const JournalEditor = ({ onEntryCreated, replyToEntry, onReplyHandled }: 
       if (encryptError) throw encryptError;
 
       toast.success("Journal entry created (AES-256 encrypted)!");
+      localStorage.removeItem(DRAFT_KEY);
       reset();
       setSelectedGoals([]);
       setSelectedEntries([]);
