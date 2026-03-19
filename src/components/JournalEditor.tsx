@@ -87,10 +87,62 @@ export const JournalEditor = ({ onEntryCreated, replyToEntry, onReplyHandled }: 
   const title = watch("title");
   const content = watch("content");
 
+  // Restore draft from localStorage on mount
   useEffect(() => {
     fetchGoals();
     fetchRecentEntries();
+
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) {
+        const draft: DraftData = JSON.parse(raw);
+        if (Date.now() - draft.savedAt < DRAFT_TTL) {
+          if (draft.title || draft.content) {
+            reset({ title: draft.title || "", content: draft.content || "" });
+            if (draft.entryDate) {
+              const restored = new Date(draft.entryDate);
+              if (!isNaN(restored.getTime())) setEntryDate(restored);
+            }
+            if (draft.selectedGoals?.length) setSelectedGoals(draft.selectedGoals);
+            if (draft.selectedEntries?.length) setSelectedEntries(draft.selectedEntries);
+            draftRestoredRef.current = true;
+            toast.info("Draft restored");
+          }
+        } else {
+          localStorage.removeItem(DRAFT_KEY);
+        }
+      }
+    } catch { /* ignore corrupt data */ }
   }, []);
+
+  // Auto-save draft with debounce
+  useEffect(() => {
+    // Skip the initial render after restore to avoid immediate re-save
+    if (draftRestoredRef.current) {
+      draftRestoredRef.current = false;
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      if (!title && !content) {
+        localStorage.removeItem(DRAFT_KEY);
+        return;
+      }
+      const draft: DraftData = {
+        title: title || "",
+        content: content || "",
+        entryDate: entryDate.toISOString(),
+        selectedGoals,
+        selectedEntries,
+        savedAt: Date.now(),
+      };
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      } catch { /* storage full */ }
+    }, 500);
+
+    return () => clearTimeout(timeout);
+  }, [title, content, entryDate, selectedGoals, selectedEntries]);
 
   useEffect(() => {
     if (replyToEntry) {
