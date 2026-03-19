@@ -9,24 +9,41 @@ import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { TrialBadge } from "@/components/TrialBadge";
 import { lazy, Suspense } from "react";
 
+// Retry dynamic imports on failure (handles stale chunk errors after deploys)
+function lazyRetry(importFn: () => Promise<any>) {
+  return lazy(() =>
+    importFn().catch(() => {
+      // If chunk fails to load, reload the page once
+      const hasReloaded = sessionStorage.getItem("lazy-reload");
+      if (!hasReloaded) {
+        sessionStorage.setItem("lazy-reload", "1");
+        window.location.reload();
+        return new Promise(() => {}); // never resolves, page will reload
+      }
+      sessionStorage.removeItem("lazy-reload");
+      return importFn(); // retry once more after reload
+    })
+  );
+}
+
 // Lazy load all routes for code splitting
-const Index = lazy(() => import("./pages/Index"));
-const Waitlist = lazy(() => import("./pages/Waitlist"));
-const BetaWelcome = lazy(() => import("./pages/BetaWelcome"));
-const Login = lazy(() => import("./pages/Login"));
-const Signup = lazy(() => import("./pages/Signup"));
-const ResetPassword = lazy(() => import("./pages/ResetPassword"));
-const UpdatePassword = lazy(() => import("./pages/UpdatePassword"));
-const Journal = lazy(() => import("./pages/Journal"));
-const Entries = lazy(() => import("./pages/Entries"));
-const Insights = lazy(() => import("./pages/Insights"));
-const ImportHistory = lazy(() => import("./pages/ImportHistory"));
-const Settings = lazy(() => import("./pages/Settings"));
-const Goals = lazy(() => import("./pages/Goals"));
-const TrialExpired = lazy(() => import("./pages/TrialExpired"));
-const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
-const Chat = lazy(() => import("./pages/Chat"));
-const NotFound = lazy(() => import("./pages/NotFound"));
+const Index = lazyRetry(() => import("./pages/Index"));
+const Waitlist = lazyRetry(() => import("./pages/Waitlist"));
+const BetaWelcome = lazyRetry(() => import("./pages/BetaWelcome"));
+const Login = lazyRetry(() => import("./pages/Login"));
+const Signup = lazyRetry(() => import("./pages/Signup"));
+const ResetPassword = lazyRetry(() => import("./pages/ResetPassword"));
+const UpdatePassword = lazyRetry(() => import("./pages/UpdatePassword"));
+const Journal = lazyRetry(() => import("./pages/Journal"));
+const Entries = lazyRetry(() => import("./pages/Entries"));
+const Insights = lazyRetry(() => import("./pages/Insights"));
+const ImportHistory = lazyRetry(() => import("./pages/ImportHistory"));
+const Settings = lazyRetry(() => import("./pages/Settings"));
+const Goals = lazyRetry(() => import("./pages/Goals"));
+const TrialExpired = lazyRetry(() => import("./pages/TrialExpired"));
+const PaymentSuccess = lazyRetry(() => import("./pages/PaymentSuccess"));
+const Chat = lazyRetry(() => import("./pages/Chat"));
+const NotFound = lazyRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
