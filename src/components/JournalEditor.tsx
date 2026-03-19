@@ -21,6 +21,18 @@ import { AudioRecorder } from "@/components/AudioRecorder";
 import { ImageUploader } from "@/components/ImageUploader";
 import { EntryLinkSelector } from "@/components/EntryLinkSelector";
 
+const DRAFT_KEY = 'yggdrasil-journal-draft';
+const DRAFT_TTL = 3 * 24 * 60 * 60 * 1000; // 3 days
+
+interface DraftData {
+  title: string;
+  content: string;
+  entryDate: string;
+  selectedGoals: string[];
+  selectedEntries: string[];
+  savedAt: number;
+}
+
 interface JournalEditorProps {
   onEntryCreated: () => void;
   replyToEntry?: { id: string; title: string } | null;
@@ -42,6 +54,7 @@ interface RecentEntry {
 
 export const JournalEditor = ({ onEntryCreated, replyToEntry, onReplyHandled }: JournalEditorProps) => {
   const titleInputRef = useRef<HTMLInputElement>(null);
+  const draftRestoredRef = useRef(false);
   const [entryDate, setEntryDate] = useState<Date>(() => {
     const today = new Date();
     today.setHours(12, 0, 0, 0);
