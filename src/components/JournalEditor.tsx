@@ -13,7 +13,7 @@ import { CalendarIcon, Target, X, MessageSquareReply, Link2, ChevronDown } from 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { format } from "date-fns";
 import { cn, preserveNewlines } from "@/lib/utils";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { journalEntrySchema, type JournalEntryFormData } from "@/lib/validations";
