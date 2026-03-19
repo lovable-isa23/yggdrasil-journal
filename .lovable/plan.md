@@ -1,77 +1,32 @@
 
 
-## Plan: Framework Lens Filtering & Enhanced Search
+## Plan: Auto-Save Journal Draft to LocalStorage
 
-### 1. Expand `decrypt-entries` Edge Function
+### Approach
 
-**File**: `supabase/functions/decrypt-entries/index.ts`
+Use `localStorage` to persist the draft (title, content, entry date, selected goals, selected entries) as the user types. On mount, restore from cache if a draft exists and is less than 3 days old. Clear the cache on successful submission.
 
-Currently only joins `entry_insights(depth_score)`. Expand the join to include `frameworks_applied, chakra_tags, tarot_tags, sacred_geometry, summary, interpretation` and flatten them onto each entry object returned to the client.
+### Changes
 
----
+**File: `src/components/JournalEditor.tsx`**
 
-### 2. Add New Filter Fields to `FilterOptions`
+1. Define a localStorage key constant (`journal-draft`) and a draft interface with `{ title, content, entryDate, selectedGoals, selectedEntries, savedAt }`
 
-**File**: `src/components/EntryFilters.tsx`
+2. **On mount**: Check localStorage for a saved draft. If it exists and `savedAt` is within 3 days, restore title/content via `reset()`, restore entryDate and selected goals/entries state. Show a subtle toast: "Draft restored."
 
-Add to `FilterOptions` interface:
-- `selectedFrameworks: string[]` -- canonical keys like `jungian`, `stoic`, `dbt`, etc.
-- `selectedChakras: string[]`
-- `selectedTarot: string[]`
-- `selectedGeometry: string[]`
+3. **On change**: Add a `useEffect` watching `title`, `content`, `entryDate`, `selectedGoals`, `selectedEntries`. Debounce (500ms) writes to localStorage with current timestamp as `savedAt`.
 
-Add a new "Insights" section inside the Filters popover with:
-- **Frameworks**: Toggle badges for the 12 canonical frameworks (theravada, hermetic, advaita, taoist, freudian, jungian, attachment, ifs, cbt, dbt, stoic, gnostic) with display labels
-- **Chakras**: Toggle badges for 7 chakras (only shown if any entries have chakra data)
-- **Tarot**: Toggle badges for tarot cards found across entries (only shown if any entries have tarot data)
-- **Sacred Geometry**: Toggle badges for geometry patterns found (only shown if any entries have geometry data)
+4. **On successful submit**: Remove the draft from localStorage (already calls `reset()` — just add `localStorage.removeItem`).
 
-Update `activeFilterCount` to include these new filters.
+5. **Expiry cleanup**: The restore check simply skips if `savedAt` is older than 3 days and removes the stale draft.
 
----
-
-### 3. Enhance Search to Cover Insights Data
-
-**File**: `src/components/JournalEntryList.tsx`
-
-Update the search filter block (lines 267-274) to also search through:
-- `entry.summary` (insight summary text)
-- `entry.interpretation` (interpretation object -- search stringified text fields)
-- `entry.chakra_tags` (array of chakra names)
-- `entry.tarot_tags` (array of tarot card names)
-- `entry.sacred_geometry` (array of geometry pattern names)
-- `entry.frameworks_applied` (array of framework objects -- search name/key fields)
-
----
-
-### 4. Add Framework/Chakra/Tarot/Geometry Filtering Logic
-
-**File**: `src/components/JournalEntryList.tsx`
-
-In the `filteredAndSortedEntries` memo, add filtering for the new filter fields:
-- `selectedFrameworks`: Check if `entry.frameworks_applied` contains any matching canonical key
-- `selectedChakras`: Check if `entry.chakra_tags` contains any matching chakra
-- `selectedTarot`: Check if `entry.tarot_tags` contains any matching card
-- `selectedGeometry`: Check if `entry.sacred_geometry` contains any matching pattern
-
-Update the `JournalEntry` interface to include the new fields from the expanded edge function response.
-
----
-
-### 5. Pass Available Insight Options to EntryFilters
-
-**File**: `src/pages/Entries.tsx`
-
-Compute unique sets of frameworks, chakras, tarot cards, and geometry patterns from loaded entries. Pass these as props to `EntryFilters` so it only shows options that actually exist in the user's data.
-
----
-
-### Summary
-
-| File | Action |
+| What | Detail |
 |------|--------|
-| `supabase/functions/decrypt-entries/index.ts` | Expand join to include insights fields |
-| `src/components/EntryFilters.tsx` | Add framework/chakra/tarot/geometry filter UI and filter state |
-| `src/components/JournalEntryList.tsx` | Expand search + add insight-based filtering |
-| `src/pages/Entries.tsx` | Compute available insight options, pass to filters |
+| Storage key | `yggdrasil-journal-draft` |
+| Debounce | 500ms to avoid excessive writes |
+| TTL | 3 days (259200000ms) |
+| Restore trigger | Component mount only |
+| Clear trigger | Successful save |
+
+No new files needed. Single file change.
 
