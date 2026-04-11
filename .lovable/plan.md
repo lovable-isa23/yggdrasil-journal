@@ -1,32 +1,50 @@
 
 
-## Plan: Auto-Save Journal Draft to LocalStorage
+## Revised Plan: Homepage Redesign
 
-### Approach
+### Homepage Section Order (after Hero)
 
-Use `localStorage` to persist the draft (title, content, entry date, selected goals, selected entries) as the user types. On mount, restore from cache if a draft exists and is less than 3 days old. Clear the cache on successful submission.
+1. **LiveDemoSection** — kept, restyled to new palette
+2. **GraphSnapshotSection** — kept, restyled to new palette
+3. **AboutPreviewSection** (new) — world tree metaphor + CTA to /about
+4. **PricingCTA** (new) — pricing tiers, newsletter signup, contact link
 
-### Changes
+### Section Dividers
 
-**File: `src/components/JournalEditor.tsx`**
+- **Hero only**: curved organic SVG divider at bottom (color-rich gradient transition)
+- **All other sections**: simple horizontal line or spacing — no curved dividers
 
-1. Define a localStorage key constant (`journal-draft`) and a draft interface with `{ title, content, entryDate, selectedGoals, selectedEntries, savedAt }`
+### Changes vs Previous Plan
 
-2. **On mount**: Check localStorage for a saved draft. If it exists and `savedAt` is within 3 days, restore title/content via `reset()`, restore entryDate and selected goals/entries state. Show a subtle toast: "Draft restored."
+| Change | Detail |
+|--------|--------|
+| **Removed** LatestEntriesSection | Privacy concern — no user entries shown on public page |
+| **Removed** CurvedDivider component | No longer needed as reusable component; curve is hero-only, built inline |
+| **Simplified** section separators | Plain horizontal dividers (border or spacing) between sections 1–4 |
 
-3. **On change**: Add a `useEffect` watching `title`, `content`, `entryDate`, `selectedGoals`, `selectedEntries`. Debounce (500ms) writes to localStorage with current timestamp as `savedAt`.
+### Full File List
 
-4. **On successful submit**: Remove the draft from localStorage (already calls `reset()` — just add `localStorage.removeItem`).
+**Updated from previous plan:**
 
-5. **Expiry cleanup**: The restore check simply skips if `savedAt` is older than 3 days and removes the stale draft.
+- `src/index.css` — new palette, dark mode, utilities
+- `tailwind.config.ts` — Playfair Display, animation keyframes
+- `index.html` — font link, meta/OG tags
+- `src/components/YggdrasilLogo.tsx` (new) — SVG world-tree logo
+- `src/components/PublicNavbar.tsx` (new) — transparent → shrink + blur on scroll
+- `src/components/PublicFooter.tsx` (new) — minimal footer with root-line SVG
+- `src/components/Hero.tsx` — full restyle, serif headline, curved SVG divider at bottom only
+- `src/components/homepage/AboutPreviewSection.tsx` (new) — brief metaphor text + SVG tree + /about CTA
+- `src/components/homepage/PricingCTA.tsx` (new) — two tier cards + newsletter input + contact
+- `src/components/homepage/LiveDemoSection.tsx` — restyle to new palette
+- `src/components/homepage/GraphSnapshotSection.tsx` — restyle to new palette
+- `src/pages/Index.tsx` — new section order, PublicNavbar + PublicFooter
+- `src/components/AppNavbar.tsx` — add scroll-aware shrink behavior
+- `src/pages/Topics.tsx` (new) — SEO/blog page, not on homepage
+- `src/pages/About.tsx` (new) — world tree metaphor page
+- `src/pages/Contact.tsx` (new) — minimal contact form
+- `src/App.tsx` — add /topics, /about, /contact routes
 
-| What | Detail |
-|------|--------|
-| Storage key | `yggdrasil-journal-draft` |
-| Debounce | 500ms to avoid excessive writes |
-| TTL | 3 days (259200000ms) |
-| Restore trigger | Component mount only |
-| Clear trigger | Successful save |
+**Files to remove:** HowItWorksSection, UseCaseCards, BetaWaitlistCTA, FloatingParticles
 
-No new files needed. Single file change.
+**Unchanged:** All internal app pages, Supabase integrations, edge functions, NeuralNetworkAnimation
 
