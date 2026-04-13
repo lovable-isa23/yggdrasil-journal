@@ -146,13 +146,13 @@ const getDepthBadge = (depthScore?: number | null) => {
   if (!depthScore) return null;
   
   if (depthScore >= 9) {
-    return { label: `Depth: ${depthScore}`, className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' };
+    return { label: `Analysis Depth: ${depthScore}`, className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' };
   } else if (depthScore >= 7) {
-    return { label: `Depth: ${depthScore}`, className: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' };
+    return { label: `Analysis Depth: ${depthScore}`, className: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' };
   } else if (depthScore >= 5) {
-    return { label: `Depth: ${depthScore}`, className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' };
+    return { label: `Analysis Depth: ${depthScore}`, className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' };
   } else {
-    return { label: `Depth: ${depthScore}`, className: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' };
+    return { label: `Analysis Depth: ${depthScore}`, className: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' };
   }
 };
 
@@ -613,15 +613,32 @@ export function JournalEntryList({ refreshTrigger, filters, sortOption, onEntrie
               <CardHeader className="pb-3 relative">
                 {/* Small floating reply/edit/delete buttons */}
                 <div className="absolute top-3 right-3 flex gap-1">
-                  <Button variant="ghost" className="h-7 w-7 p-0" onClick={() => onReply?.(entry.id, entry.title)} title="Reply to this entry">
-                    <MessageSquareReply className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button variant="ghost" className="h-7 w-7 p-0" onClick={() => openEditDialog(entry)}>
-                    <Edit className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button variant="ghost" className="h-7 w-7 p-0" onClick={() => setEntryToDelete(entry.id)}>
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+                  <TooltipProvider delayDuration={300}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" className="h-7 w-7 p-0" onClick={() => onReply?.(entry.id, entry.title)}>
+                          <MessageSquareReply className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent><p>Reflect with Yggi</p></TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" className="h-7 w-7 p-0" onClick={() => openEditDialog(entry)}>
+                          <Edit className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent><p>Edit entry</p></TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" className="h-7 w-7 p-0" onClick={() => setEntryToDelete(entry.id)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent><p>Delete entry</p></TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
                
                <div className="space-y-2 pr-16">

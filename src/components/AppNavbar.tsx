@@ -60,13 +60,14 @@ export const AppNavbar = () => {
                       variant={isActive(item.path) ? "secondary" : "ghost"}
                       size="icon"
                       onClick={() => navigate(item.path)}
-                      className="h-9 w-9"
+                      className="h-9 w-9 lg:w-auto lg:px-3 lg:gap-2"
                       aria-label={item.label}
                     >
                       {item.icon}
+                      <span className="hidden lg:inline text-sm">{item.label}</span>
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom">
+                  <TooltipContent side="bottom" className="lg:hidden">
                     <p>{item.label}</p>
                   </TooltipContent>
                 </Tooltip>
@@ -79,13 +80,14 @@ export const AppNavbar = () => {
                     variant="ghost"
                     size="icon"
                     onClick={handleSignOut}
-                    className="h-9 w-9 text-muted-foreground hover:text-destructive"
+                    className="h-9 w-9 lg:w-auto lg:px-3 lg:gap-2 text-muted-foreground hover:text-destructive"
                     aria-label="Sign Out"
                   >
                     <LogOut className="h-4 w-4" />
+                    <span className="hidden lg:inline text-sm">Sign Out</span>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="bottom">
+                <TooltipContent side="bottom" className="lg:hidden">
                   <p>Sign Out</p>
                 </TooltipContent>
               </Tooltip>

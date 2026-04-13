@@ -6,10 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ReactMarkdown from "react-markdown";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, Target, X, MessageSquareReply, Link2, ChevronDown } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { format } from "date-fns";
 import { cn, preserveNewlines } from "@/lib/utils";
@@ -30,6 +32,7 @@ interface DraftData {
   entryDate: string;
   selectedGoals: string[];
   selectedEntries: string[];
+  mood: string;
   savedAt: number;
 }
 
@@ -66,6 +69,7 @@ export const JournalEditor = ({ onEntryCreated, replyToEntry, onReplyHandled }: 
   const [selectedEntries, setSelectedEntries] = useState<string[]>([]);
   const [audioUrl, setAudioUrl] = useState<string | undefined>();
   const [imageUrl, setImageUrl] = useState<string | undefined>();
+  const [mood, setMood] = useState("general");
   
   const {
     register,
@@ -105,6 +109,7 @@ export const JournalEditor = ({ onEntryCreated, replyToEntry, onReplyHandled }: 
             }
             if (draft.selectedGoals?.length) setSelectedGoals(draft.selectedGoals);
             if (draft.selectedEntries?.length) setSelectedEntries(draft.selectedEntries);
+            if (draft.mood) setMood(draft.mood);
             draftRestoredRef.current = true;
             toast.info("Draft restored");
           }
@@ -134,6 +139,7 @@ export const JournalEditor = ({ onEntryCreated, replyToEntry, onReplyHandled }: 
         entryDate: entryDate.toISOString(),
         selectedGoals,
         selectedEntries,
+        mood,
         savedAt: Date.now(),
       };
       try {
@@ -142,7 +148,7 @@ export const JournalEditor = ({ onEntryCreated, replyToEntry, onReplyHandled }: 
     }, 500);
 
     return () => clearTimeout(timeout);
-  }, [title, content, entryDate, selectedGoals, selectedEntries]);
+  }, [title, content, entryDate, selectedGoals, selectedEntries, mood]);
 
   useEffect(() => {
     if (replyToEntry) {
@@ -254,6 +260,7 @@ export const JournalEditor = ({ onEntryCreated, replyToEntry, onReplyHandled }: 
           audio_url: audioUrl,
           image_url: imageUrl,
           transcription_source: audioUrl ? 'voice' : imageUrl ? 'image' : 'typed',
+          mood_type: mood,
         },
       });
 
@@ -266,6 +273,7 @@ export const JournalEditor = ({ onEntryCreated, replyToEntry, onReplyHandled }: 
       setSelectedEntries([]);
       setAudioUrl(undefined);
       setImageUrl(undefined);
+      setMood("general");
       const today = new Date();
       today.setHours(12, 0, 0, 0);
       setEntryDate(today);
@@ -402,6 +410,24 @@ export const JournalEditor = ({ onEntryCreated, replyToEntry, onReplyHandled }: 
         </Popover>
       </div>
 
+      {/* Mood / Category Selector */}
+      <div className="space-y-2">
+        <Label>Mood / Category</Label>
+        <Select value={mood} onValueChange={setMood}>
+          <SelectTrigger className="h-12">
+            <SelectValue placeholder="Select a mood" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="dream">🌙 Dream</SelectItem>
+            <SelectItem value="reflection">🪞 Reflection</SelectItem>
+            <SelectItem value="gratitude">🙏 Gratitude</SelectItem>
+            <SelectItem value="intention">🎯 Intention</SelectItem>
+            <SelectItem value="shadow_work">🌑 Shadow Work</SelectItem>
+            <SelectItem value="general">📝 General</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Alternative Input Methods - Hidden for now */}
       {/* <div className="space-y-4 p-4 rounded-xl bg-muted/30 border border-border">
         <Label>Alternative Input Methods</Label>
@@ -425,7 +451,7 @@ export const JournalEditor = ({ onEntryCreated, replyToEntry, onReplyHandled }: 
             <Textarea
               placeholder="Pour your thoughts here... (Markdown supported)"
               {...register("content")}
-              className="min-h-[300px] resize-none font-mono text-sm"
+              className="min-h-[300px] resize-none font-['Poppins'] text-base"
             />
             {errors.content && (
               <p className="text-sm text-destructive">{errors.content.message}</p>
