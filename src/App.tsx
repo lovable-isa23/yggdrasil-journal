@@ -43,6 +43,8 @@ const Goals = lazyRetry(() => import("./pages/Goals"));
 const TrialExpired = lazyRetry(() => import("./pages/TrialExpired"));
 const PaymentSuccess = lazyRetry(() => import("./pages/PaymentSuccess"));
 const Chat = lazyRetry(() => import("./pages/Chat"));
+const Privacy = lazyRetry(() => import("./pages/Privacy"));
+const Terms = lazyRetry(() => import("./pages/Terms"));
 const NotFound = lazyRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -73,6 +75,8 @@ const App = () => (
               <Route path="/trial-expired" element={<TrialExpired />} />
               <Route path="/payment-success" element={<PaymentSuccess />} />
               <Route path="/chat" element={<Chat />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

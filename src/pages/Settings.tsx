@@ -14,6 +14,16 @@ import { DataImport } from "@/components/DataImport";
 import { toast } from "sonner";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Progress } from "@/components/ui/progress";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Preferences {
   enable_chakra_tags: boolean;
@@ -92,6 +102,8 @@ const Settings = () => {
   const [reanalyzing, setReanalyzing] = useState(false);
   const [reanalyzeProgress, setReanalyzeProgress] = useState(0);
   const [reanalyzeTotalEntries, setReanalyzeTotalEntries] = useState(0);
+  const [showReanalyzeConfirm, setShowReanalyzeConfirm] = useState(false);
+  const [entryCountForConfirm, setEntryCountForConfirm] = useState(0);
 
   useEffect(() => {
     loadPreferences();
@@ -505,7 +517,16 @@ const Settings = () => {
                 )}
                 
                 <Button
-                  onClick={handleReanalyzeAll}
+                  onClick={async () => {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (!user) return;
+                    const { count } = await supabase
+                      .from('journal_entries')
+                      .select('id', { count: 'exact', head: true })
+                      .eq('user_id', user.id);
+                    setEntryCountForConfirm(count || 0);
+                    setShowReanalyzeConfirm(true);
+                  }}
                   disabled={reanalyzing}
                   className="gap-2"
                 >
@@ -521,6 +542,23 @@ const Settings = () => {
                     </>
                   )}
                 </Button>
+
+                <AlertDialog open={showReanalyzeConfirm} onOpenChange={setShowReanalyzeConfirm}>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Re-analyze all entries?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will update insights for all {entryCountForConfirm} {entryCountForConfirm === 1 ? 'entry' : 'entries'} using your current framework settings. This may take a few minutes.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => { setShowReanalyzeConfirm(false); handleReanalyzeAll(); }}>
+                        Confirm
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </Card>
             </div>
           )}

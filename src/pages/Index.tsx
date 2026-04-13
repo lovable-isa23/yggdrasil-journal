@@ -1,7 +1,9 @@
+import { PublicNavbar } from "@/components/PublicNavbar";
 import { Hero } from "@/components/Hero";
+import { LandingFooter } from "@/components/LandingFooter";
 import { lazy, Suspense } from "react";
 
-// Lazy load below-the-fold components
+const SocialProofSection = lazy(() => import("@/components/homepage/SocialProofSection").then(m => ({ default: m.SocialProofSection })));
 const LiveDemoSection = lazy(() => import("@/components/homepage/LiveDemoSection").then(m => ({ default: m.LiveDemoSection })));
 const HowItWorksSection = lazy(() => import("@/components/homepage/HowItWorksSection").then(m => ({ default: m.HowItWorksSection })));
 const UseCaseCards = lazy(() => import("@/components/homepage/UseCaseCards").then(m => ({ default: m.UseCaseCards })));
@@ -11,14 +13,17 @@ const BetaWaitlistCTA = lazy(() => import("@/components/homepage/BetaWaitlistCTA
 const Index = () => {
   return (
     <main className="min-h-screen">
+      <PublicNavbar />
       <Hero />
       <Suspense fallback={<div className="h-24" />}>
+        <SocialProofSection />
         <LiveDemoSection />
         <HowItWorksSection />
         <UseCaseCards />
         <GraphSnapshotSection />
         <BetaWaitlistCTA />
       </Suspense>
+      <LandingFooter />
     </main>
   );
 };

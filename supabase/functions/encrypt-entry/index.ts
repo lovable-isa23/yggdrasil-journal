@@ -81,6 +81,7 @@ serve(async (req) => {
       source_type,
       source_practice_id,
       source_milestone_id,
+      mood_type,
     } = await req.json();
     
     if (!title || !content) {
@@ -124,6 +125,7 @@ serve(async (req) => {
         source_type: source_type || 'manual',
         source_practice_id: source_practice_id || null,
         source_milestone_id: source_milestone_id || null,
+        mood_type: mood_type || 'general',
       })
       .select()
       .single();

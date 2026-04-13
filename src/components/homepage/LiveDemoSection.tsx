@@ -86,6 +86,7 @@ export const LiveDemoSection = () => {
 
   return (
     <section
+      id="demo"
       ref={elementRef}
       className="py-24 px-6 grain-overlay relative overflow-hidden"
       style={{
@@ -114,6 +115,13 @@ export const LiveDemoSection = () => {
         >
           {/* Journal Input Panel */}
           <div className="relative">
+            {/* Example block above textarea */}
+            {!inputText && (
+              <div className="mb-4 p-4 rounded-xl border border-border/60 bg-muted/30 italic text-sm text-muted-foreground leading-relaxed">
+                <span className="not-italic font-medium text-foreground text-xs uppercase tracking-wide block mb-2">For example:</span>
+                "Met Emma for brunch at our favorite café—she's been struggling with her job search and I could see the exhaustion in her eyes. Reminded me of how overwhelmed I felt last year when I was between jobs. Afterward, went for a long walk in the park and felt this unexpected wave of gratitude. Need to text Mom tonight, haven't talked to her in a week."
+              </div>
+            )}
             <div className="bg-card rounded-2xl border border-border p-6 paper-texture min-h-[300px]">
               <div className="text-xs text-muted-foreground mb-4 flex items-center justify-between">
                 <span>Your Journal Entry</span>
@@ -122,9 +130,7 @@ export const LiveDemoSection = () => {
               <textarea
                 value={inputText}
                 onChange={handleInputChange}
-                placeholder="Try it: Type a few sentences from your day...
-
-For example: 'Met Emma for brunch at our favorite café—she's been struggling with her job search and I could see the exhaustion in her eyes. Reminded me of how overwhelmed I felt last year when I was between jobs. Afterward, went for a long walk in the park and felt this unexpected wave of gratitude. Need to text Mom tonight, haven't talked to her in a week.'"
+                placeholder="Start typing..."
                 className="w-full h-[220px] bg-transparent resize-none border-none focus:outline-none focus:ring-0 text-foreground placeholder:text-muted-foreground/60 leading-7"
                 maxLength={500}
               />
