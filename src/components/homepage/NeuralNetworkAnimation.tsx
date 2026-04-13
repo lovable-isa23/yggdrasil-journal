@@ -19,10 +19,10 @@ interface Connection {
 }
 
 const COLORS = {
-  amber: "hsl(37, 76%, 56%)",
-  golden: "hsl(42, 86%, 65%)",
-  brown: "hsl(20, 25%, 30%)",
-  teal: "hsl(169, 43%, 32%)",
+  sage: "hsl(100, 25%, 50%)",
+  orange: "hsl(18, 55%, 55%)",
+  brown: "hsl(25, 45%, 40%)",
+  teal: "hsl(180, 40%, 55%)",
 };
 
 export const NeuralNetworkAnimation = () => {
@@ -198,9 +198,9 @@ export const NeuralNetworkAnimation = () => {
           const gradient = ctx.createLinearGradient(
             source.x, source.y, target.x, target.y
           );
-          gradient.addColorStop(0, `hsla(20, 25%, 30%, ${conn.strength * 0.3})`);
-          gradient.addColorStop(0.5, `hsla(37, 76%, 56%, ${conn.strength * 0.4})`);
-          gradient.addColorStop(1, `hsla(42, 86%, 65%, ${conn.strength * 0.3})`);
+          gradient.addColorStop(0, `hsla(25, 45%, 40%, ${conn.strength * 0.3})`);
+          gradient.addColorStop(0.5, `hsla(100, 25%, 50%, ${conn.strength * 0.4})`);
+          gradient.addColorStop(1, `hsla(18, 55%, 55%, ${conn.strength * 0.3})`);
           
           ctx.strokeStyle = gradient;
           ctx.lineWidth = conn.strength * 2;
@@ -214,7 +214,7 @@ export const NeuralNetworkAnimation = () => {
             
             ctx.beginPath();
             ctx.arc(px, py, 2, 0, Math.PI * 2);
-            ctx.fillStyle = `hsla(37, 76%, 60%, ${conn.strength * 0.8})`;
+            ctx.fillStyle = `hsla(100, 25%, 60%, ${conn.strength * 0.8})`;
             ctx.fill();
           }
         }

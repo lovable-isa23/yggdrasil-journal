@@ -78,10 +78,10 @@ export const GraphSnapshotSection = () => {
   return (
     <section 
       ref={elementRef}
-      className="py-24 px-6 bg-card relative overflow-hidden"
+      className="py-24 px-6 bg-card grain-overlay relative overflow-hidden"
     >
       <div className="container mx-auto max-w-6xl relative z-10">
-        <h2 className="text-3xl md:text-4xl font-serif font-bold text-center mb-4 text-foreground">
+        <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
           Your journal becomes a living landscape
         </h2>
         <p className="text-muted-foreground text-center mb-12 max-w-2xl mx-auto">

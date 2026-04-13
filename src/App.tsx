@@ -28,9 +28,6 @@ function lazyRetry(importFn: () => Promise<any>) {
 
 // Lazy load all routes for code splitting
 const Index = lazyRetry(() => import("./pages/Index"));
-const Topics = lazyRetry(() => import("./pages/Topics"));
-const AboutPage = lazyRetry(() => import("./pages/About"));
-const ContactPage = lazyRetry(() => import("./pages/Contact"));
 const Waitlist = lazyRetry(() => import("./pages/Waitlist"));
 const BetaWelcome = lazyRetry(() => import("./pages/BetaWelcome"));
 const Login = lazyRetry(() => import("./pages/Login"));
@@ -61,9 +58,6 @@ const App = () => (
           <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}>
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/topics" element={<Topics />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="/contact" element={<ContactPage />} />
               <Route path="/waitlist" element={<Waitlist />} />
               <Route path="/beta-welcome" element={<BetaWelcome />} />
               <Route path="/login" element={<Login />} />
