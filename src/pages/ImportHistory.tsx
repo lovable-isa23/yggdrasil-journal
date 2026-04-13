@@ -27,7 +27,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Badge } from "@/components/ui/badge";
 
 interface ImportRecord {
   id: string;
