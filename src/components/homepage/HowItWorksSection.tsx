@@ -31,6 +31,7 @@ export const HowItWorksSection = () => {
 
   return (
     <section 
+      id="how-it-works"
       ref={elementRef}
       className="py-24 px-6 bg-card grain-overlay relative overflow-hidden"
     >

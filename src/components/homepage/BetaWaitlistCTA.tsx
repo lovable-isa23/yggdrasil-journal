@@ -22,6 +22,7 @@ export const BetaWaitlistCTA = () => {
 
   return (
     <section 
+      id="pricing"
       ref={elementRef}
       className="py-24 px-6 bg-gradient-to-b from-background to-card grain-overlay relative overflow-hidden"
     >
@@ -51,9 +52,17 @@ export const BetaWaitlistCTA = () => {
               Paid Beta
             </div>
 
-            <h3 className="text-xl font-semibold mb-4 mt-2">
+            <h3 className="text-xl font-semibold mb-2 mt-2">
               Beta Access
             </h3>
+
+            <div className="mb-4">
+              <span className="text-4xl font-bold text-foreground">$5.99</span>
+              <p className="text-sm text-muted-foreground mt-1">one-time fee</p>
+              <p className="text-xs text-muted-foreground/80 mt-2 italic">
+                Early adopter pricing — becomes a monthly subscription at launch.
+              </p>
+            </div>
 
             <ul className="space-y-3 mb-8">
               {betaBenefits.map((benefit) => (
