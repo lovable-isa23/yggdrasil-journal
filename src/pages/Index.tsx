@@ -16,11 +16,11 @@ const Index = () => {
       <PublicNavbar />
       <Hero />
       <Suspense fallback={<div className="h-24" />}>
-        <SocialProofSection />
-        <LiveDemoSection />
         <HowItWorksSection />
+        <LiveDemoSection />
         <UseCaseCards />
         <GraphSnapshotSection />
+        <SocialProofSection />
         <BetaWaitlistCTA />
       </Suspense>
       <LandingFooter />
