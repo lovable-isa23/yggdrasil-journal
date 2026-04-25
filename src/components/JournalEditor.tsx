@@ -374,57 +374,58 @@ export const JournalEditor = ({ onEntryCreated, replyToEntry, onReplyHandled }: 
         </Collapsible>
       )}
 
-      <div className="space-y-2">
-        <Label>Entry Date</Label>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              type="button"
-              variant="outline"
-              className={cn(
-                "w-full h-12 justify-start text-left font-normal",
-                !entryDate && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {entryDate ? format(entryDate, "PPP") : <span>Pick a date</span>}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 z-50 pointer-events-auto" align="start">
-            <Calendar
-              mode="single"
-              selected={entryDate}
-              onSelect={(date) => {
-                if (date) {
-                  // Set to noon local time to avoid timezone boundary issues
-                  const adjustedDate = new Date(date);
-                  adjustedDate.setHours(12, 0, 0, 0);
-                  setEntryDate(adjustedDate);
-                }
-              }}
-              initialFocus
-              className="pointer-events-auto"
-            />
-          </PopoverContent>
-        </Popover>
-      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Entry Date</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                className={cn(
+                  "w-full h-12 justify-start text-left font-normal",
+                  !entryDate && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {entryDate ? format(entryDate, "PPP") : <span>Pick a date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 z-50 pointer-events-auto" align="start">
+              <Calendar
+                mode="single"
+                selected={entryDate}
+                onSelect={(date) => {
+                  if (date) {
+                    const adjustedDate = new Date(date);
+                    adjustedDate.setHours(12, 0, 0, 0);
+                    setEntryDate(adjustedDate);
+                  }
+                }}
+                initialFocus
+                className="pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
 
-      {/* Mood / Category Selector */}
-      <div className="space-y-2">
-        <Label>Mood / Category</Label>
-        <Select value={mood} onValueChange={setMood}>
-          <SelectTrigger className="h-12">
-            <SelectValue placeholder="Select a mood" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="dream">🌙 Dream</SelectItem>
-            <SelectItem value="reflection">🪞 Reflection</SelectItem>
-            <SelectItem value="gratitude">🙏 Gratitude</SelectItem>
-            <SelectItem value="intention">🎯 Intention</SelectItem>
-            <SelectItem value="shadow_work">🌑 Shadow Work</SelectItem>
-            <SelectItem value="general">📝 General</SelectItem>
-          </SelectContent>
-        </Select>
+        {/* Category Selector */}
+        <div className="space-y-2">
+          <Label>Category</Label>
+          <Select value={mood} onValueChange={setMood}>
+            <SelectTrigger className="h-12">
+              <SelectValue placeholder="Select a category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="dream">🌙 Dream</SelectItem>
+              <SelectItem value="reflection">🪞 Reflection</SelectItem>
+              <SelectItem value="gratitude">🙏 Gratitude</SelectItem>
+              <SelectItem value="intention">🎯 Intention</SelectItem>
+              <SelectItem value="shadow_work">🌑 Shadow Work</SelectItem>
+              <SelectItem value="general">📝 General</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Alternative Input Methods - Hidden for now */}
