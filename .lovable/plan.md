@@ -1,138 +1,121 @@
+## Plan: Fix Three Supabase Security Findings
 
-
-## Plan: 13 Multi-Area Improvements
-
-### LANDING PAGE
-
-#### 1. Public Navbar
-**New file: `src/components/PublicNavbar.tsx`**
-- Sticky header with Yggdrasil logo on left, anchor links on right: `#demo`, `#how-it-works`, `#pricing`
-- "Open Journal" button (links to `/journal`) styled as CTA
-- Transparent over hero, gains `bg-background/80 backdrop-blur-sm` on scroll (track with `useState` + scroll listener)
-
-**`src/pages/Index.tsx`** — Add `<PublicNavbar />` above `<Hero />`
-
-**`src/components/homepage/LiveDemoSection.tsx`** — Add `id="demo"` to the section  
-**`src/components/homepage/HowItWorksSection.tsx`** — Add `id="how-it-works"` to the section  
-**`src/components/homepage/BetaWaitlistCTA.tsx`** — Add `id="pricing"` to the section
-
-#### 2. Move Demo Example Text Above Textarea
-**`src/components/homepage/LiveDemoSection.tsx`**
-- Remove the long placeholder text from the textarea
-- Add a styled quote block above the textarea with label "For example:" and the example text in italics, bordered/muted styling
-- Leave textarea placeholder as just "Start typing..."
-
-#### 3. Social Proof Row
-**New file: `src/components/homepage/SocialProofSection.tsx`**
-- Three-column horizontal layout:
-  - Left: `Users` icon + "Join our growing community"
-  - Center: Testimonial card — quote + attribution
-  - Right: `BarChart3` icon + "100+ journal entries analyzed"
-- Warm, minimal styling consistent with existing sections
-
-**`src/pages/Index.tsx`** — Insert `<SocialProofSection />` between `<Hero />` and `<LiveDemoSection />`
-
-#### 4. Beta Pricing Display
-**`src/components/homepage/BetaWaitlistCTA.tsx`**
-- In the "Paid Beta" card, add `$5.99` in large text + "one-time fee" label below the title
-- Add urgency line: "Early adopter pricing — becomes a monthly subscription at launch." in `text-muted-foreground` warm tone
-
-#### 5. Privacy & Terms Placeholder Pages
-**New files: `src/pages/Privacy.tsx`, `src/pages/Terms.tsx`**
-- Each renders `<PublicNavbar />`, page title, placeholder body text
-- Consistent styling with app pages
-
-**`src/App.tsx`** — Add routes `/privacy` and `/terms`
-
-#### 6. Landing Page Footer
-**New file: `src/components/LandingFooter.tsx`**
-- Logo + tagline, links to `/privacy` and `/terms`, copyright line
-- Minimal, on-brand
-
-**`src/pages/Index.tsx`** — Add `<LandingFooter />` at bottom
+All three findings are database-level — fixed in a single migration. No application code needs to change.
 
 ---
 
-### APP — NAVIGATION
+### 1. Waitlist `WITH CHECK (true)` (RLS Policy Always True)
 
-#### 7. Labels on App Navbar
-**`src/components/AppNavbar.tsx`**
-- On `lg` and above: render icon + text label for each nav item (no tooltip needed)
-- Below `lg`: keep icon-only with existing tooltips
-- Use responsive classes: `<span className="hidden lg:inline">{label}</span>`
+**Current:** The `waitlist` INSERT policy `"Anyone can join waitlist"` uses `WITH CHECK (true)`, which trips the linter.
 
----
+**Fix:** Replace it with a policy that still allows public signups but adds basic shape validation so the check expression is no longer trivially `true`:
 
-### APP — WRITE PAGE
+```sql
+DROP POLICY "Anyone can join waitlist" ON public.waitlist;
 
-#### 8. Content Textarea Font
-**`src/components/JournalEditor.tsx`** (line ~428)
-- Change `className="... font-mono text-sm"` to `className="... font-['Poppins'] text-base"` on the content textarea
-- Verify Poppins is loaded (it is, via the project's font setup)
+CREATE POLICY "Anyone can join waitlist"
+ON public.waitlist
+FOR INSERT
+TO anon, authenticated
+WITH CHECK (
+  email IS NOT NULL
+  AND length(email) BETWEEN 3 AND 320
+  AND email ~* '^[^@\s]+@[^@\s]+\.[^@\s]+$'
+);
+```
 
-#### 9. Mood/Category Selector
-**`src/components/JournalEditor.tsx`**
-- Add `mood` state (default `"general"`)
-- Between the Entry Date popover and the Content section, add a labeled `Select` dropdown with options: Dream, Reflection, Gratitude, Intention, Shadow Work, General
-- Include `mood` in draft auto-save/restore
-- Pass `mood_type: mood` in the `encrypt-entry` body
-
-**`supabase/functions/encrypt-entry/index.ts`**
-- Destructure `mood_type` from request body
-- Include `mood_type: mood_type || 'general'` in the insert object
+This keeps the waitlist publicly writable (matches existing product behavior) while satisfying the linter and rejecting obviously malformed rows.
 
 ---
 
-### APP — ENTRIES PAGE
+### 2. Storage buckets missing UPDATE policy
 
-#### 10. Tooltips on Entry Card Action Icons
-**`src/components/JournalEntryList.tsx`** (lines ~615-624)
-- Wrap each of the three icon buttons in `<Tooltip>` with:
-  - MessageSquareReply → "Reflect with Yggi"
-  - Edit → "Edit entry"
-  - Trash2 → "Delete entry"
-- Wrap the group in a `<TooltipProvider>` (already imported)
+**Current:** `audio-recordings` and `journal-images` have INSERT/SELECT/DELETE policies scoped to the user's folder, but no UPDATE policy. Without one, behavior is ambiguous and users could potentially overwrite others' files via `upsert`.
 
-#### 11. Rename Depth Badge
-**`src/components/JournalEntryList.tsx`** (lines ~145-156)
-- Change all `Depth: ${depthScore}` to `Analysis Depth: ${depthScore}` in the `getDepthBadge` function
+**Fix:** Add owner-scoped UPDATE policies mirroring the existing folder-name pattern:
 
-#### 12. Fix Import History Navbar
-**`src/pages/ImportHistory.tsx`**
-- Remove the custom header block (lines ~115-170)
-- Import and render `<AppNavbar />` instead
+```sql
+CREATE POLICY "Users can update own audio recordings"
+ON storage.objects
+FOR UPDATE
+TO authenticated
+USING (
+  bucket_id = 'audio-recordings'
+  AND (auth.uid())::text = (storage.foldername(name))[1]
+)
+WITH CHECK (
+  bucket_id = 'audio-recordings'
+  AND (auth.uid())::text = (storage.foldername(name))[1]
+);
+
+CREATE POLICY "Users can update own journal images"
+ON storage.objects
+FOR UPDATE
+TO authenticated
+USING (
+  bucket_id = 'journal-images'
+  AND (auth.uid())::text = (storage.foldername(name))[1]
+)
+WITH CHECK (
+  bucket_id = 'journal-images'
+  AND (auth.uid())::text = (storage.foldername(name))[1]
+);
+```
 
 ---
 
-### APP — SETTINGS PAGE
+### 3. `rate_limits` policies rely on JWT `role` claim
 
-#### 13. Confirmation Dialog for Re-analyze
-**`src/pages/Settings.tsx`**
-- Add state `showReanalyzeConfirm`
-- The "Re-analyze All Entries" button sets `showReanalyzeConfirm = true` instead of calling `handleReanalyzeAll` directly
-- Render an `AlertDialog` with message: "Re-analyze all entries? This will update insights for all [N] entries using your current framework settings. This may take a few minutes." and Confirm/Cancel buttons
-- Confirm triggers the existing `handleReanalyzeAll`
+**Current:** The service-role policy uses `auth.jwt() ->> 'role' = 'service_role'`, which checks a JWT claim that could in principle be spoofed if a token were ever misissued. There's also no UPDATE policy, even though the upsert pattern requires one.
+
+**Fix:** Replace the policies with ones gated on `auth.role()` (the trusted Postgres role the request is authenticated as), and split into explicit per-command policies. Regular users keep SELECT-own; only the service role can INSERT/UPDATE/DELETE.
+
+```sql
+DROP POLICY "Service role can manage rate limits" ON public.rate_limits;
+DROP POLICY "Users can view own rate limits" ON public.rate_limits;
+
+CREATE POLICY "Service role can insert rate limits"
+ON public.rate_limits
+FOR INSERT
+TO service_role
+WITH CHECK (true);
+
+CREATE POLICY "Service role can update rate limits"
+ON public.rate_limits
+FOR UPDATE
+TO service_role
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Service role can delete rate limits"
+ON public.rate_limits
+FOR DELETE
+TO service_role
+USING (true);
+
+CREATE POLICY "Service role can view rate limits"
+ON public.rate_limits
+FOR SELECT
+TO service_role
+USING (true);
+
+CREATE POLICY "Users can view own rate limits"
+ON public.rate_limits
+FOR SELECT
+TO authenticated
+USING (auth.uid() = user_id);
+```
+
+Edge functions already use the `SUPABASE_SERVICE_ROLE_KEY`, so they connect as the `service_role` Postgres role and these policies apply automatically. No edge function code changes needed.
 
 ---
 
-### File Change Summary
+### Summary
 
-| File | Changes |
-|------|---------|
-| `src/components/PublicNavbar.tsx` | **New** — landing page navbar |
-| `src/components/homepage/SocialProofSection.tsx` | **New** — social proof row |
-| `src/components/LandingFooter.tsx` | **New** — landing page footer |
-| `src/pages/Privacy.tsx` | **New** — placeholder page |
-| `src/pages/Terms.tsx` | **New** — placeholder page |
-| `src/pages/Index.tsx` | Add PublicNavbar, SocialProofSection, LandingFooter |
-| `src/components/homepage/LiveDemoSection.tsx` | Add `id="demo"`, move example text above textarea |
-| `src/components/homepage/HowItWorksSection.tsx` | Add `id="how-it-works"` |
-| `src/components/homepage/BetaWaitlistCTA.tsx` | Add `id="pricing"`, add price + urgency line |
-| `src/App.tsx` | Add `/privacy` and `/terms` routes |
-| `src/components/AppNavbar.tsx` | Show labels on lg+, icon-only below |
-| `src/components/JournalEditor.tsx` | Change textarea font to Poppins, add mood selector, include mood in draft + submission |
-| `supabase/functions/encrypt-entry/index.ts` | Accept and store `mood_type` |
-| `src/components/JournalEntryList.tsx` | Add tooltips to action icons, rename depth badge |
-| `src/pages/ImportHistory.tsx` | Replace custom header with `<AppNavbar />` |
-| `src/pages/Settings.tsx` | Add confirmation dialog to re-analyze |
+| Finding | Fix |
+|---|---|
+| Waitlist `WITH CHECK (true)` | Replace with email-shape validation check |
+| Missing storage UPDATE policies | Add owner-scoped UPDATE policies for both buckets |
+| `rate_limits` JWT-role check | Switch to role-grant policies (`TO service_role`) and add explicit UPDATE/DELETE/SELECT policies |
 
+One migration file, no application code changes.
