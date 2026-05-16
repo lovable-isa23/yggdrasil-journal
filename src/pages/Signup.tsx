@@ -10,6 +10,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signupSchema, type SignupFormData } from "@/lib/validations";
 import { useState } from "react";
+import { Seo } from "@/components/Seo";
 
 const Signup = () => {
   const navigate = useNavigate();
