@@ -8,6 +8,7 @@ import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { waitlistSchema, type WaitlistFormData } from "@/lib/validations";
+import { Seo } from "@/components/Seo";
 
 const Waitlist = () => {
   const {
