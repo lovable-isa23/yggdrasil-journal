@@ -1,0 +1,12 @@
+# Yggdrasil
+
+> Semantic journaling platform that turns your writing into a living map of your mind. AI-powered insights reveal patterns, people, and themes across your entries.
+
+## Pages
+
+- [Home](/): Overview, live demo, and how Yggdrasil works.
+- [Waitlist](/waitlist): Join the beta waitlist.
+- [Sign up](/signup): Create an account.
+- [Sign in](/login): Existing user login.
+- [Privacy](/privacy): Privacy policy.
+- [Terms](/terms): Terms of service.
