@@ -10,6 +10,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, type LoginFormData } from "@/lib/validations";
 import { useState } from "react";
+import { Seo } from "@/components/Seo";
 
 const Login = () => {
   const navigate = useNavigate();
