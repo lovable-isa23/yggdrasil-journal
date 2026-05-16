@@ -1,6 +1,7 @@
 import { PublicNavbar } from "@/components/PublicNavbar";
 import { Hero } from "@/components/Hero";
 import { LandingFooter } from "@/components/LandingFooter";
+import { Seo } from "@/components/Seo";
 import { lazy, Suspense } from "react";
 
 const SocialProofSection = lazy(() => import("@/components/homepage/SocialProofSection").then(m => ({ default: m.SocialProofSection })));
