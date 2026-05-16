@@ -10,6 +10,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, type LoginFormData } from "@/lib/validations";
 import { useState } from "react";
+import { Seo } from "@/components/Seo";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -62,6 +63,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-6 py-12 bg-gradient-to-br from-background via-muted/30 to-background relative overflow-hidden">
+      <Seo title="Sign In — Yggdrasil" description="Sign in to continue your Yggdrasil journaling journey." path="/login" />
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-[0.03]">
         <div className="absolute inset-0" style={{

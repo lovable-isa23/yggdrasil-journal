@@ -8,6 +8,7 @@ import yggdrasilLogo from "@/assets/yggdrasil-logo.png";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { waitlistSchema, type WaitlistFormData } from "@/lib/validations";
+import { Seo } from "@/components/Seo";
 
 const Waitlist = () => {
   const {
@@ -43,6 +44,7 @@ const Waitlist = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-6 py-12 bg-gradient-to-br from-background via-muted/30 to-background relative overflow-hidden">
+      <Seo title="Join the Waitlist — Yggdrasil" description="Be among the first to experience transformative semantic journaling with Yggdrasil." path="/waitlist" />
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-[0.03]">
         <div className="absolute inset-0" style={{

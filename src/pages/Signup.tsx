@@ -10,6 +10,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signupSchema, type SignupFormData } from "@/lib/validations";
 import { useState } from "react";
+import { Seo } from "@/components/Seo";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -70,6 +71,7 @@ const Signup = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-6 py-12 bg-gradient-to-br from-background via-muted/30 to-background relative overflow-hidden">
+      <Seo title="Sign Up — Yggdrasil" description="Create your Yggdrasil account and start mapping your inner world." path="/signup" />
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-[0.03]">
         <div className="absolute inset-0" style={{
