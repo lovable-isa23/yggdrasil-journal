@@ -1,25 +1,17 @@
-## Plan: Homepage reorder + Journal editor row layout
+## Goal
+Track the timestamp of each user's most recent journal entry on the `profiles` table, so it's easy to see when a user last journaled (distinct from when their profile row was created).
 
-### 1. Reorder homepage sections (`src/pages/Index.tsx`)
+## Changes
 
-Change the section order inside `<Suspense>` to:
-1. `Hero` (already outside Suspense — stays first)
-2. `HowItWorksSection` ("How It Works")
-3. `LiveDemoSection` ("Try It Yourself")
-4. `UseCaseCards` ("What You'll Discover")
-5. `GraphSnapshotSection` ("Living Landscape")
-6. `SocialProofSection` (Social proof)
-7. `BetaWaitlistCTA` (final CTA)
+### 1. Database migration
+- Add `last_entry_at TIMESTAMPTZ` column to `public.profiles` (nullable).
+- Backfill: set `last_entry_at` to `MAX(journal_entries.created_at)` per user.
+- Create trigger function `public.update_profile_last_entry_at()` (SECURITY DEFINER, `search_path = public`) that updates `profiles.last_entry_at = NEW.created_at` for `NEW.user_id`.
+- Attach `AFTER INSERT` trigger on `public.journal_entries` calling that function.
 
-No other files affected. Anchor IDs (`#demo`, `#how-it-works`, `#pricing`) in `PublicNavbar` continue to work since the section IDs remain on the same components.
+### 2. No app code changes required
+The existing `profiles.updated_at` keeps its original meaning (profile row mutation). New `last_entry_at` is available for any future UI that wants to show "last journaled" — not wired into UI in this change.
 
-### 2. Entry Date + Category on same row (`src/components/JournalEditor.tsx`)
-
-- Wrap the existing "Entry Date" block and the "Mood / Category" block in a single `grid grid-cols-1 sm:grid-cols-2 gap-4` container so they sit side-by-side (50/50) on tablet+ and stack on mobile.
-- Rename the label "Mood / Category" → "Category".
-- Rename the Select placeholder from "Select a mood" → "Select a category".
-- Keep the underlying `mood` state variable, `mood_type` payload field, and all 6 options (Dream, Reflection, Gratitude, Intention, Shadow Work, General) unchanged — purely a label/layout change.
-
-### Files changed
-- `src/pages/Index.tsx`
-- `src/components/JournalEditor.tsx`
+## Notes
+- Trigger fires on INSERT only (not UPDATE), so editing an old entry won't bump the timestamp. If you'd rather "last activity" include edits, say so and I'll add UPDATE too.
+- No RLS change needed — `profiles` policies already cover the new column.
