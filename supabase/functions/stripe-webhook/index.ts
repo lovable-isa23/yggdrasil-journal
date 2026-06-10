@@ -146,9 +146,12 @@ serve(async (req) => {
       // Send welcome email
       try {
         await supabaseAdmin.functions.invoke("send-welcome-email", {
-          body: { 
+          body: {
             email: session.customer_email,
-            userId: newUser.user.id 
+            userId: newUser.user.id,
+          },
+          headers: {
+            "x-internal-secret": Deno.env.get("WELCOME_EMAIL_SECRET") ?? "",
           },
         });
         console.log("[STRIPE-WEBHOOK] Welcome email sent successfully");
