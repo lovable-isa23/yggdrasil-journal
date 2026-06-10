@@ -14,9 +14,20 @@ serve(async (req) => {
   }
 
   try {
+    // Internal-only endpoint: require shared secret (called by stripe-webhook server-side)
+    const internalSecret = req.headers.get("x-internal-secret");
+    const expectedSecret = Deno.env.get("WELCOME_EMAIL_SECRET");
+    if (!expectedSecret || internalSecret !== expectedSecret) {
+      console.error("[SEND-WELCOME-EMAIL] Forbidden: invalid or missing internal secret");
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { email, userId } = await req.json();
 
-    console.log("Sending welcome email to:", email);
+    console.log("Sending welcome email to user:", userId ? userId.slice(0, 5) + "***" : "[no-id]");
 
     // Create Supabase client to generate password reset link
     const supabaseAdmin = createClient(
