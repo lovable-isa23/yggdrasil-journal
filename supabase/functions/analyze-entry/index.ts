@@ -185,11 +185,15 @@ serve(async (req) => {
       .from('journal_entries')
       .select('*')
       .eq('id', entryId)
+      .eq('user_id', user.id)
       .single();
 
     if (entryError || !entry) {
       console.error('Entry fetch error:', entryError);
-      throw new Error('Entry not found');
+      return new Response(
+        JSON.stringify({ error: 'Entry not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Decrypt the entry
